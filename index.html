@@ -20,737 +20,348 @@ input[type=date]{color-scheme:dark}
 ::-webkit-scrollbar{display:none}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:0.3}50%{transform:scale(1.5);opacity:1}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 .fi{animation:fadeIn 0.18s ease-out}
-.su{animation:slideUp 0.22s ease-out}
+.su{animation:slideUp 0.25s cubic-bezier(0.32,0.72,0,1)}
+.shimmer{background:linear-gradient(90deg,#0D1B2E 25%,#1E3A5F44 50%,#0D1B2E 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const {useState, useEffect, useCallback, useRef, useMemo} = React;
-const SB = 'https://gvzkxjynpmjnexbmhqgb.supabase.co';
-const SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emt4anlucG1qbmV4Ym1ocWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3Njk4ODcsImV4cCI6MjA4OTM0NTg4N30.1BzFmAWsr72dnyMoJgUPQrBFoyh-w_-tdPgnrvcoE5s';
-const A='#38BDF8', G='#4ADE80', O='#FB923C', R='#F87171', PU='#A78BFA', PK='#F472B6', SW='#22D3EE', BK='#FBBF24';
+const {useState,useEffect,useCallback,useRef,useMemo}=React;
+const SB='https://gvzkxjynpmjnexbmhqgb.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emt4anlucG1qbmV4Ym1ocWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3Njk4ODcsImV4cCI6MjA4OTM0NTg4N30.1BzFmAWsr72dnyMoJgUPQrBFoyh-w_-tdPgnrvcoE5s';
+const RAPID_KEY='bdaa6b55dbmsh055e7929ea3a53ap190f8cjsn1cc016801936';
+const RAPID_HOST='exercisedb.p.rapidapi.com';
+const A='#38BDF8',G='#4ADE80',O='#FB923C',R='#F87171',PU='#A78BFA',PK='#F472B6',SW='#22D3EE',BK='#FBBF24';
 
-async function db(method, path, body) {
-  const res = await fetch(SB+'/rest/v1'+path, {method, headers: {'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'}, body: body ? JSON.stringify(body) : undefined});
-  const t = await res.text();
-  return t ? JSON.parse(t) : null;
-}
-function uid() {
-  let id = localStorage.getItem('tl-uid');
-  if (!id) { id = 'chris-' + Math.random().toString(36).slice(2,10); localStorage.setItem('tl-uid', id); }
-  return id;
-}
-const fmt = iso => new Date(iso).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
-function calcWeek(sd) {
-  if (!sd) return 1;
-  const diff = new Date() - new Date(sd);
-  return Math.max(1, Math.min(12, Math.floor(diff/(1000*60*60*24*7))+1));
-}
-function getPrevSession(hist, type) { return hist.filter(s => s.type === type)[0] || null; }
-function getPrevExData(prev, secTitle, exName) {
-  if (!prev || !prev.data || !prev.data.sections) return null;
-  for (const sec of prev.data.sections) {
-    if (sec.title === secTitle) {
-      for (const ss of sec.supersets || []) {
-        for (const ex of ss.exercises || []) {
-          if (ex.name === exName) {
-            const ds = (ex.sets || []).filter(s => s.weight || s.reps);
-            if (ds.length) return ds;
-          }
-        }
+// ExerciseDB search term mapping
+const GIF_SEARCH={
+  'Romanian Deadlift':'romanian deadlift',
+  'Bent-Over DB / Kettlebell Row':'bent over row',
+  'Leg Press':'leg press',
+  'Flat DB Press (neutral grip)':'dumbbell bench press',
+  'DB Split Squat (front foot elevated)':'split squat',
+  'Lying Leg Curl':'lying leg curl',
+  'Pallof Press':'cable pallof press',
+  'Dead Bug':'dead bug',
+  'Barbell Squat / Goblet Squat':'goblet squat',
+  'Pull-Up / Lat Pulldown (neutral grip)':'lat pulldown',
+  'Hip Thrust (Barbell or Machine)':'hip thrust',
+  'Low-Incline DB Press (neutral grip)':'dumbbell incline press',
+  'Single-Arm DB Row (incline bench)':'one arm dumbbell row',
+  'Side Plank':'side plank',
+  'Reverse Crunch':'reverse crunch',
+  'Bulgarian Split Squat':'bulgarian split squat',
+  'Bent-Over Barbell / DB Row':'barbell bent over row',
+  '45deg Back Extension / KB Good Morning':'back extension',
+  'Cable Chest Fly (chest height)':'cable fly',
+  'Push-Up Variation':'push up',
+  'Cable Wood Chop':'cable wood chop',
+  'Bird Dog':'bird dog',
+  'Band External Rotation at Side':'external rotation',
+  'Side-Lying External Rotation (DB)':'lying external rotation',
+  'Prone Y Raise':'prone y raise',
+  'Prone T Raise':'rear delt fly',
+  'Serratus Anterior Wall Press':'push up plus',
+  'Sleeper Stretch':'shoulder stretch',
+  'Hip Flexor Lunge Stretch':'lunge stretch',
+  'Lying Figure-Four Glute Stretch':'figure four',
+  'Standing Hamstring Stretch':'standing hamstring stretch',
+  'Thoracic Extension over Roller':'thoracic extension',
+  'Wall Chest Opener':'chest stretch',
+  "Child's Pose with Side Reach":'child pose',
+  '90/90 Hip Stretch':'hip stretch',
+  'Shoulder Circles':'arm circles',
+  'Band External Rotations':'band external rotation',
+  'Scapular Shrugs':'scapular shrug',
+};
+
+// ── 3-LAYER GIF CACHE ────────────────────────────────────────────────────────
+// Layer 1: in-memory (instant, resets on page reload)
+// Layer 2: Supabase exercise_gifs table (persists forever, shared across devices)
+// Layer 3: ExerciseDB API (called at most ONCE per exercise, ever)
+const memCache={};
+
+async function fetchExerciseGif(exName){
+  // Layer 1 — memory
+  if(memCache[exName]!==undefined)return memCache[exName];
+
+  // Layer 2 — Supabase persistent cache
+  try{
+    const res=await fetch(
+      SB+'/rest/v1/exercise_gifs?exercise_name=eq.'+encodeURIComponent(exName)+'&select=gif_url&limit=1',
+      {headers:{'apikey':SK,'Authorization':'Bearer '+SK}}
+    );
+    if(res.ok){
+      const rows=await res.json();
+      if(rows&&rows.length>0){
+        const url=rows[0].gif_url||null;
+        memCache[exName]=url;
+        return url;
       }
     }
-  }
+  }catch{}
+
+  // Layer 3 — ExerciseDB API (first time only)
+  const term=GIF_SEARCH[exName]||exName.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+  let gifUrl=null;
+  try{
+    const apiRes=await fetch(
+      'https://exercisedb.p.rapidapi.com/exercises/name/'+encodeURIComponent(term)+'?limit=1&offset=0',
+      {headers:{'x-rapidapi-key':RAPID_KEY,'x-rapidapi-host':RAPID_HOST}}
+    );
+    if(apiRes.ok){
+      const data=await apiRes.json();
+      gifUrl=(data&&data[0]&&data[0].gifUrl)?data[0].gifUrl:null;
+    }
+  }catch{}
+
+  // Persist to Supabase — fire and forget (even null saved so we don't retry)
+  fetch(SB+'/rest/v1/exercise_gifs',{
+    method:'POST',
+    headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify({exercise_name:exName,gif_url:gifUrl,fetched_at:new Date().toISOString()})
+  }).catch(()=>{});
+
+  memCache[exName]=gifUrl;
+  return gifUrl;
+}
+
+async function db(method,path,body){
+  const res=await fetch(SB+'/rest/v1'+path,{method,headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:body?JSON.stringify(body):undefined});
+  const t=await res.text();return t?JSON.parse(t):null;
+}
+function uid(){let id=localStorage.getItem('tl-uid');if(!id){id='chris-'+Math.random().toString(36).slice(2,10);localStorage.setItem('tl-uid',id);}return id;}
+const fmt=iso=>new Date(iso).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+function calcWeek(sd){if(!sd)return 1;const diff=new Date()-new Date(sd);return Math.max(1,Math.min(12,Math.floor(diff/(1000*60*60*24*7))+1));}
+function getPrevSession(hist,type){return hist.filter(s=>s.type===type)[0]||null;}
+function getPrevExData(prev,secTitle,exName){
+  if(!prev||!prev.data||!prev.data.sections)return null;
+  for(const sec of prev.data.sections){if(sec.title===secTitle){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){const ds=(ex.sets||[]).filter(s=>s.weight||s.reps);if(ds.length)return ds;}}}}}
   return null;
 }
-function canProgress(hist, type, secTitle, exName, repsStr) {
-  const sessions = hist.filter(s => s.type === type).slice(0, 2);
-  if (sessions.length < 2) return false;
-  const top = parseInt((repsStr || '').split('-').pop());
-  if (isNaN(top)) return false;
-  return sessions.every(session => {
-    if (!session.data || !session.data.sections) return false;
-    for (const sec of session.data.sections) {
-      if (sec.title === secTitle) {
-        for (const ss of sec.supersets || []) {
-          for (const ex of ss.exercises || []) {
-            if (ex.name === exName) {
-              const sets = ex.sets || [];
-              return sets.length > 0 && sets.every(s => s.done && parseInt(s.reps) >= top);
-            }
-          }
-        }
-      }
-    }
+function canProgress(hist,type,secTitle,exName,repsStr){
+  const sessions=hist.filter(s=>s.type===type).slice(0,2);
+  if(sessions.length<2)return false;
+  const top=parseInt((repsStr||'').split('-').pop());
+  if(isNaN(top))return false;
+  return sessions.every(session=>{
+    if(!session.data||!session.data.sections)return false;
+    for(const sec of session.data.sections){if(sec.title===secTitle){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){const sets=ex.sets||[];return sets.length>0&&sets.every(s=>s.done&&parseInt(s.reps)>=top);}}}}}
     return false;
   });
 }
-function getPersonalBest(hist, exName) {
-  let best = null; let bestDate = null;
-  for (const session of hist) {
-    if (!session.data || !session.data.sections) continue;
-    for (const sec of session.data.sections) {
-      for (const ss of sec.supersets || []) {
-        for (const ex of ss.exercises || []) {
-          if (ex.name === exName) {
-            for (const s of ex.sets || []) {
-              const w = parseFloat(s.weight); const r = parseInt(s.reps);
-              if (w && r && s.done) {
-                if (!best || w > best.weight || (w === best.weight && r > best.reps)) {
-                  best = {weight:w, reps:r}; bestDate = session.session_date;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  return best ? {...best, date: bestDate} : null;
+function getPersonalBest(hist,exName){
+  let best=null,bestDate=null;
+  for(const session of hist){if(!session.data||!session.data.sections)continue;for(const sec of session.data.sections){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){for(const s of ex.sets||[]){const w=parseFloat(s.weight),r=parseInt(s.reps);if(w&&r&&s.done){if(!best||w>best.weight||(w===best.weight&&r>best.reps)){best={weight:w,reps:r};bestDate=session.session_date;}}}}}}}}
+  return best?{...best,date:bestDate}:null;
 }
-function getLastLogged(hist, exName) {
-  for (const session of hist) {
-    if (!session.data || !session.data.sections) continue;
-    for (const sec of session.data.sections) {
-      for (const ss of sec.supersets || []) {
-        for (const ex of ss.exercises || []) {
-          if (ex.name === exName) {
-            const ds = (ex.sets || []).filter(s => s.weight && s.reps && s.done);
-            if (ds.length) return {date: session.session_date, sets: ds, sessionType: session.type, week: session.week};
-          }
-        }
-      }
-    }
-  }
+function getLastLogged(hist,exName){
+  for(const session of hist){if(!session.data||!session.data.sections)continue;for(const sec of session.data.sections){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){const ds=(ex.sets||[]).filter(s=>s.weight&&s.reps&&s.done);if(ds.length)return{date:session.session_date,sets:ds,sessionType:session.type,week:session.week};}}}}}
   return null;
 }
 
-// ── EXERCISE COACHING DATA ───────────────────────────────────────────────────
-const COACHING = {
-  'Romanian Deadlift': {
-    muscle: 'Hamstring / Glute / Lower Back', category: 'Hinge',
-    tips: [
-      'Feet hip-width, bar at arms length. Push your hips back as if reaching them toward the wall behind you — this is a hinge, not a squat.',
-      'Keep the bar close to your body throughout. It should almost drag along your legs on the way up.',
-      'Maintain a neutral spine: chest up, slight arch in the lower back. Never let the lower back round under load.',
-      'Feel a strong stretch through the hamstrings at the bottom. Go as low as your mobility allows without losing the back position.',
-      'Drive through the floor and squeeze your glutes hard at the top. Do not hyperextend the lower back.',
-      'Brace your core like you are about to take a punch before every rep — this protects the spine under heavy load.',
-      'This is your primary posterior chain builder. Every set should be treated with intent and full control.',
-    ]
-  },
-  'Bent-Over DB / Kettlebell Row': {
-    muscle: 'Back / Bicep / Rear Delt', category: 'Pull',
-    tips: [
-      'Hinge to roughly 45 degrees — torso close to parallel gives the best lat and mid-back activation.',
-      'Pull the weight toward your hip, not your shoulder. Pulling to the hip targets the lats; pulling high targets the traps.',
-      'Lead with your elbow, not your hand. Think of your hand as a hook — the elbow does the work.',
-      'Squeeze the shoulder blade toward your spine at the top of each rep. Hold for a full second.',
-      'Lower the weight slowly — 2 to 3 seconds down. The controlled eccentric is where most hypertrophy happens.',
-      'Keep your core braced throughout. Your trunk should remain completely still — no twisting or heaving.',
-    ]
-  },
-  'Leg Press': {
-    muscle: 'Quad / Glute / Hamstring', category: 'Quad',
-    tips: [
-      'Place feet shoulder-width at the middle of the platform. Too high loads glutes more; too low increases knee stress.',
-      'Lower the platform until knees are at 90 degrees or slightly past — do not let hips tuck or lower back lift off the pad.',
-      'Drive through your full foot, not just the heel. Heel-only pressing disengages the quad significantly.',
-      'Keep a slight bend at the top — do not fully lock out, as this takes tension off the working muscle.',
-      'Take 2 to 3 seconds to lower the weight. The eccentric phase builds more muscle than the concentric.',
-      'Breathe out on the drive up. Keep your core pressed against the seat pad throughout.',
-    ]
-  },
-  'Flat DB Press (neutral grip)': {
-    muscle: 'Chest / Tricep / Front Delt', category: 'Push',
-    tips: [
-      'Neutral grip (palms facing each other) keeps elbows at 45 degrees — this significantly reduces rotator cuff strain.',
-      'Set up with dumbbells on your knees, then kick them up as you lie back. Wrists stay stacked over elbows.',
-      'Lower with full control to your chest. Feel the stretch across the pec at the bottom.',
-      'Press up and very slightly inward — the dumbbells converge slightly at the top to increase chest contraction.',
-      'Think about trying to crush the dumbbells together throughout the set. This cue significantly increases chest fibre recruitment.',
-      'Drive your shoulder blades into the bench and keep them there. Do not let the shoulders roll forward.',
-    ]
-  },
-  'DB Split Squat (front foot elevated)': {
-    muscle: 'Quad / Glute / Hip Flexor', category: 'Squat',
-    tips: [
-      'Elevate the front foot on a step or plate — this increases range of motion and shifts more load to the quad.',
-      'Your split stance should be wide enough that your knee tracks over your toes without going far past them.',
-      'Keep the torso upright throughout. Leaning forward shifts the load from quad to glute — both are valid but be intentional.',
-      'The back knee drops straight down toward the floor. Do not let it flare outward.',
-      'Drive through the front heel to stand. You should feel the quad working through the entire range.',
-      'Take 2 to 3 seconds on the way down. Complete all reps on one leg before switching.',
-    ]
-  },
-  'Lying Leg Curl': {
-    muscle: 'Hamstring', category: 'Hamstring',
-    tips: [
-      'Adjust the pad so it sits just above the ankle, not at mid-calf. This gives better mechanical leverage.',
-      'Press your hips firmly into the pad throughout. Do not let them lift as you curl — this protects the lower back.',
-      'Curl all the way up — aim to fully contract the hamstring at the top of the movement.',
-      'The 3-second eccentric lowering is critical. This controlled stretch under load is the primary hypertrophy driver.',
-      'Point your toes slightly toward your shins (dorsiflexion) to increase hamstring recruitment.',
-      'No momentum or swinging. Every rep should be clean and controlled from start to finish.',
-    ]
-  },
-  'Pallof Press': {
-    muscle: 'Core / Oblique', category: 'Core',
-    tips: [
-      'Set the cable at chest height. Stand sideways to the machine, feet shoulder-width, slight knee bend.',
-      'Hold the handle at your chest. This is an anti-rotation exercise — the goal is to resist the cable pulling you sideways, not to create movement.',
-      'Press the handle directly out in front of you and hold for a full 2 seconds. Feel the obliques working hard to prevent rotation.',
-      'Return slowly to the chest. Do not let the cable yank you back — control the return.',
-      'Standing further from the cable increases the rotational force. Progress distance before adding weight.',
-      'Keep your hips square and feet rooted. No leaning, no shifting. The whole benefit comes from the stillness.',
-    ]
-  },
-  'Dead Bug': {
-    muscle: 'Deep Core / TVA', category: 'Core',
-    tips: [
-      'Lie on your back with your lower back pressed firmly into the floor. Maintaining this contact throughout the exercise is the entire point.',
-      'Arms pointing toward the ceiling, knees bent at 90 degrees, shins parallel to the floor.',
-      'Breathe out fully before moving — this activates the deep transverse abdominis, the muscle this exercise targets.',
-      'Slowly lower the opposite arm and leg simultaneously. Only go as far as you can keep the lower back flat.',
-      'Return to the start. Breathe in, then breathe out again before the next rep.',
-      'If your lower back arches away from the floor, you have gone too far. Reduce your range of motion.',
-    ]
-  },
-  'Barbell Squat / Goblet Squat': {
-    muscle: 'Quad / Glute / Core', category: 'Squat',
-    tips: [
-      'Start with goblet squat (dumbbell at chest) to establish the pattern before moving to barbell.',
-      'Feet shoulder-width or slightly wider, toes turned out 15 to 30 degrees.',
-      'Brace your core completely before descending — create a rigid trunk that does not change throughout the rep.',
-      'Squat to at least parallel — thighs horizontal or below. Depth is where the muscle stimulus is greatest.',
-      'Knees track in line with toes throughout. Do not allow them to cave inward, especially out of the bottom.',
-      'For barbell: bar rests on upper traps (high bar) or rear delts (low bar). Keep elbows pulled under the bar.',
-    ]
-  },
-  'Pull-Up / Lat Pulldown (neutral grip)': {
-    muscle: 'Lat / Bicep / Mid Back', category: 'Pull',
-    tips: [
-      'Neutral grip (palms facing each other) is the safest option for your right shoulder — use a close parallel attachment.',
-      'For pulldown: sit tall with a slight lean back (around 15 degrees). Pull to the upper chest, not behind the neck.',
-      'The cue that changes everything: pull your elbows down and back, not your hands down. This is what fires the lats.',
-      'Start each rep from a full hang — do not shorten the range of motion by keeping tension in the shoulder.',
-      'Squeeze the shoulder blades together and down at the bottom of the movement. Hold for one second.',
-      'Right arm: respect your current ROM. Do not force a range that creates impingement or pain.',
-    ]
-  },
-  'Hip Thrust (Barbell or Machine)': {
-    muscle: 'Glute / Hamstring', category: 'Hinge',
-    tips: [
-      'Upper back rests across the bench — specifically the shoulder blades, not the neck.',
-      'Feet flat on the floor, hip-width apart. Drive through your heels at the top.',
-      'Squeeze your glutes as hard as possible at full extension. Chin tucked slightly to maintain a neutral neck.',
-      'At the top: shins should be vertical, hips fully extended, glutes fully contracted.',
-      'Lower slowly — 2 to 3 seconds — until your hips are just off the floor. Do not touch down between reps.',
-      'Think about posteriorly tilting your pelvis at the top (tailbone curling slightly under). This achieves full glute contraction.',
-    ]
-  },
-  'Low-Incline DB Press (neutral grip)': {
-    muscle: 'Upper Chest / Tricep / Front Delt', category: 'Push',
-    tips: [
-      'Set the bench to 15 to 30 degrees only. Higher angles shift the load increasingly to the front delt rather than the chest.',
-      'Neutral grip eliminates impingement risk at the shoulder joint — particularly important for your right side.',
-      'Lower the dumbbells in a controlled arc to the upper chest — feel the stretch at the bottom.',
-      'Press back up and slightly inward. The dumbbells should converge at the top.',
-      'Keep your shoulder blades pulled back and down throughout. Do not let the shoulders roll forward.',
-      'Wrists stay stacked directly over elbows. Do not let them bend backward under the load.',
-    ]
-  },
-  'Single-Arm DB Row (incline bench)': {
-    muscle: 'Back / Bicep / Rear Delt', category: 'Pull',
-    tips: [
-      'Chest supported on an incline bench at 30 to 45 degrees. This removes lower back strain completely.',
-      'Pull toward the hip, not the shoulder. Elbow tracks close to the body.',
-      'Full stretch at the bottom — let the dumbbell hang fully. A short range of motion defeats the purpose.',
-      'Lead with your elbow. Your hand is just a hook connecting you to the weight.',
-      'Squeeze the shoulder blade at the top. Hold for one full second before lowering.',
-      'Both arms must do equal work. Note if one side is significantly stronger or weaker.',
-    ]
-  },
-  'Side Plank': {
-    muscle: 'Oblique / Core / Glute Med', category: 'Core',
-    tips: [
-      'Forearm on the floor, elbow directly under your shoulder. Stack your feet or stagger them for more stability.',
-      'Lift your hips until your body forms a perfectly straight line from head to heel.',
-      'Do not let the hips sag down or pike upward. Think about pushing the floor away with your forearm.',
-      'Brace your core and squeeze your glutes simultaneously — both contribute to lateral stability.',
-      'Eyes forward, neck neutral. Keep breathing throughout — do not hold your breath.',
-      'Progress by adding a hip dip (slowly lower and raise the hip) or by increasing hold time by 5 seconds per session.',
-    ]
-  },
-  'Reverse Crunch': {
-    muscle: 'Lower Abdominal / Hip Flexor', category: 'Core',
-    tips: [
-      'Lie on your back, hands under your glutes or gripping a bench above your head for stability.',
-      'Start with knees bent at 90 degrees, feet just off the floor.',
-      'Curl your pelvis toward your chest — the movement comes from the abs contracting, not a hip flexor swing.',
-      'Your lower back should peel off the floor as you curl upward. This is the range you want.',
-      'Lower slowly and with control. Do not let feet touch the floor between reps.',
-      'This targets the lower rectus abdominis — the region often undertrained by standard crunches.',
-    ]
-  },
-  'Bulgarian Split Squat': {
-    muscle: 'Quad / Glute / Hip Flexor', category: 'Squat',
-    tips: [
-      'Rear foot elevated on a bench, laces down or ball of foot on the pad.',
-      'Step forward enough that your front knee does not travel far past your toes at the bottom.',
-      'Upright torso = more quad. Slight forward lean = more glute. Choose based on your goal for that session.',
-      'Drop the back knee straight down toward the floor. Slow and controlled — 3 seconds down.',
-      'Drive through the front heel to stand. Do not push off with the back foot.',
-      'This is one of the most demanding lower body exercises available. Respect the weight and the fatigue it creates.',
-    ]
-  },
-  'Bent-Over Barbell / DB Row': {
-    muscle: 'Back / Bicep / Rear Delt', category: 'Pull',
-    tips: [
-      'Hinge to roughly 45 degrees and hold that position firmly throughout — do not stand up as you pull.',
-      'Pull to your lower ribcage. Not your belly, not your upper chest.',
-      'Alternate your grip weekly: overhand one week for more upper back, underhand the next for more lat and bicep.',
-      'Lead with the elbow. Your hand is just a hook.',
-      'Lower the bar with full control — do not drop it. The eccentric phase matters as much as the pull.',
-      'Core braced hard throughout. No spinal rotation as you row.',
-    ]
-  },
-  '45deg Back Extension / KB Good Morning': {
-    muscle: 'Hamstring / Glute / Lower Back', category: 'Hinge',
-    tips: [
-      'For back extension: position the pad just above your hip bones, not at your waist.',
-      'Hinge from the hips — feel the hamstring stretch on the way down. This is not a lower back crunch.',
-      'For KB good morning: hold the bell at your chest. Hinge until you feel a full hamstring stretch, then drive the hips forward.',
-      'Squeeze your glutes hard at the top — full hip extension on every rep.',
-      'Take 2 to 3 seconds on the descent. The controlled eccentric is the primary stimulus.',
-      'Keep a neutral spine throughout. The movement happens at the hip, not in the lumbar spine.',
-    ]
-  },
-  'Cable Chest Fly (chest height)': {
-    muscle: 'Chest / Front Delt', category: 'Push',
-    tips: [
-      'Set the cables at chest height. This angle maximises pec activation and keeps the shoulder in a safe position.',
-      'Step forward slightly so your arms are slightly behind the cable line at the start — this creates a full pec stretch.',
-      'Slight forward lean from the hips (around 10 to 15 degrees) to align the pressing angle with the chest fibres.',
-      'Think about hugging a large tree — the arc comes from the shoulder joint, not from bending the elbow.',
-      'Maintain a soft bend in the elbow throughout. Do not fully extend or fully flex the arm.',
-      'Squeeze the pecs hard as your hands come together. Hold for one second to maximise the contraction.',
-    ]
-  },
-  'Push-Up Variation': {
-    muscle: 'Chest / Tricep / Core', category: 'Push',
-    tips: [
-      'Hands slightly wider than shoulder-width. Elbows track at 45 degrees — not flared wide.',
-      'Your body is a rigid plank from head to heel throughout. No sagging hips or piked hips.',
-      'Lower your chest to the floor. Full range every rep. No half-reps.',
-      'Archer push-up: shift your weight to one arm as you lower — significantly increases the unilateral load.',
-      'Close-grip variation: hands under the shoulders, elbows stay close to the body — increases tricep emphasis.',
-      'Add a one-second pause at the bottom to remove the elastic rebound and increase time under tension.',
-    ]
-  },
-  'Cable Wood Chop': {
-    muscle: 'Oblique / Core / Shoulder', category: 'Core',
-    tips: [
-      'Stand sideways to the cable, feet shoulder-width, slight knee bend.',
-      'The rotation comes from your core and hips rotating together — not from pulling with your arms.',
-      'Let your eyes follow your hands throughout the movement. This cue ensures the rotation is real, not just arm swing.',
-      'The trail hip should open as you rotate. Think full trunk rotation, loaded and controlled.',
-      'Control the return — the cable will try to pull you back. Resist it with the same muscles.',
-      'Both directions train different aspects of rotational strength. The plan uses one; over time consider both.',
-    ]
-  },
-  'Bird Dog': {
-    muscle: 'Core / Lower Back / Glute', category: 'Core',
-    tips: [
-      'Start on all fours: hands under shoulders, knees under hips. Spine neutral — not arched or rounded.',
-      'Extend the opposite arm and leg simultaneously. Move slowly — speed defeats the purpose entirely.',
-      'Hold for a full 3 seconds at full extension. The extended hold recruits more deep stabiliser muscle.',
-      'Keep your hips completely level. Do not let the extending hip hike up — this is the most common error.',
-      'Reach your heel toward the wall behind you rather than lifting your leg toward the ceiling.',
-      'This exercise builds the coordination between the glutes and opposite shoulder — directly relevant to running and lifting.',
-    ]
-  },
-  // SHOULDER REHAB
-  'Band External Rotation at Side': {
-    muscle: 'Rotator Cuff (Infraspinatus / Teres Minor)', category: 'Shoulder Rehab',
-    tips: [
-      'Hold a light resistance band with your elbow bent at 90 degrees and tucked firmly at your side.',
-      'The elbow stays completely fixed. The movement is purely forearm rotation outward — nothing else moves.',
-      'Perform slowly and deliberately. Zero pain. If you feel any catching or sharp sensation, stop.',
-      'Hold at the end range for 1 to 2 seconds on every rep.',
-      'This targets the external rotators — the muscles most commonly weakened after shoulder surgery.',
-      'Right arm only. The range will improve over weeks as the repair consolidates and the muscle strengthens.',
-    ]
-  },
-  'Side-Lying External Rotation (DB)': {
-    muscle: 'Rotator Cuff (Infraspinatus)', category: 'Shoulder Rehab',
-    tips: [
-      'Lie on your left side. Right arm bent at 90 degrees, elbow resting at your side.',
-      'Use the lightest dumbbell available. This is precision work, not strength work.',
-      'Rotate the forearm upward in a slow arc. Stop well before any pain or catching.',
-      'Lower with full control — 2 to 3 seconds down.',
-      'The range available to you will increase over weeks as the posterior capsule loosens and the rotator cuff gets stronger.',
-      'Do not compensate by rolling your whole shoulder backward. Isolate the rotation.',
-    ]
-  },
-  'Prone Y Raise': {
-    muscle: 'Lower Trap / Serratus Anterior', category: 'Shoulder Rehab',
-    tips: [
-      'Lie face down on a bench. Arms extended overhead in a Y shape, thumbs pointing toward the ceiling.',
-      'Raise both arms simultaneously, lifting only 4 to 6 inches off the surface.',
-      'Focus on the lower trapezius: think about pulling your shoulder blades down and together as you raise.',
-      'The movement is small and controlled. No momentum, no jerking.',
-      'No weight needed initially. Progress to a very light plate only when bodyweight feels genuinely easy.',
-      'This directly addresses the weakness that develops after shoulder surgery and prolonged immobility.',
-    ]
-  },
-  'Prone T Raise': {
-    muscle: 'Mid Trap / Posterior Delt', category: 'Shoulder Rehab',
-    tips: [
-      'Lie face down. Arms out to the side in a T shape, thumbs pointing toward the ceiling.',
-      'Raise both arms simultaneously — squeeze the shoulder blades together as you lift.',
-      'Hold at the top for 2 seconds. Lower slowly back down.',
-      'Keep your neck neutral throughout — do not strain it upward.',
-      'This targets the mid-trapezius and posterior deltoid, which stabilise the shoulder blade against the ribcage.',
-      'Progress only when the current level feels easy across all sets and reps without any fatigue.',
-    ]
-  },
-  'Serratus Anterior Wall Press': {
-    muscle: 'Serratus Anterior', category: 'Shoulder Rehab',
-    tips: [
-      'Stand an arms length from a wall. Hands flat on the wall at shoulder height.',
-      'Push the wall away — the movement is the shoulder blade protracting (wrapping forward around the ribcage).',
-      'You should feel the muscle underneath your armpit engaging. That is the serratus.',
-      'Hold the end position for 2 seconds, then slowly return.',
-      'Serratus weakness is extremely common after shoulder surgery. It contributes directly to impingement.',
-      'Think about your shoulder blades moving forward and around the ribs rather than just pushing with your arms.',
-    ]
-  },
-  'Sleeper Stretch': {
-    muscle: 'Posterior Shoulder Capsule', category: 'Shoulder Rehab',
-    tips: [
-      'Lie on your right side. Right arm bent at 90 degrees, pointing toward the ceiling.',
-      'Using your left hand, gently push the right forearm toward the floor — creating internal rotation at the shoulder.',
-      'The stretch should be felt deep in the back of the shoulder. Stop well before any sharp pain.',
-      'Hold for 30 seconds. Breathe steadily and allow the tissue to relax gradually.',
-      'This stretches the posterior capsule, which tightens after surgery and restricts internal rotation.',
-      'Do not force the range. Gradual, consistent stretching over weeks is far safer and more effective than aggressive pushing.',
-    ]
-  },
-  // STRETCH
-  'Hip Flexor Lunge Stretch': {
-    muscle: 'Hip Flexor / Psoas / Quad', category: 'Stretch',
-    tips: [
-      'Back knee on the floor, front foot flat with shin vertical.',
-      'Drive your hips forward until you feel the stretch in the front of the back hip.',
-      'Keep your torso upright and your core lightly braced — do not arch your lower back.',
-      'For a deeper stretch, raise your same-side arm overhead and lean slightly away.',
-      'Especially important after heavy squat and hinge sessions — the hip flexors take significant load.',
-    ]
-  },
-  'Lying Figure-Four Glute Stretch': {
-    muscle: 'Glute / Piriformis', category: 'Stretch',
-    tips: [
-      'Lie on your back. Cross one ankle over the opposite knee to create a figure 4 shape.',
-      'Pull the bottom leg toward your chest or push the crossed knee gently away.',
-      'The stretch should be felt deep in the glute of the crossed leg. If you feel it in the knee, adjust foot position.',
-      'Breathe steadily. On each exhale allow the hip to relax further into the stretch.',
-      'Particularly effective after leg press, split squat, and hip thrust sessions.',
-    ]
-  },
-  'Standing Hamstring Stretch': {
-    muscle: 'Hamstring', category: 'Stretch',
-    tips: [
-      'Stand with one foot on a bench or step, leg straight.',
-      'Hinge forward at the hip — not by rounding the back — until you feel the stretch.',
-      'Keep your chest up and spine long. A flat back gives a far more effective stretch than a rounded one.',
-      'Hold 45 seconds per side. Your right side may be tighter from altered mechanics during shoulder recovery.',
-    ]
-  },
-  'Thoracic Extension over Roller': {
-    muscle: 'Thoracic Spine / Pec Minor', category: 'Stretch',
-    tips: [
-      'Place the roller across your mid-back — specifically the thoracic spine, not the lumbar.',
-      'Support your head with hands behind your neck. Let the upper back extend over the roller.',
-      'Roll slightly up and down to find the stiffest segments and spend more time there.',
-      'This addresses the thoracic stiffness that develops from pressing and rowing — and opens the chest significantly.',
-    ]
-  },
-  'Wall Chest Opener': {
-    muscle: 'Chest / Front Delt / Bicep Tendon', category: 'Stretch',
-    tips: [
-      'Stand sideways to a wall. Place your palm flat on the wall at shoulder height.',
-      'Slowly rotate your body away from the wall, opening the chest.',
-      'Right arm: go only as far as comfortable. Do not force ranges that cause shoulder discomfort.',
-      'Feel the stretch across the front of the chest and the front of the shoulder.',
-      'Particularly useful after pressing sessions to counteract pectoral shortening.',
-    ]
-  },
-  "Child's Pose with Side Reach": {
-    muscle: "Lat / Thoracic Spine / Shoulder", category: 'Stretch',
-    tips: [
-      "Start in child's pose: knees wide, hips back toward heels, arms extended forward.",
-      "Walk your hands to one side — feel the stretch in the opposite lat and the side of the ribcage.",
-      "Hold for 30 seconds per side. Breathe deeply into the stretch.",
-      "The lat is often tight after heavy rowing sessions — this directly addresses that.",
-    ]
-  },
-  '90/90 Hip Stretch': {
-    muscle: 'Hip / Glute / Piriformis / TFL', category: 'Stretch',
-    tips: [
-      'Sit on the floor with both legs bent at 90 degrees — front leg in front, back leg out to the side.',
-      'Sit tall. Do not collapse into the hip — find length through the spine first.',
-      'Hinge forward over the front leg to deepen the stretch in the front hip.',
-      'Switch sides. Both hips benefit after any lower body session.',
-      'One of the most comprehensive hip mobility positions available. Do not rush through it.',
-    ]
-  },
-  // SWIM WARM-UP
-  'Shoulder Circles': {
-    muscle: 'Shoulder / Rotator Cuff', category: 'Swim Warm-Up',
-    tips: [
-      'Stand tall. Circle the arm slowly — forward circles first, then backward.',
-      'Keep the movement pain-free throughout. Stop if you feel any catching.',
-      'Start with small circles and gradually increase the range as the joint warms up.',
-      'Goal is to mobilise the joint and bring blood flow to the shoulder capsule, not to stretch or load it.',
-    ]
-  },
-  'Band External Rotations': {
-    muscle: 'Rotator Cuff', category: 'Swim Warm-Up',
-    tips: [
-      'Same movement as your rehab external rotation, but with a lighter band and activation intent.',
-      'This is not a fatigue exercise — it is preparation. Keep the load minimal.',
-      'Goal is to activate and wake up the rotator cuff before it is loaded by freestyle.',
-      'Focus on movement quality. A clean, deliberate pattern is the entire point here.',
-    ]
-  },
-  'Scapular Shrugs': {
-    muscle: 'Trap / Serratus / Rhomboid', category: 'Swim Warm-Up',
-    tips: [
-      'Stand or sit tall. Shrug both shoulder blades upward, then pull them back and down.',
-      'Think: up, back, down — in a slow controlled loop.',
-      'This activates the full trapezius and scapular stabilisers before pool entry.',
-      'Each rep should be deliberate — feel the muscles between and around the shoulder blades working.',
-    ]
-  },
+// ── COACHING DATA ─────────────────────────────────────────────────────────────
+const COACHING={
+  'Romanian Deadlift':{muscle:'Hamstring / Glute / Lower Back',category:'Hinge',tips:['Feet hip-width, bar at arms length. Push your hips back toward the wall behind you — this is a hinge, not a squat.','Keep the bar close to your body throughout. It should almost drag along your legs on the way up.','Maintain a neutral spine: chest up, slight arch in the lower back. Never let it round under load.','Feel a strong hamstring stretch at the bottom. Go as low as mobility allows without losing back position.','Squeeze your glutes hard at the top. Drive through the floor. Do not hyperextend.','Brace your core like you are about to take a punch before every rep — this protects the spine under load.']},
+  'Bent-Over DB / Kettlebell Row':{muscle:'Back / Bicep / Rear Delt',category:'Pull',tips:['Hinge to roughly 45 degrees — torso close to parallel gives the best lat and mid-back activation.','Pull the weight toward your hip, not your shoulder. Hip = lats. Shoulder = traps.','Lead with your elbow, not your hand. Think of your hand as a hook — the elbow does the work.','Squeeze the shoulder blade toward your spine at the top of each rep. Hold for a full second.','Lower slowly — 2 to 3 seconds down. The controlled eccentric is where most hypertrophy happens.','Keep your core braced. Your trunk should remain completely still — no twisting or heaving.']},
+  'Leg Press':{muscle:'Quad / Glute / Hamstring',category:'Quad',tips:['Feet shoulder-width at the middle of the platform. Too high = more glute; too low = more knee stress.','Lower until knees are at 90 degrees or past — do not let hips tuck or lower back lift off the pad.','Drive through your full foot, not just the heel. Heel-only pressing disengages the quad.','Keep a slight bend at the top — do not fully lock out. This keeps tension on the muscle.','Take 2 to 3 seconds to lower the weight. The eccentric builds more muscle than the concentric.']},
+  'Flat DB Press (neutral grip)':{muscle:'Chest / Tricep / Front Delt',category:'Push',tips:['Neutral grip (palms facing each other) keeps elbows at 45 degrees — significantly reducing rotator cuff strain.','Lower with full control to your chest. Feel the stretch across the pec at the bottom.','Press up and slightly inward — dumbbells converge at the top to increase chest contraction.','Think about trying to crush the dumbbells together throughout the set. This increases chest fibre recruitment.','Drive your shoulder blades into the bench. Do not let the shoulders roll forward.']},
+  'DB Split Squat (front foot elevated)':{muscle:'Quad / Glute / Hip Flexor',category:'Squat',tips:['Elevate the front foot on a step or plate — increases range of motion and quad emphasis.','Split stance wide enough that your knee tracks over your toes without going far past them.','Keep the torso upright. Leaning forward shifts the load to the glute — both valid, be intentional.','The back knee drops straight down toward the floor. Do not let it flare outward.','Drive through the front heel to stand. Feel the quad working through the full range.','Take 2 to 3 seconds on the way down. Complete all reps on one leg before switching.']},
+  'Lying Leg Curl':{muscle:'Hamstring',category:'Hamstring',tips:['Adjust the pad so it sits just above the ankle, not at mid-calf. Better mechanical leverage.','Press your hips firmly into the pad throughout. Do not let them lift — this protects the lower back.','Curl all the way up — aim to fully contract the hamstring at the top.','The 3-second eccentric lowering is critical. This controlled stretch under load is the primary hypertrophy driver.','Point toes slightly toward shins (dorsiflexion) to increase hamstring recruitment.','No momentum or swinging. Every rep clean and controlled.']},
+  'Pallof Press':{muscle:'Core / Oblique',category:'Core',tips:['Cable at chest height. Stand sideways to the machine, feet shoulder-width, slight knee bend.','This is an anti-rotation exercise — resist the cable pulling you sideways, do not create movement.','Press the handle directly out and hold for 2 seconds. Feel the obliques working to prevent rotation.','Return slowly to the chest. Do not let the cable yank you back — control the return.','Further from the cable = more rotational force. Progress distance before adding weight.','Hips square, feet rooted. No leaning or shifting. The benefit comes entirely from the stillness.']},
+  'Dead Bug':{muscle:'Deep Core / TVA',category:'Core',tips:['Lie on your back, lower back pressed firmly into the floor. This contact must be maintained throughout.','Arms toward the ceiling, knees bent at 90 degrees, shins parallel to the floor.','Breathe out fully before moving — this activates the deep transverse abdominis.','Slowly lower the opposite arm and leg simultaneously. Only go as far as you can keep the lower back flat.','Return to start. Breathe in, breathe out again before the next rep.','If your lower back arches away from the floor, you have gone too far.']},
+  'Barbell Squat / Goblet Squat':{muscle:'Quad / Glute / Core',category:'Squat',tips:['Start with goblet squat (dumbbell at chest) to establish the pattern before loading a barbell.','Feet shoulder-width or slightly wider, toes turned out 15 to 30 degrees.','Brace your core completely before descending — create a rigid trunk throughout the rep.','Squat to at least parallel — thighs horizontal or below. Depth is where the stimulus is greatest.','Knees track in line with toes throughout. Do not allow them to cave inward.','For barbell: bar on upper traps (high bar) or rear delts (low bar). Elbows under the bar.']},
+  'Pull-Up / Lat Pulldown (neutral grip)':{muscle:'Lat / Bicep / Mid Back',category:'Pull',tips:['Neutral grip (palms facing each other) is safest for your right shoulder — use a close parallel attachment.','For pulldown: sit tall, slight lean back (15 degrees). Pull to the upper chest, not behind the neck.','Pull your elbows down and back, not your hands down. This is the cue that fires the lats.','Start each rep from a full hang — do not shorten the range of motion.','Squeeze shoulder blades together and down at the bottom. Hold for one second.','Right arm: respect your current ROM. Do not force ranges that create impingement.']},
+  'Hip Thrust (Barbell or Machine)':{muscle:'Glute / Hamstring',category:'Hinge',tips:['Upper back across the bench — shoulder blades, not the neck.','Feet flat, hip-width apart. Drive through your heels at the top.','Squeeze glutes as hard as possible at full extension. Chin tucked, neutral neck.','At the top: shins vertical, hips fully extended, glutes fully contracted.','Lower slowly — 2 to 3 seconds — until hips are just off the floor. Do not touch down between reps.','Posteriorly tilt the pelvis at the top (tailbone curling slightly under) for full glute contraction.']},
+  'Low-Incline DB Press (neutral grip)':{muscle:'Upper Chest / Tricep / Front Delt',category:'Push',tips:['Set bench to 15 to 30 degrees only. Higher angles shift load increasingly to the front delt.','Neutral grip eliminates impingement risk — particularly important for your right shoulder.','Lower in a controlled arc to the upper chest — feel the stretch at the bottom.','Press back up and slightly inward. Dumbbells converge at the top.','Shoulder blades pulled back and down throughout. Do not let shoulders roll forward.','Wrists stacked over elbows. Do not let them bend backward under load.']},
+  'Single-Arm DB Row (incline bench)':{muscle:'Back / Bicep / Rear Delt',category:'Pull',tips:['Chest supported on an incline bench at 30 to 45 degrees. Removes lower back strain completely.','Pull toward the hip, not the shoulder. Elbow tracks close to the body.','Full stretch at the bottom — let the dumbbell hang fully. Short range defeats the purpose.','Lead with your elbow. Your hand is just a hook connecting you to the weight.','Squeeze shoulder blade at the top. Hold for one full second before lowering.','Both arms must do equal work. Note if one side is weaker.']},
+  'Side Plank':{muscle:'Oblique / Core / Glute Med',category:'Core',tips:['Forearm on the floor, elbow directly under your shoulder. Stack or stagger your feet.','Lift hips until your body forms a straight line from head to heel.','Do not let the hips sag or pike. Push the floor away with your forearm.','Brace your core and squeeze your glutes — both contribute to lateral stability.','Eyes forward, neck neutral. Keep breathing throughout.','Progress by adding hip dips or increasing hold time by 5 seconds per session.']},
+  'Reverse Crunch':{muscle:'Lower Abdominal / Hip Flexor',category:'Core',tips:['Lie on your back, hands under your glutes or gripping a bench for stability.','Start with knees bent at 90 degrees, feet just off the floor.','Curl your pelvis toward your chest — movement from the abs, not a hip flexor swing.','Lower back should peel off the floor as you curl upward. This is the range you want.','Lower slowly and with control. Do not let feet touch the floor between reps.','This targets the lower rectus abdominis — the region most often undertrained.']},
+  'Bulgarian Split Squat':{muscle:'Quad / Glute / Hip Flexor',category:'Squat',tips:['Rear foot elevated on a bench, laces down or ball of foot on the pad.','Step forward enough that your front knee does not travel far past your toes at the bottom.','Upright torso = more quad. Slight forward lean = more glute.','Drop the back knee straight down toward the floor. Slow and controlled — 3 seconds.','Drive through the front heel to stand. Do not push off with the back foot.','One of the most demanding lower body exercises available. Respect the load.']},
+  'Bent-Over Barbell / DB Row':{muscle:'Back / Bicep / Rear Delt',category:'Pull',tips:['Hinge to roughly 45 degrees and hold that position firmly throughout.','Pull to your lower ribcage — not your belly, not your upper chest.','Alternate grip weekly: overhand for more upper back, underhand for more lat and bicep.','Lead with the elbow. Your hand is just a hook.','Lower with full control — do not drop it. The eccentric matters as much as the pull.','Core braced throughout. No spinal rotation as you row.']},
+  '45deg Back Extension / KB Good Morning':{muscle:'Hamstring / Glute / Lower Back',category:'Hinge',tips:['For back extension: position the pad just above your hip bones, not at your waist.','Hinge from the hips — feel the hamstring stretch on the way down. Not a lower back crunch.','For KB good morning: hold at your chest. Hinge until you feel a full hamstring stretch, then drive hips forward.','Squeeze glutes hard at the top — full hip extension on every rep.','2 to 3 seconds on the descent. The controlled eccentric is the primary stimulus.','Keep a neutral spine. The movement happens at the hip, not in the lumbar spine.']},
+  'Cable Chest Fly (chest height)':{muscle:'Chest / Front Delt',category:'Push',tips:['Set cables at chest height. This angle maximises pec activation with the shoulder in a safe position.','Step forward so arms are slightly behind the cable line at the start — creates a full pec stretch.','Slight forward lean (10 to 15 degrees) to align with the chest fibres.','Think about hugging a large tree — the arc comes from the shoulder joint, not elbow bending.','Maintain a soft bend in the elbow throughout. Do not fully extend or fully flex the arm.','Squeeze the pecs hard as hands come together. Hold for one second.']},
+  'Push-Up Variation':{muscle:'Chest / Tricep / Core',category:'Push',tips:['Hands slightly wider than shoulder-width. Elbows at 45 degrees — not flared wide.','Rigid plank from head to heel. No sagging hips, no piked hips.','Lower your chest to the floor. Full range every rep. No half reps.','Archer push-up: shift your weight to one arm as you lower — significantly increases unilateral load.','Close-grip: hands under the shoulders, elbows close to the body — more tricep emphasis.','Pause at the bottom for 1 second to remove elastic rebound and increase time under tension.']},
+  'Cable Wood Chop':{muscle:'Oblique / Core / Shoulder',category:'Core',tips:['Stand sideways to the cable, feet shoulder-width, slight knee bend.','The rotation comes from your core and hips rotating together — not arm pulling.','Let your eyes follow your hands. This ensures the rotation is real, not just arm swing.','The trail hip should open as you rotate. Think full trunk rotation, loaded and controlled.','Control the return — the cable will try to pull you back. Resist it with the same muscles.']},
+  'Bird Dog':{muscle:'Core / Lower Back / Glute',category:'Core',tips:['On all fours: hands under shoulders, knees under hips. Spine neutral — not arched or rounded.','Extend the opposite arm and leg simultaneously. Move slowly — speed defeats the purpose.','Hold for a full 3 seconds at full extension. The extended hold recruits more deep stabiliser muscle.','Keep your hips completely level. Do not let the extending hip hike up.','Reach your heel toward the wall behind you rather than lifting your leg toward the ceiling.','This builds coordination between the glutes and opposite shoulder — relevant to running and lifting.']},
+  'Band External Rotation at Side':{muscle:'Rotator Cuff (Infraspinatus / Teres Minor)',category:'Shoulder Rehab',tips:['Light resistance band, elbow bent at 90 degrees and tucked firmly at your side.','The elbow stays completely fixed. Movement is purely forearm rotation outward — nothing else moves.','Perform slowly and deliberately. Zero pain. Stop if you feel any catching or sharp sensation.','Hold at end range for 1 to 2 seconds on every rep.','This targets the external rotators — the muscles most commonly weakened after shoulder surgery.','Right arm only. Range will improve over weeks as the repair consolidates.']},
+  'Side-Lying External Rotation (DB)':{muscle:'Rotator Cuff (Infraspinatus)',category:'Shoulder Rehab',tips:['Lie on your left side. Right arm bent at 90 degrees, elbow resting at your side.','Use the lightest dumbbell available. This is precision work, not strength work.','Rotate the forearm upward in a slow arc. Stop well before any pain or catching.','Lower with full control — 2 to 3 seconds down.','Range will increase over weeks as the posterior capsule loosens.','Do not compensate by rolling your whole shoulder backward. Isolate the rotation.']},
+  'Prone Y Raise':{muscle:'Lower Trap / Serratus Anterior',category:'Shoulder Rehab',tips:['Lie face down on a bench. Arms extended in a Y shape overhead, thumbs pointing up.','Raise both arms simultaneously, only 4 to 6 inches off the surface.','Focus on the lower trapezius: shoulder blades down and together as you raise.','The movement is small and controlled. No momentum, no jerking.','No weight needed initially. Progress to a very light plate only when bodyweight is genuinely easy.','This directly addresses the weakness that develops after shoulder surgery.']},
+  'Prone T Raise':{muscle:'Mid Trap / Posterior Delt',category:'Shoulder Rehab',tips:['Lie face down. Arms out to the side in a T shape, thumbs pointing up.','Raise both arms simultaneously — squeeze shoulder blades together as you lift.','Hold at the top for 2 seconds. Lower slowly.','Keep your neck neutral — do not strain it upward.','Targets the mid-trapezius and posterior deltoid, which stabilise the shoulder blade.','Progress only when current level feels easy across all sets.']},
+  'Serratus Anterior Wall Press':{muscle:'Serratus Anterior',category:'Shoulder Rehab',tips:['Stand an arms length from a wall. Hands flat on the wall at shoulder height.','Push the wall away — the movement is the shoulder blade protracting forward around the ribcage.','You should feel the muscle underneath your armpit engaging. That is the serratus.','Hold the end position for 2 seconds, then slowly return.','Serratus weakness is extremely common after shoulder surgery. It contributes to impingement.','Think shoulder blades moving forward and around the ribs, not just pushing with your arms.']},
+  'Sleeper Stretch':{muscle:'Posterior Shoulder Capsule',category:'Shoulder Rehab',tips:['Lie on your right side. Right arm bent at 90 degrees, pointing toward the ceiling.','Using your left hand, gently push the right forearm toward the floor — creating internal rotation.','The stretch should be felt deep in the back of the shoulder. Stop well before any sharp pain.','Hold for 30 seconds. Breathe steadily and allow the tissue to relax gradually.','This stretches the posterior capsule, which tightens after surgery and restricts internal rotation.','Do not force the range. Gradual stretching over weeks is far safer than aggressive pushing.']},
+  'Hip Flexor Lunge Stretch':{muscle:'Hip Flexor / Psoas / Quad',category:'Stretch',tips:['Back knee on the floor, front foot flat with shin vertical.','Drive your hips forward until you feel the stretch in the front of the back hip.','Keep your torso upright and core lightly braced — do not arch your lower back.','For a deeper stretch, raise your same-side arm overhead and lean slightly away.']},
+  'Lying Figure-Four Glute Stretch':{muscle:'Glute / Piriformis',category:'Stretch',tips:['Lie on your back. Cross one ankle over the opposite knee to create a figure 4 shape.','Pull the bottom leg toward your chest or push the crossed knee gently away.','Stretch should be felt deep in the glute of the crossed leg. If felt in the knee, adjust foot position.','On each exhale allow the hip to relax further into the stretch.']},
+  'Standing Hamstring Stretch':{muscle:'Hamstring',category:'Stretch',tips:['One foot on a bench or step, leg straight.','Hinge forward at the hip — not by rounding the back — until you feel the stretch.','Keep your chest up and spine long. A flat back gives a far more effective stretch.','Hold 45 seconds per side.']},
+  'Thoracic Extension over Roller':{muscle:'Thoracic Spine / Pec Minor',category:'Stretch',tips:['Roller across your mid-back — the thoracic spine, not the lumbar.','Support your head with hands behind your neck. Let the upper back extend over the roller.','Roll slightly up and down to find the stiffest segments and spend more time there.','This addresses thoracic stiffness from pressing and rowing — and opens the chest significantly.']},
+  'Wall Chest Opener':{muscle:'Chest / Front Delt / Bicep Tendon',category:'Stretch',tips:['Stand sideways to a wall. Palm flat on the wall at shoulder height.','Slowly rotate your body away from the wall, opening the chest.','Right arm: go only as far as comfortable. Do not force ranges that cause shoulder discomfort.','Feel the stretch across the front of the chest and shoulder.']},
+  "Child's Pose with Side Reach":{muscle:'Lat / Thoracic Spine / Shoulder',category:'Stretch',tips:["Child's pose: knees wide, hips back toward heels, arms extended forward.",'Walk hands to one side — feel the stretch in the opposite lat and side of the ribcage.','Hold for 30 seconds per side. Breathe deeply into the stretch.','The lat is often tight after heavy rowing sessions — this directly addresses that.']},
+  '90/90 Hip Stretch':{muscle:'Hip / Glute / Piriformis / TFL',category:'Stretch',tips:['Sit on the floor with both legs bent at 90 degrees — front leg in front, back leg to the side.','Sit tall. Do not collapse into the hip — find length through the spine first.','Hinge forward over the front leg to deepen the stretch in the front hip.','Switch sides. Both hips benefit after any lower body session.']},
+  'Shoulder Circles':{muscle:'Shoulder / Rotator Cuff',category:'Swim Warm-Up',tips:['Stand tall. Circle the arm slowly — forward circles first, then backward.','Keep the movement pain-free throughout. Stop if you feel any catching.','Start with small circles and gradually increase the range as the joint warms up.']},
+  'Band External Rotations':{muscle:'Rotator Cuff',category:'Swim Warm-Up',tips:['Same movement as your rehab external rotation, but with a lighter band.','This is preparation, not a fatigue exercise. Keep the load minimal.','Goal is to activate and wake up the rotator cuff before it is loaded by freestyle.']},
+  'Scapular Shrugs':{muscle:'Trap / Serratus / Rhomboid',category:'Swim Warm-Up',tips:['Stand or sit tall. Shrug both shoulder blades upward, then pull them back and down.','Think: up, back, down — in a slow controlled loop.','Each rep should be deliberate — feel the muscles between and around the shoulder blades working.']},
 };
 
-// ── EXERCISE DATA (explicit, not derived) ───────────────────────────────────
-const SREHAB = [
-  {name:'Band External Rotation at Side', sets:3, reps:'15'},
-  {name:'Side-Lying External Rotation (DB)', sets:2, reps:'12'},
-  {name:'Prone Y Raise', sets:2, reps:'10'},
-  {name:'Prone T Raise', sets:2, reps:'10'},
-  {name:'Serratus Anterior Wall Press', sets:2, reps:'12'},
-  {name:'Sleeper Stretch', sets:2, reps:'30s'},
+const SREHAB=[
+  {name:'Band External Rotation at Side',sets:3,reps:'15'},
+  {name:'Side-Lying External Rotation (DB)',sets:2,reps:'12'},
+  {name:'Prone Y Raise',sets:2,reps:'10'},
+  {name:'Prone T Raise',sets:2,reps:'10'},
+  {name:'Serratus Anterior Wall Press',sets:2,reps:'12'},
+  {name:'Sleeper Stretch',sets:2,reps:'30s'},
 ];
-const STRETCH_EX = [
-  {name:'Hip Flexor Lunge Stretch', sets:2, reps:'45s each side'},
-  {name:'Lying Figure-Four Glute Stretch', sets:2, reps:'45s each side'},
-  {name:'Standing Hamstring Stretch', sets:2, reps:'45s each side'},
-  {name:'Thoracic Extension over Roller', sets:1, reps:'60s'},
-  {name:'Wall Chest Opener', sets:1, reps:'30s each side'},
-  {name:"Child's Pose with Side Reach", sets:1, reps:'30s each side'},
-  {name:'90/90 Hip Stretch', sets:2, reps:'45s each side'},
+const STRETCH_EX=[
+  {name:'Hip Flexor Lunge Stretch',sets:2,reps:'45s each side'},
+  {name:'Lying Figure-Four Glute Stretch',sets:2,reps:'45s each side'},
+  {name:'Standing Hamstring Stretch',sets:2,reps:'45s each side'},
+  {name:'Thoracic Extension over Roller',sets:1,reps:'60s'},
+  {name:'Wall Chest Opener',sets:1,reps:'30s each side'},
+  {name:"Child's Pose with Side Reach",sets:1,reps:'30s each side'},
+  {name:'90/90 Hip Stretch',sets:2,reps:'45s each side'},
 ];
-const SWU_EX = [
-  {name:'Shoulder Circles', sets:1, reps:'10 each direction'},
-  {name:'Band External Rotations', sets:1, reps:'12 each side'},
-  {name:'Scapular Shrugs', sets:1, reps:'10'},
+const SWU_EX=[
+  {name:'Shoulder Circles',sets:1,reps:'10 each direction'},
+  {name:'Band External Rotations',sets:1,reps:'12 each side'},
+  {name:'Scapular Shrugs',sets:1,reps:'10'},
 ];
 
-const PLAN = {
-  'Gym A': {color:A, icon:'A', subtitle:'Lower + Horizontal Push/Pull + Core', sections:[
-    {title:'Main Session', color:A, supersets:[
-      {label:'Superset 1', note:'Hinge + Pull — alternate, rest after both', exercises:[
-        {name:'Romanian Deadlift', sets:3, reps:'8-10'},
-        {name:'Bent-Over DB / Kettlebell Row', sets:3, reps:'8-12'},
-      ]},
-      {label:'Superset 2', note:'Lower Push + Upper Push — alternate, rest after both', exercises:[
-        {name:'Leg Press', sets:3, reps:'8-12'},
-        {name:'Flat DB Press (neutral grip)', sets:3, reps:'8-12'},
-      ]},
-      {label:'Superset 3', note:'Unilateral Lower — alternate legs, 60s rest', exercises:[
-        {name:'DB Split Squat (front foot elevated)', sets:3, reps:'10'},
-        {name:'Lying Leg Curl', sets:3, reps:'10-12'},
-      ]},
-      {label:'Core Superset', note:'Anti-rotation + Anti-extension — minimal rest', exercises:[
-        {name:'Pallof Press', sets:3, reps:'10'},
-        {name:'Dead Bug', sets:3, reps:'8'},
-      ]},
+const PLAN={
+  'Gym A':{color:A,icon:'A',subtitle:'Lower + Horizontal Push/Pull + Core',sections:[
+    {title:'Main Session',color:A,supersets:[
+      {label:'Superset 1',note:'Hinge + Pull — alternate, rest after both',exercises:[{name:'Romanian Deadlift',sets:3,reps:'8-10'},{name:'Bent-Over DB / Kettlebell Row',sets:3,reps:'8-12'}]},
+      {label:'Superset 2',note:'Lower Push + Upper Push — alternate, rest after both',exercises:[{name:'Leg Press',sets:3,reps:'8-12'},{name:'Flat DB Press (neutral grip)',sets:3,reps:'8-12'}]},
+      {label:'Superset 3',note:'Unilateral Lower — alternate legs, 60s rest',exercises:[{name:'DB Split Squat (front foot elevated)',sets:3,reps:'10'},{name:'Lying Leg Curl',sets:3,reps:'10-12'}]},
+      {label:'Core Superset',note:'Anti-rotation + Anti-extension — minimal rest',exercises:[{name:'Pallof Press',sets:3,reps:'10'},{name:'Dead Bug',sets:3,reps:'8'}]},
     ]},
-    {title:'Shoulder Rehab', color:PK, supersets:[{label:'Rehab Circuit', note:'Minimal rest between exercises', exercises:SREHAB}]},
-    {title:'Post-Session Stretch', color:G, supersets:[{label:'Stretch Sequence', note:'Hold each stretch fully', exercises:STRETCH_EX}]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest between exercises',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch fully',exercises:STRETCH_EX}]},
   ]},
-  'Gym B': {color:PU, icon:'B', subtitle:'Squat + Vertical Pull + Trunk Stability', sections:[
-    {title:'Main Session', color:PU, supersets:[
-      {label:'Superset 1', note:'Squat + Vertical Pull — alternate, 90s rest', exercises:[
-        {name:'Barbell Squat / Goblet Squat', sets:3, reps:'8-10'},
-        {name:'Pull-Up / Lat Pulldown (neutral grip)', sets:3, reps:'6-10'},
-      ]},
-      {label:'Superset 2', note:'Hip Hinge + Upper Push — alternate, 60-90s rest', exercises:[
-        {name:'Hip Thrust (Barbell or Machine)', sets:3, reps:'10-12'},
-        {name:'Low-Incline DB Press (neutral grip)', sets:3, reps:'8-12'},
-      ]},
-      {label:'Superset 3', note:'Row + Hamstring — alternate, 60s rest', exercises:[
-        {name:'Single-Arm DB Row (incline bench)', sets:3, reps:'10-12'},
-        {name:'Lying Leg Curl', sets:2, reps:'10-12'},
-      ]},
-      {label:'Core Superset', note:'Lateral + Flexion — minimal rest', exercises:[
-        {name:'Side Plank', sets:3, reps:'20-30s'},
-        {name:'Reverse Crunch', sets:3, reps:'10-15'},
-      ]},
+  'Gym B':{color:PU,icon:'B',subtitle:'Squat + Vertical Pull + Trunk Stability',sections:[
+    {title:'Main Session',color:PU,supersets:[
+      {label:'Superset 1',note:'Squat + Vertical Pull — alternate, 90s rest',exercises:[{name:'Barbell Squat / Goblet Squat',sets:3,reps:'8-10'},{name:'Pull-Up / Lat Pulldown (neutral grip)',sets:3,reps:'6-10'}]},
+      {label:'Superset 2',note:'Hip Hinge + Upper Push — alternate, 60-90s rest',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:3,reps:'10-12'},{name:'Low-Incline DB Press (neutral grip)',sets:3,reps:'8-12'}]},
+      {label:'Superset 3',note:'Row + Hamstring — alternate, 60s rest',exercises:[{name:'Single-Arm DB Row (incline bench)',sets:3,reps:'10-12'},{name:'Lying Leg Curl',sets:2,reps:'10-12'}]},
+      {label:'Core Superset',note:'Lateral + Flexion — minimal rest',exercises:[{name:'Side Plank',sets:3,reps:'20-30s'},{name:'Reverse Crunch',sets:3,reps:'10-15'}]},
     ]},
-    {title:'Shoulder Rehab', color:PK, supersets:[{label:'Rehab Circuit', note:'Minimal rest', exercises:SREHAB}]},
-    {title:'Post-Session Stretch', color:G, supersets:[{label:'Stretch Sequence', note:'Hold each stretch', exercises:STRETCH_EX}]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch',exercises:STRETCH_EX}]},
   ]},
-  'Gym C': {color:G, icon:'C', subtitle:'Single-Leg + Upper Hypertrophy + Rotational Core', sections:[
-    {title:'Main Session', color:G, supersets:[
-      {label:'Superset 1', note:'Unilateral Lower + Row — alternate, 90s rest', exercises:[
-        {name:'Bulgarian Split Squat', sets:3, reps:'10'},
-        {name:'Bent-Over Barbell / DB Row', sets:3, reps:'10-12'},
-      ]},
-      {label:'Superset 2', note:'Hip Hinge + Chest Fly — alternate, 60-90s rest', exercises:[
-        {name:'45deg Back Extension / KB Good Morning', sets:3, reps:'10-12'},
-        {name:'Cable Chest Fly (chest height)', sets:3, reps:'12-15'},
-      ]},
-      {label:'Superset 3', note:'Push + Hamstring — alternate, 60s rest', exercises:[
-        {name:'Push-Up Variation', sets:3, reps:'10-15'},
-        {name:'Lying Leg Curl', sets:3, reps:'10-12'},
-      ]},
-      {label:'Core Superset', note:'Rotational + Anti-extension — minimal rest', exercises:[
-        {name:'Cable Wood Chop', sets:3, reps:'10'},
-        {name:'Bird Dog', sets:2, reps:'8'},
-      ]},
+  'Gym C':{color:G,icon:'C',subtitle:'Single-Leg + Upper Hypertrophy + Rotational Core',sections:[
+    {title:'Main Session',color:G,supersets:[
+      {label:'Superset 1',note:'Unilateral Lower + Row — alternate, 90s rest',exercises:[{name:'Bulgarian Split Squat',sets:3,reps:'10'},{name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12'}]},
+      {label:'Superset 2',note:'Hip Hinge + Chest Fly — alternate, 60-90s rest',exercises:[{name:'45deg Back Extension / KB Good Morning',sets:3,reps:'10-12'},{name:'Cable Chest Fly (chest height)',sets:3,reps:'12-15'}]},
+      {label:'Superset 3',note:'Push + Hamstring — alternate, 60s rest',exercises:[{name:'Push-Up Variation',sets:3,reps:'10-15'},{name:'Lying Leg Curl',sets:3,reps:'10-12'}]},
+      {label:'Core Superset',note:'Rotational + Anti-extension — minimal rest',exercises:[{name:'Cable Wood Chop',sets:3,reps:'10'},{name:'Bird Dog',sets:2,reps:'8'}]},
     ]},
-    {title:'Shoulder Rehab', color:PK, supersets:[{label:'Rehab Circuit', note:'Minimal rest', exercises:SREHAB}]},
-    {title:'Post-Session Stretch', color:G, supersets:[{label:'Stretch Sequence', note:'Hold each stretch', exercises:STRETCH_EX}]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch',exercises:STRETCH_EX}]},
   ]},
-  'Bike': {color:BK, icon:'B', subtitle:'Zone 2 Active Recovery — Thursday', isBike:true,
-    phases:[
-      {label:'Wks 1-4', target:'30-40 min Zone 2 (111-130 bpm) — steady conversational pace'},
-      {label:'Wks 5-8', target:'40-50 min Zone 2 — increase duration as legs adapt'},
-      {label:'Wks 9-12', target:'45-55 min Zone 2 — optional final 5 min push to Zone 3'},
-    ]
-  },
-  'Swim': {color:SW, icon:'~', subtitle:'Aerobic + Shoulder-Friendly Volume',
-    phases:[
-      {label:'Phase 1', weeks:'1-2', sets:[{name:'Warm-up — easy backstroke',target:'200m'},{name:'Main set — any stroke',target:'6x50m, 30s rest'},{name:'Kick set — kickboard only',target:'4x25m'},{name:'Cool-down — backstroke',target:'100m'}]},
-      {label:'Phase 2', weeks:'3-6', sets:[{name:'Warm-up',target:'200m easy'},{name:'Pull buoy — arms only',target:'4x75m'},{name:'Main set',target:'6x75m, 25s rest'},{name:'Kick set',target:'4x25m'},{name:'Cool-down — backstroke',target:'100m'}]},
-      {label:'Phase 3', weeks:'7-12', sets:[{name:'Warm-up — mixed stroke',target:'300m'},{name:'Pull buoy',target:'4x100m'},{name:'Main set',target:'8x75m, 20s rest'},{name:'Sprints (wks 10-12)',target:'4x25m'},{name:'Cool-down — backstroke',target:'150m'}]},
-    ]
-  },
-  'Run': {color:O, icon:'>', subtitle:'Cardiovascular — Zone-Based',
-    phases:[
-      {label:'Easy Base', weeks:'1-4', target:'5k Zone 2 throughout (111-130 bpm)'},
-      {label:'Steady Build', weeks:'5-8', target:'5k — 4km Zone 2, final 1km Zone 3'},
-      {label:'Easy Run', weeks:'9-12 odd', target:'5k easy Zone 2'},
-      {label:'Intervals', weeks:'9-12 even', target:'6x2min Zone 3-4 / 2min easy jog'},
-    ]
-  },
+  'Bike':{color:BK,icon:'B',subtitle:'Zone 2 Active Recovery — Thursday',isBike:true,phases:[{label:'Wks 1-4',target:'30-40 min Zone 2 (111-130 bpm) — steady conversational pace'},{label:'Wks 5-8',target:'40-50 min Zone 2 — increase duration as legs adapt'},{label:'Wks 9-12',target:'45-55 min Zone 2 — optional final 5 min push to Zone 3'}]},
+  'Swim':{color:SW,icon:'~',subtitle:'Aerobic + Shoulder-Friendly Volume',phases:[
+    {label:'Phase 1',weeks:'1-2',sets:[{name:'Warm-up — easy backstroke',target:'200m'},{name:'Main set — any stroke',target:'6x50m, 30s rest'},{name:'Kick set — kickboard only',target:'4x25m'},{name:'Cool-down — backstroke',target:'100m'}]},
+    {label:'Phase 2',weeks:'3-6',sets:[{name:'Warm-up',target:'200m easy'},{name:'Pull buoy — arms only',target:'4x75m'},{name:'Main set',target:'6x75m, 25s rest'},{name:'Kick set',target:'4x25m'},{name:'Cool-down — backstroke',target:'100m'}]},
+    {label:'Phase 3',weeks:'7-12',sets:[{name:'Warm-up — mixed stroke',target:'300m'},{name:'Pull buoy',target:'4x100m'},{name:'Main set',target:'8x75m, 20s rest'},{name:'Sprints (wks 10-12)',target:'4x25m'},{name:'Cool-down — backstroke',target:'150m'}]},
+  ]},
+  'Run':{color:O,icon:'>',subtitle:'Cardiovascular — Zone-Based',phases:[{label:'Easy Base',weeks:'1-4',target:'5k Zone 2 throughout (111-130 bpm)'},{label:'Steady Build',weeks:'5-8',target:'5k — 4km Zone 2, final 1km Zone 3'},{label:'Easy Run',weeks:'9-12 odd',target:'5k easy Zone 2'},{label:'Intervals',weeks:'9-12 even',target:'6x2min Zone 3-4 / 2min easy jog'}]},
 };
 
-// ── BUILD EXERCISE LIBRARY ───────────────────────────────────────────────────
-function buildLibrary() {
-  const lib = []; const seen = new Set();
-  for (const [sessionName, plan] of Object.entries(PLAN)) {
-    if (!plan.sections) continue;
-    for (const sec of plan.sections) {
-      for (const ss of sec.supersets || []) {
-        for (const ex of ss.exercises || []) {
-          if (!seen.has(ex.name)) {
-            seen.add(ex.name);
-            const c = COACHING[ex.name] || {};
-            lib.push({name:ex.name, sets:ex.sets, reps:ex.reps, category:c.category||sec.title, muscle:c.muscle||'', sessions:[], tips:c.tips||[]});
-          }
-          const entry = lib.find(e => e.name === ex.name);
-          if (entry && !entry.sessions.includes(sessionName)) entry.sessions.push(sessionName);
-        }
-      }
-    }
+function buildLibrary(){
+  const lib=[],seen=new Set();
+  for(const[sessionName,plan]of Object.entries(PLAN)){
+    if(!plan.sections)continue;
+    for(const sec of plan.sections){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(!seen.has(ex.name)){seen.add(ex.name);const c=COACHING[ex.name]||{};lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,category:c.category||sec.title,muscle:c.muscle||'',sessions:[],tips:c.tips||[]});}const entry=lib.find(e=>e.name===ex.name);if(entry&&!entry.sessions.includes(sessionName))entry.sessions.push(sessionName);}}}
   }
-  for (const ex of SWU_EX) {
-    if (!seen.has(ex.name)) {
-      seen.add(ex.name);
-      const c = COACHING[ex.name] || {};
-      lib.push({name:ex.name, sets:ex.sets, reps:ex.reps, category:'Swim Warm-Up', muscle:c.muscle||'', sessions:['Swim'], tips:c.tips||[]});
-    }
-  }
-  return lib.sort((a, b) => a.name.localeCompare(b.name));
+  for(const ex of SWU_EX){if(!seen.has(ex.name)){seen.add(ex.name);const c=COACHING[ex.name]||{};lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,category:'Swim Warm-Up',muscle:c.muscle||'',sessions:['Swim'],tips:c.tips||[]});}}
+  return lib.sort((a,b)=>a.name.localeCompare(b.name));
 }
-const LIBRARY = buildLibrary();
-const CATS = ['All','Squat','Hinge','Push','Pull','Core','Hamstring','Shoulder Rehab','Stretch','Swim Warm-Up'];
+const LIBRARY=buildLibrary();
+const CATS=['All','Squat','Hinge','Push','Pull','Core','Hamstring','Shoulder Rehab','Stretch','Swim Warm-Up'];
+function catColor(cat){return{Squat:PU,Hinge:O,Push:A,Pull:'#34D399',Core:PU,Hamstring:G,'Shoulder Rehab':PK,Stretch:G,'Swim Warm-Up':SW}[cat]||A;}
 
-function catColor(cat) {
-  const m = {Squat:PU, Hinge:O, Push:A, Pull:'#34D399', Core:PU, Hamstring:G, 'Shoulder Rehab':PK, Stretch:G, 'Swim Warm-Up':SW};
-  return m[cat] || A;
+const ROPT=[{l:'30s',v:30},{l:'45s',v:45},{l:'60s',v:60},{l:'90s',v:90},{l:'2min',v:120},{l:'3min',v:180}];
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DMAP={Mon:'Gym A',Tue:'Swim',Wed:'Gym B',Thu:'Bike',Fri:'Gym C',Sat:'Run',Sun:'Rest'};
+
+// ── GIF COMPONENT ─────────────────────────────────────────────────────────────
+function ExerciseGif({exName,color}){
+  const[gifUrl,setGifUrl]=useState(null);
+  const[loading,setLoading]=useState(true);
+  const[failed,setFailed]=useState(false);
+  useEffect(()=>{
+    let cancelled=false;
+    setLoading(true);setFailed(false);setGifUrl(null);
+    fetchExerciseGif(exName).then(url=>{
+      if(cancelled)return;
+      if(url){setGifUrl(url);setLoading(false);}
+      else{setFailed(true);setLoading(false);}
+    });
+    return()=>{cancelled=true;};
+  },[exName]);
+  if(loading)return <div className="shimmer" style={{width:'100%',height:220,borderRadius:12,marginBottom:14}}/>;
+  if(failed||!gifUrl)return null;
+  return(
+    <div style={{borderRadius:12,overflow:'hidden',marginBottom:14,background:'#0D1B2E',border:`1px solid ${color}33`,position:'relative'}}>
+      <img src={gifUrl} alt={exName} style={{width:'100%',display:'block',maxHeight:260,objectFit:'contain',background:'#0D1B2E'}} onError={()=>setFailed(true)}/>
+      <div style={{position:'absolute',bottom:6,right:8,color:'#1E3A5F',fontSize:9}}>via ExerciseDB</div>
+    </div>
+  );
 }
 
-const ROPT = [{l:'30s',v:30},{l:'45s',v:45},{l:'60s',v:60},{l:'90s',v:90},{l:'2min',v:120},{l:'3min',v:180}];
-const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const DMAP = {Mon:'Gym A', Tue:'Swim', Wed:'Gym B', Thu:'Bike', Fri:'Gym C', Sat:'Run', Sun:'Rest'};
-
-// ── EXERCISE DETAIL SHEET ────────────────────────────────────────────────────
-function ExDetailSheet({exName, hist, onClose}) {
-  const entry = LIBRARY.find(e => e.name === exName);
-  const coaching = COACHING[exName] || {};
-  const tips = (entry && entry.tips && entry.tips.length) ? entry.tips : (coaching.tips || []);
-  const muscle = (entry && entry.muscle) || coaching.muscle || '';
-  const category = (entry && entry.category) || coaching.category || '';
-  const sets = entry ? entry.sets : null;
-  const reps = entry ? entry.reps : null;
-  const c = catColor(category);
-  const pb = getPersonalBest(hist, exName);
-  const last = getLastLogged(hist, exName);
-
-  return (
+// ── EXERCISE DETAIL SHEET ─────────────────────────────────────────────────────
+function ExDetailSheet({exName,hist,onClose}){
+  const entry=LIBRARY.find(e=>e.name===exName);
+  const coaching=COACHING[exName]||{};
+  const tips=(entry&&entry.tips&&entry.tips.length)?entry.tips:(coaching.tips||[]);
+  const muscle=(entry&&entry.muscle)||coaching.muscle||'';
+  const category=(entry&&entry.category)||coaching.category||'';
+  const sets=entry?entry.sets:null;
+  const reps=entry?entry.reps:null;
+  const c=catColor(category);
+  const pb=getPersonalBest(hist,exName);
+  const last=getLastLogged(hist,exName);
+  return(
     <div style={{position:'fixed',inset:0,background:'#000000cc',zIndex:300,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={onClose}>
-      <div className="su" style={{background:'#0A1628',border:`1px solid ${c}44`,borderRadius:'18px 18px 0 0',padding:'8px 20px 40px',maxWidth:520,width:'100%',maxHeight:'88vh',overflowY:'auto'}} onClick={e => e.stopPropagation()}>
+      <div className="su" style={{background:'#0A1628',borderRadius:'18px 18px 0 0',padding:'8px 20px 44px',maxWidth:520,width:'100%',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
         <div style={{width:36,height:4,background:'#1E3A5F',borderRadius:2,margin:'12px auto 16px'}}/>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:14}}>
           <div style={{flex:1,marginRight:12}}>
             <div style={{color:'#E2E8F0',fontSize:17,fontWeight:700,marginBottom:5}}>{exName}</div>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
               <span style={{background:c+'22',color:c,borderRadius:5,padding:'2px 8px',fontSize:11,fontWeight:600}}>{category}</span>
               <span style={{color:'#475569',fontSize:12}}>{muscle}</span>
             </div>
           </div>
-          <button onClick={onClose} style={{background:'none',border:'none',color:'#475569',fontSize:24,cursor:'pointer',lineHeight:1}}>×</button>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#475569',fontSize:24,cursor:'pointer',lineHeight:1,flexShrink:0}}>×</button>
         </div>
-
+        <ExerciseGif exName={exName} color={c}/>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
           <div style={{background:'#0D1B2E',borderRadius:8,padding:'10px 12px'}}>
             <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:3}}>Target</div>
-            <div style={{color:c,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{sets ? `${sets} × ${reps}` : '—'}</div>
+            <div style={{color:c,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{sets?`${sets} × ${reps}`:'—'}</div>
           </div>
           <div style={{background:'#0D1B2E',borderRadius:8,padding:'10px 12px'}}>
             <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:3}}>Personal Best</div>
-            {pb ? <div style={{color:G,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{pb.weight}kg × {pb.reps}</div> : <div style={{color:'#334155',fontSize:12}}>No data yet</div>}
+            {pb?<div style={{color:G,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{pb.weight}kg × {pb.reps}</div>:<div style={{color:'#334155',fontSize:12}}>No data yet</div>}
           </div>
         </div>
-
-        {last && (
+        {last&&(
           <div style={{background:'#0D1B2E',borderRadius:8,padding:'10px 12px',marginBottom:12}}>
-            <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>Last Logged — {fmt(last.date)}</div>
-            {last.sets.map((s, i) => (
+            <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>Last Session — {fmt(last.date)}</div>
+            {last.sets.map((s,i)=>(
               <div key={i} style={{display:'flex',gap:8,fontSize:12,fontFamily:'monospace',color:'#475569',marginBottom:2}}>
-                <span>Set {i+1}:</span>
-                <span style={{color:c}}>{s.weight}kg</span>
-                <span>×</span>
-                <span style={{color:'#94A3B8'}}>{s.reps} reps</span>
-                {s.done && <span style={{color:G}}>✓</span>}
+                <span>Set {i+1}:</span><span style={{color:c}}>{s.weight}kg</span><span>×</span><span style={{color:'#94A3B8'}}>{s.reps} reps</span>{s.done&&<span style={{color:G}}>✓</span>}
               </div>
             ))}
           </div>
         )}
-
-        {tips.length > 0 && (
+        {tips.length>0&&(
           <div>
             <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Coaching Notes</div>
-            {tips.map((tip, i) => (
+            {tips.map((tip,i)=>(
               <div key={i} style={{display:'flex',gap:10,marginBottom:10,alignItems:'flex-start'}}>
                 <div style={{width:20,height:20,borderRadius:'50%',background:c+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:2}}>
                   <span style={{color:c,fontSize:10,fontWeight:700}}>{i+1}</span>
@@ -765,47 +376,37 @@ function ExDetailSheet({exName, hist, onClose}) {
   );
 }
 
-// ── EXERCISE LIBRARY TAB ─────────────────────────────────────────────────────
-function ExerciseLibrary({hist}) {
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('All');
-  const [modal, setModal] = useState(null);
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return LIBRARY.filter(ex => {
-      const matchSearch = !search || ex.name.toLowerCase().includes(q) || ex.muscle.toLowerCase().includes(q) || ex.tips.some(t => t.toLowerCase().includes(q));
-      const matchFilter = filter === 'All' || ex.category === filter;
-      return matchSearch && matchFilter;
+// ── EXERCISE LIBRARY TAB ──────────────────────────────────────────────────────
+function ExerciseLibrary({hist}){
+  const[search,setSearch]=useState('');
+  const[filter,setFilter]=useState('All');
+  const[modal,setModal]=useState(null);
+  const filtered=useMemo(()=>{
+    const q=search.toLowerCase();
+    return LIBRARY.filter(ex=>{
+      const ms=!search||ex.name.toLowerCase().includes(q)||ex.muscle.toLowerCase().includes(q)||ex.tips.some(t=>t.toLowerCase().includes(q));
+      const mf=filter==='All'||ex.category===filter;
+      return ms&&mf;
     });
-  }, [search, filter]);
-
-  return (
+  },[search,filter]);
+  return(
     <div style={{padding:'16px 20px 0'}}>
       <div style={{position:'relative',marginBottom:10}}>
-        <input placeholder="Search exercises or muscles..." value={search} onChange={e => setSearch(e.target.value)}
+        <input placeholder="Search exercises or muscles..." value={search} onChange={e=>setSearch(e.target.value)}
           style={{width:'100%',background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:10,color:'#E2E8F0',padding:'10px 36px',fontSize:13,outline:'none'}}/>
         <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'#334155',fontSize:15,pointerEvents:'none'}}>⌕</span>
-        {search && <button onClick={() => setSearch('')} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#475569',cursor:'pointer',fontSize:18,lineHeight:1}}>×</button>}
+        {search&&<button onClick={()=>setSearch('')} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#475569',cursor:'pointer',fontSize:18,lineHeight:1}}>×</button>}
       </div>
-
       <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:10,marginBottom:10}}>
-        {CATS.map(cat => (
-          <button key={cat} onClick={() => setFilter(cat)}
-            style={{padding:'5px 12px',borderRadius:20,border:`1px solid ${filter===cat ? catColor(cat) : '#1E3A5F'}`,background:filter===cat ? catColor(cat)+'22' : 'transparent',color:filter===cat ? catColor(cat) : '#475569',cursor:'pointer',fontSize:11,fontWeight:filter===cat ? 700 : 400,whiteSpace:'nowrap',flexShrink:0}}>
-            {cat}
-          </button>
+        {CATS.map(cat=>(
+          <button key={cat} onClick={()=>setFilter(cat)} style={{padding:'5px 12px',borderRadius:20,border:`1px solid ${filter===cat?catColor(cat):'#1E3A5F'}`,background:filter===cat?catColor(cat)+'22':'transparent',color:filter===cat?catColor(cat):'#475569',cursor:'pointer',fontSize:11,fontWeight:filter===cat?700:400,whiteSpace:'nowrap',flexShrink:0}}>{cat}</button>
         ))}
       </div>
-
       <div style={{color:'#334155',fontSize:11,marginBottom:10}}>{filtered.length} exercises</div>
-
-      {filtered.map(ex => {
-        const pb = getPersonalBest(hist, ex.name);
-        const c = catColor(ex.category);
-        return (
-          <button key={ex.name} onClick={() => setModal(ex.name)}
-            style={{width:'100%',background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'12px 14px',marginBottom:7,textAlign:'left',cursor:'pointer',display:'block'}}>
+      {filtered.map(ex=>{
+        const pb=getPersonalBest(hist,ex.name);const c=catColor(ex.category);
+        return(
+          <button key={ex.name} onClick={()=>setModal(ex.name)} style={{width:'100%',background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'12px 14px',marginBottom:7,textAlign:'left',cursor:'pointer',display:'block'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div style={{flex:1,minWidth:0,marginRight:12}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
@@ -815,209 +416,146 @@ function ExerciseLibrary({hist}) {
                 <div style={{color:'#475569',fontSize:11,paddingLeft:14}}>{ex.muscle} · {ex.category}</div>
               </div>
               <div style={{textAlign:'right',flexShrink:0}}>
-                {pb ? (
-                  <div>
-                    <div style={{color:G,fontSize:12,fontFamily:'monospace',fontWeight:700}}>{pb.weight}kg×{pb.reps}</div>
-                    <div style={{color:'#334155',fontSize:9}}>PB</div>
-                  </div>
-                ) : <div style={{color:'#1E3A5F',fontSize:10}}>No data</div>}
+                {pb?<div><div style={{color:G,fontSize:12,fontFamily:'monospace',fontWeight:700}}>{pb.weight}kg×{pb.reps}</div><div style={{color:'#334155',fontSize:9}}>PB</div></div>:<div style={{color:'#1E3A5F',fontSize:10}}>No data</div>}
               </div>
             </div>
           </button>
         );
       })}
-
-      {filtered.length === 0 && (
-        <div style={{textAlign:'center',padding:'40px 0',color:'#334155'}}>
-          <div style={{fontSize:24,marginBottom:8}}>⌕</div>
-          <div style={{fontSize:13}}>No exercises found</div>
-        </div>
-      )}
-
-      {modal && <ExDetailSheet exName={modal} hist={hist} onClose={() => setModal(null)}/>}
+      {filtered.length===0&&<div style={{textAlign:'center',padding:'40px 0',color:'#334155'}}><div style={{fontSize:24,marginBottom:8}}>⌕</div><div style={{fontSize:13}}>No exercises found</div></div>}
+      {modal&&<ExDetailSheet exName={modal} hist={hist} onClose={()=>setModal(null)}/>}
     </div>
   );
 }
 
-// ── TIMER ────────────────────────────────────────────────────────────────────
-function Timer({duration, onDone}) {
-  const [rem, setRem] = useState(duration);
-  const [active, setActive] = useState(true);
-  useEffect(() => {
-    if (!active) return;
-    if (rem <= 0) { onDone(); return; }
-    const t = setTimeout(() => setRem(r => r-1), 1000);
-    return () => clearTimeout(t);
-  }, [rem, active]);
-  const r = 26, circ = 2*Math.PI*r, c = rem > duration*0.5 ? G : rem > duration*0.25 ? O : R;
-  return (
+// ── TIMER ─────────────────────────────────────────────────────────────────────
+function Timer({duration,onDone}){
+  const[rem,setRem]=useState(duration);const[active,setActive]=useState(true);
+  useEffect(()=>{if(!active)return;if(rem<=0){onDone();return;}const t=setTimeout(()=>setRem(r=>r-1),1000);return()=>clearTimeout(t);},[rem,active]);
+  const r=26,circ=2*Math.PI*r,c=rem>duration*0.5?G:rem>duration*0.25?O:R;
+  return(
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',padding:'14px 0',background:'#0A1628',borderRadius:12,border:`1px solid ${c}44`,margin:'10px 0'}}>
       <div style={{color:'#475569',fontSize:11,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Rest Timer</div>
       <div style={{position:'relative',width:66,height:66}}>
-        <svg width="66" height="66" style={{transform:'rotate(-90deg)'}}>
-          <circle cx="33" cy="33" r={r} fill="none" stroke="#1E2D40" strokeWidth="5"/>
-          <circle cx="33" cy="33" r={r} fill="none" stroke={c} strokeWidth="5" strokeDasharray={`${circ*(rem/duration)} ${circ}`} strokeLinecap="round" style={{transition:'stroke-dasharray 1s linear,stroke 0.3s'}}/>
-        </svg>
-        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <span style={{color:c,fontSize:18,fontFamily:'monospace',fontWeight:700}}>{rem}</span>
-        </div>
+        <svg width="66" height="66" style={{transform:'rotate(-90deg)'}}><circle cx="33" cy="33" r={r} fill="none" stroke="#1E2D40" strokeWidth="5"/><circle cx="33" cy="33" r={r} fill="none" stroke={c} strokeWidth="5" strokeDasharray={`${circ*(rem/duration)} ${circ}`} strokeLinecap="round" style={{transition:'stroke-dasharray 1s linear,stroke 0.3s'}}/></svg>
+        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{color:c,fontSize:18,fontFamily:'monospace',fontWeight:700}}>{rem}</span></div>
       </div>
       <div style={{display:'flex',gap:8,marginTop:10}}>
-        <button onClick={() => setActive(a => !a)} style={{background:'none',border:`1px solid ${c}44`,borderRadius:6,color:c,padding:'4px 12px',cursor:'pointer',fontSize:12}}>{active ? 'Pause' : 'Resume'}</button>
+        <button onClick={()=>setActive(a=>!a)} style={{background:'none',border:`1px solid ${c}44`,borderRadius:6,color:c,padding:'4px 12px',cursor:'pointer',fontSize:12}}>{active?'Pause':'Resume'}</button>
         <button onClick={onDone} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 12px',cursor:'pointer',fontSize:12}}>Skip</button>
       </div>
     </div>
   );
 }
 
-function SetRow({set, idx, onChange, color}) {
-  return (
+function SetRow({set,idx,onChange,color}){
+  return(
     <div style={{display:'flex',gap:6,alignItems:'center',marginBottom:5}}>
       <span style={{color:'#475569',fontSize:11,fontFamily:'monospace',width:16,textAlign:'right',flexShrink:0}}>{idx+1}</span>
-      <input type="number" placeholder="kg" value={set.weight||''} onChange={e => onChange({...set,weight:e.target.value})} style={{width:52,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:color||A,padding:'5px 4px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
+      <input type="number" placeholder="kg" value={set.weight||''} onChange={e=>onChange({...set,weight:e.target.value})} style={{width:52,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:color||A,padding:'5px 4px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
       <span style={{color:'#334155',fontSize:11}}>kg</span>
-      <input type="number" placeholder="reps" value={set.reps||''} onChange={e => onChange({...set,reps:e.target.value})} style={{width:52,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:'#E2E8F0',padding:'5px 4px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
+      <input type="number" placeholder="reps" value={set.reps||''} onChange={e=>onChange({...set,reps:e.target.value})} style={{width:52,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:'#E2E8F0',padding:'5px 4px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
       <span style={{color:'#334155',fontSize:11}}>reps</span>
-      <button onClick={() => onChange({...set,done:!set.done})} style={{width:28,height:28,borderRadius:6,border:`1px solid ${set.done ? G : '#1E3A5F'}`,background:set.done ? G+'22' : 'transparent',color:set.done ? G : '#334155',cursor:'pointer',fontSize:13,flexShrink:0}}>{set.done ? '✓' : '○'}</button>
+      <button onClick={()=>onChange({...set,done:!set.done})} style={{width:28,height:28,borderRadius:6,border:`1px solid ${set.done?G:'#1E3A5F'}`,background:set.done?G+'22':'transparent',color:set.done?G:'#334155',cursor:'pointer',fontSize:13,flexShrink:0}}>{set.done?'✓':'○'}</button>
     </div>
   );
 }
 
-function ExCard({exDef, data, onChange, color, prevSets, progress, hist}) {
-  const [showInfo, setShowInfo] = useState(false);
-  const c = color || A;
-  const ns = exDef.sets || 1;
-  const sets = data.sets || Array.from({length:ns}, () => ({weight:'',reps:'',done:false}));
-  const done = sets.filter(s => s.done).length;
-  const complete = done === sets.length && sets.length > 0;
-  const isUpper = /(press|curl|fly|row|pulldown|pull-up|chop|bird)/i.test(exDef.name);
-  const jump = isUpper ? '2.5' : '5';
-
-  const hset = (i, val) => {
-    const s = [...sets]; const p = s[i]; s[i] = val;
-    if (i === 0 && !p.done && val.done && val.weight && val.reps) {
-      for (let j = 1; j < s.length; j++) {
-        if (!s[j].weight && !s[j].reps) s[j] = {...s[j], weight:val.weight, reps:val.reps};
-      }
-    }
-    onChange({...data, sets:s});
+function ExCard({exDef,data,onChange,color,prevSets,progress,hist}){
+  const[showInfo,setShowInfo]=useState(false);
+  const c=color||A;
+  const ns=exDef.sets||1;
+  const sets=data.sets||Array.from({length:ns},()=>({weight:'',reps:'',done:false}));
+  const done=sets.filter(s=>s.done).length;
+  const complete=done===sets.length&&sets.length>0;
+  const isUpper=/(press|curl|fly|row|pulldown|pull-up|chop|bird)/i.test(exDef.name);
+  const jump=isUpper?'2.5':'5';
+  const hset=(i,val)=>{
+    const s=[...sets];const p=s[i];s[i]=val;
+    if(i===0&&!p.done&&val.done&&val.weight&&val.reps){for(let j=1;j<s.length;j++){if(!s[j].weight&&!s[j].reps)s[j]={...s[j],weight:val.weight,reps:val.reps};}}
+    onChange({...data,sets:s});
   };
-
-  return (
-    <div className="fi" style={{background:'#070E1A',border:`1px solid ${progress ? G+'99' : complete ? c+'55' : '#1E2D40'}`,borderRadius:8,padding:'10px 12px',marginBottom:8}}>
+  return(
+    <div style={{background:'#070E1A',border:`1px solid ${progress?G+'99':complete?c+'55':'#1E2D40'}`,borderRadius:8,padding:'10px 12px',marginBottom:8}}>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
         <div style={{flex:1,marginRight:8}}>
           <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
             <span style={{color:'#E2E8F0',fontSize:13,fontWeight:600,flex:1}}>{exDef.name}</span>
-            {progress && <span style={{background:G+'22',color:G,borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,flexShrink:0}}>↑ +{jump}kg</span>}
-            <button onClick={() => setShowInfo(true)}
-              style={{width:22,height:22,borderRadius:'50%',border:`1px solid ${c}55`,background:c+'11',color:c,cursor:'pointer',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              i
-            </button>
+            {progress&&<span style={{background:G+'22',color:G,borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,flexShrink:0}}>↑ +{jump}kg</span>}
+            <button onClick={()=>setShowInfo(true)} style={{width:22,height:22,borderRadius:'50%',border:`1px solid ${c}55`,background:c+'11',color:c,cursor:'pointer',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>i</button>
           </div>
           <div style={{display:'flex',gap:10,alignItems:'center'}}>
             <span style={{color:c,fontSize:11,fontFamily:'monospace'}}>Target: {exDef.reps} × {exDef.sets}</span>
-            {prevSets && prevSets[0] && prevSets[0].weight && (
-              <span style={{color:'#334155',fontSize:10,fontFamily:'monospace'}}>Last: {prevSets[0].weight}kg×{prevSets[0].reps}</span>
-            )}
+            {prevSets&&prevSets[0]&&prevSets[0].weight&&<span style={{color:'#334155',fontSize:10,fontFamily:'monospace'}}>Last: {prevSets[0].weight}kg×{prevSets[0].reps}</span>}
           </div>
         </div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3,flexShrink:0}}>
-          <span style={{color:complete ? G : '#475569',fontSize:11,fontFamily:'monospace'}}>{done}/{sets.length}</span>
-          {data.rpe && <span style={{background:A+'22',color:A,borderRadius:4,padding:'1px 6px',fontSize:11,fontFamily:'monospace',fontWeight:700}}>RPE {data.rpe}</span>}
+          <span style={{color:complete?G:'#475569',fontSize:11,fontFamily:'monospace'}}>{done}/{sets.length}</span>
+          {data.rpe&&<span style={{background:A+'22',color:A,borderRadius:4,padding:'1px 6px',fontSize:11,fontFamily:'monospace',fontWeight:700}}>RPE {data.rpe}</span>}
         </div>
       </div>
-      {progress && (
-        <div style={{background:G+'11',border:`1px solid ${G}33`,borderRadius:6,padding:'5px 8px',marginBottom:8,fontSize:11,color:G}}>
-          Hit top rep range 2 sessions running — increase by {jump}kg this session
-        </div>
-      )}
-      <div style={{marginBottom:6}}>
-        {sets.map((s, i) => <SetRow key={i} set={s} idx={i} color={c} onChange={val => hset(i, val)}/>)}
-      </div>
+      {progress&&<div style={{background:G+'11',border:`1px solid ${G}33`,borderRadius:6,padding:'5px 8px',marginBottom:8,fontSize:11,color:G}}>Hit top rep range 2 sessions running — increase by {jump}kg this session</div>}
+      <div style={{marginBottom:6}}>{sets.map((s,i)=><SetRow key={i} set={s} idx={i} color={c} onChange={val=>hset(i,val)}/>)}</div>
       <div style={{display:'flex',gap:5,alignItems:'center',flexWrap:'wrap'}}>
         <span style={{color:'#475569',fontSize:11}}>RPE</span>
-        {[5,6,7,8,9].map(rv => (
-          <button key={rv} onClick={() => onChange({...data,rpe:rv})}
-            style={{width:22,height:22,borderRadius:4,border:`1px solid ${data.rpe===rv ? c : '#1E3A5F'}`,background:data.rpe===rv ? c+'33' : 'transparent',color:data.rpe===rv ? c : '#334155',cursor:'pointer',fontSize:11,fontFamily:'monospace',fontWeight:700}}>
-            {rv}
-          </button>
-        ))}
-        <input placeholder="Note..." value={data.note||''} onChange={e => onChange({...data,note:e.target.value})} style={{flex:1,minWidth:70,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:'#94A3B8',padding:'3px 7px',fontSize:12,outline:'none'}}/>
+        {[5,6,7,8,9].map(rv=><button key={rv} onClick={()=>onChange({...data,rpe:rv})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${data.rpe===rv?c:'#1E3A5F'}`,background:data.rpe===rv?c+'33':'transparent',color:data.rpe===rv?c:'#334155',cursor:'pointer',fontSize:11,fontFamily:'monospace',fontWeight:700}}>{rv}</button>)}
+        <input placeholder="Note..." value={data.note||''} onChange={e=>onChange({...data,note:e.target.value})} style={{flex:1,minWidth:70,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:'#94A3B8',padding:'3px 7px',fontSize:12,outline:'none'}}/>
       </div>
-      {showInfo && <ExDetailSheet exName={exDef.name} hist={hist} onClose={() => setShowInfo(false)}/>}
+      {showInfo&&<ExDetailSheet exName={exDef.name} hist={hist} onClose={()=>setShowInfo(false)}/>}
     </div>
   );
 }
 
-function SSBlock({ss, ssData, onChange, color, restDur, secTitle, hist, sessionType}) {
-  const [col, setCol] = useState(false);
-  const [timer, setTimer] = useState(false);
-  const prev = useRef(0);
-  const prevSession = getPrevSession(hist, sessionType);
-  useEffect(() => {
-    if (ss.exercises.length <= 1) return;
-    const mins = ss.exercises.map((_, ei) => (ssData[ei] ? ssData[ei].sets || [] : []).filter(s => s.done).length);
-    const m = Math.min(...mins);
-    if (m > prev.current && m > 0 && !timer) setTimer(true);
-    prev.current = m;
-  }, [ssData]);
-  const tot = ss.exercises.reduce((a, ex) => a + (ex.sets || 1), 0);
-  const dn = ss.exercises.reduce((a, ex, ei) => a + ((ssData[ei] ? ssData[ei].sets || [] : []).filter(s => s.done).length), 0);
-  return (
+function SSBlock({ss,ssData,onChange,color,restDur,secTitle,hist,sessionType}){
+  const[col,setCol]=useState(false);const[timer,setTimer]=useState(false);const prev=useRef(0);
+  const prevSession=getPrevSession(hist,sessionType);
+  useEffect(()=>{
+    if(ss.exercises.length<=1)return;
+    const mins=ss.exercises.map((_,ei)=>(ssData[ei]?ssData[ei].sets||[]:[]).filter(s=>s.done).length);
+    const m=Math.min(...mins);
+    if(m>prev.current&&m>0&&!timer)setTimer(true);
+    prev.current=m;
+  },[ssData]);
+  const tot=ss.exercises.reduce((a,ex)=>a+(ex.sets||1),0);
+  const dn=ss.exercises.reduce((a,ex,ei)=>a+((ssData[ei]?ssData[ei].sets||[]:[]).filter(s=>s.done).length),0);
+  return(
     <div style={{marginBottom:12}}>
-      <button onClick={() => setCol(v => !v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',background:`linear-gradient(135deg,${color}1A,${color}0A)`,border:`1px solid ${color}33`,borderRadius:10,padding:'9px 13px',cursor:'pointer',marginBottom:col?0:8}}>
-        <div style={{textAlign:'left'}}>
-          <div style={{color:color,fontSize:13,fontWeight:700}}>{ss.label}</div>
-          {!col && <div style={{color:'#334155',fontSize:10,marginTop:2}}>{ss.note}</div>}
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{color:dn===tot&&tot>0 ? G : '#475569',fontSize:11,fontFamily:'monospace'}}>{dn}/{tot}</span>
-          <span style={{color:'#334155',fontSize:11}}>{col ? '+' : '−'}</span>
-        </div>
+      <button onClick={()=>setCol(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',background:`linear-gradient(135deg,${color}1A,${color}0A)`,border:`1px solid ${color}33`,borderRadius:10,padding:'9px 13px',cursor:'pointer',marginBottom:col?0:8}}>
+        <div style={{textAlign:'left'}}><div style={{color:color,fontSize:13,fontWeight:700}}>{ss.label}</div>{!col&&<div style={{color:'#334155',fontSize:10,marginTop:2}}>{ss.note}</div>}</div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}><span style={{color:dn===tot&&tot>0?G:'#475569',fontSize:11,fontFamily:'monospace'}}>{dn}/{tot}</span><span style={{color:'#334155',fontSize:11}}>{col?'+':'−'}</span></div>
       </button>
-      {!col && (
+      {!col&&(
         <div style={{paddingLeft:4}}>
-          {ss.exercises.map((ex, ei) => {
-            const ps = getPrevExData(prevSession, secTitle, ex.name);
-            const cp = canProgress(hist, sessionType, secTitle, ex.name, ex.reps);
-            return <ExCard key={ei} exDef={ex} data={ssData[ei]||{}} color={color} onChange={val => onChange(ei, val)} prevSets={ps} progress={cp} hist={hist}/>;
+          {ss.exercises.map((ex,ei)=>{
+            const ps=getPrevExData(prevSession,secTitle,ex.name);
+            const cp=canProgress(hist,sessionType,secTitle,ex.name,ex.reps);
+            return <ExCard key={ei} exDef={ex} data={ssData[ei]||{}} color={color} onChange={val=>onChange(ei,val)} prevSets={ps} progress={cp} hist={hist}/>;
           })}
-          {timer && <Timer duration={restDur} onDone={() => setTimer(false)}/>}
+          {timer&&<Timer duration={restDur} onDone={()=>setTimer(false)}/>}
         </div>
       )}
     </div>
   );
 }
 
-function SecBlock({sec, si, secData, onChange, restDur, hist, sessionType}) {
-  const [col, setCol] = useState(false);
-  const c = sec.color || A;
-  const tot = sec.supersets.reduce((a, ss) => a + ss.exercises.reduce((b, ex) => b + (ex.sets||1), 0), 0);
-  const dn = sec.supersets.reduce((a, ss, ssi) => a + ss.exercises.reduce((b, ex, ei) => b + ((secData[ssi] && secData[ssi][ei] ? secData[ssi][ei].sets || [] : []).filter(s => s.done).length), 0), 0);
-  return (
+function SecBlock({sec,si,secData,onChange,restDur,hist,sessionType}){
+  const[col,setCol]=useState(false);const c=sec.color||A;
+  const tot=sec.supersets.reduce((a,ss)=>a+ss.exercises.reduce((b,ex)=>b+(ex.sets||1),0),0);
+  const dn=sec.supersets.reduce((a,ss,ssi)=>a+ss.exercises.reduce((b,ex,ei)=>b+((secData[ssi]&&secData[ssi][ei]?secData[ssi][ei].sets||[]:[]).filter(s=>s.done).length),0),0);
+  return(
     <div style={{marginBottom:14}}>
-      <button onClick={() => setCol(v => !v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',background:`linear-gradient(135deg,${c}28,${c}10)`,border:`1px solid ${c}55`,borderRadius:12,padding:'11px 14px',cursor:'pointer',marginBottom:col?0:10}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:7,height:7,borderRadius:'50%',background:c,flexShrink:0}}/>
-          <span style={{color:c,fontSize:14,fontWeight:700}}>{sec.title}</span>
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{color:dn===tot&&tot>0 ? G : '#475569',fontSize:11,fontFamily:'monospace'}}>{dn}/{tot}</span>
-          <span style={{color:'#334155',fontSize:12}}>{col ? '+' : '−'}</span>
-        </div>
+      <button onClick={()=>setCol(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',background:`linear-gradient(135deg,${c}28,${c}10)`,border:`1px solid ${c}55`,borderRadius:12,padding:'11px 14px',cursor:'pointer',marginBottom:col?0:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}><div style={{width:7,height:7,borderRadius:'50%',background:c,flexShrink:0}}/><span style={{color:c,fontSize:14,fontWeight:700}}>{sec.title}</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}><span style={{color:dn===tot&&tot>0?G:'#475569',fontSize:11,fontFamily:'monospace'}}>{dn}/{tot}</span><span style={{color:'#334155',fontSize:12}}>{col?'+':'−'}</span></div>
       </button>
-      {!col && sec.supersets.map((ss, ssi) => (
-        <SSBlock key={ssi} ss={ss} ssData={secData[ssi]||{}} color={c} restDur={restDur} secTitle={sec.title} hist={hist} sessionType={sessionType} onChange={(ei, val) => onChange(si, ssi, ei, val)}/>
-      ))}
+      {!col&&sec.supersets.map((ss,ssi)=><SSBlock key={ssi} ss={ss} ssData={secData[ssi]||{}} color={c} restDur={restDur} secTitle={sec.title} hist={hist} sessionType={sessionType} onChange={(ei,val)=>onChange(si,ssi,ei,val)}/>)}
     </div>
   );
 }
 
-function BikeLogger({data, onChange, week}) {
-  const pi = week <= 4 ? 0 : week <= 8 ? 1 : 2;
-  const phase = PLAN['Bike'].phases[pi];
-  return (
+function BikeLogger({data,onChange,week}){
+  const phase=PLAN['Bike'].phases[week<=4?0:week<=8?1:2];
+  return(
     <div>
       <div style={{background:BK+'1A',border:`1px solid ${BK}44`,borderRadius:12,padding:'11px 14px',marginBottom:12}}>
         <div style={{color:BK,fontSize:13,fontWeight:700,marginBottom:4}}>Week {week} Target</div>
@@ -1025,96 +563,58 @@ function BikeLogger({data, onChange, week}) {
         <div style={{color:'#475569',fontSize:11,marginTop:6}}>Zone 2: 111–130 bpm · Active recovery</div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
-        {[{k:'duration',l:'Duration',u:'min',p:'40'},{k:'avgHR',l:'Avg HR',u:'bpm',p:'122'},{k:'distance',l:'Distance',u:'km',p:'15'},{k:'zone',l:'Zone',u:'',p:'Zone 2'}].map(f => (
+        {[{k:'duration',l:'Duration',u:'min',p:'40'},{k:'avgHR',l:'Avg HR',u:'bpm',p:'122'},{k:'distance',l:'Distance',u:'km',p:'15'},{k:'zone',l:'Zone',u:'',p:'Zone 2'}].map(f=>(
           <div key={f.k} style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px'}}>
             <div style={{color:'#475569',fontSize:10,marginBottom:3}}>{f.l}</div>
-            <div style={{display:'flex',alignItems:'center',gap:3}}>
-              <input placeholder={f.p} value={data[f.k]||''} onChange={e => onChange({...data,[f.k]:e.target.value})} style={{flex:1,background:'transparent',border:'none',color:BK,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>
-              {f.u && <span style={{color:'#334155',fontSize:10}}>{f.u}</span>}
-            </div>
+            <div style={{display:'flex',alignItems:'center',gap:3}}><input placeholder={f.p} value={data[f.k]||''} onChange={e=>onChange({...data,[f.k]:e.target.value})} style={{flex:1,background:'transparent',border:'none',color:BK,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>{f.u&&<span style={{color:'#334155',fontSize:10}}>{f.u}</span>}</div>
           </div>
         ))}
       </div>
       <div style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px',marginBottom:10}}>
         <div style={{color:'#475569',fontSize:11,marginBottom:6}}>Legs felt</div>
-        <div style={{display:'flex',gap:6}}>
-          {['Fresh','Some fatigue','Heavy','Very tired'].map(opt => (
-            <button key={opt} onClick={() => onChange({...data,legs:opt})} style={{flex:1,padding:'5px 4px',borderRadius:6,border:`1px solid ${data.legs===opt ? BK : '#1E3A5F'}`,background:data.legs===opt ? BK+'22' : 'transparent',color:data.legs===opt ? BK : '#475569',cursor:'pointer',fontSize:10}}>{opt}</button>
-          ))}
-        </div>
+        <div style={{display:'flex',gap:6}}>{['Fresh','Some fatigue','Heavy','Very tired'].map(opt=><button key={opt} onClick={()=>onChange({...data,legs:opt})} style={{flex:1,padding:'5px 4px',borderRadius:6,border:`1px solid ${data.legs===opt?BK:'#1E3A5F'}`,background:data.legs===opt?BK+'22':'transparent',color:data.legs===opt?BK:'#475569',cursor:'pointer',fontSize:10}}>{opt}</button>)}</div>
       </div>
       <div style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px',marginBottom:10}}>
         <div style={{color:'#475569',fontSize:11,marginBottom:6}}>Bike used</div>
-        <div style={{display:'flex',gap:6}}>
-          {['Stationary','Road bike'].map(opt => (
-            <button key={opt} onClick={() => onChange({...data,bike:opt})} style={{flex:1,padding:'8px',borderRadius:6,border:`1px solid ${data.bike===opt ? BK : '#1E3A5F'}`,background:data.bike===opt ? BK+'22' : 'transparent',color:data.bike===opt ? BK : '#475569',cursor:'pointer',fontSize:12}}>{opt}</button>
-          ))}
-        </div>
+        <div style={{display:'flex',gap:6}}>{['Stationary','Road bike'].map(opt=><button key={opt} onClick={()=>onChange({...data,bike:opt})} style={{flex:1,padding:'8px',borderRadius:6,border:`1px solid ${data.bike===opt?BK:'#1E3A5F'}`,background:data.bike===opt?BK+'22':'transparent',color:data.bike===opt?BK:'#475569',cursor:'pointer',fontSize:12}}>{opt}</button>)}</div>
       </div>
-      <textarea placeholder="Notes..." value={data.notes||''} onChange={e => onChange({...data,notes:e.target.value})} style={{width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',padding:'9px 11px',fontSize:12,outline:'none',resize:'vertical',minHeight:60,boxSizing:'border-box'}}/>
+      <textarea placeholder="Notes..." value={data.notes||''} onChange={e=>onChange({...data,notes:e.target.value})} style={{width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',padding:'9px 11px',fontSize:12,outline:'none',resize:'vertical',minHeight:60,boxSizing:'border-box'}}/>
     </div>
   );
 }
 
-function SwimLogger({data, onChange, sphase, setSphase}) {
-  const phase = PLAN['Swim'].phases[sphase];
-  return (
+function SwimLogger({data,onChange,sphase,setSphase}){
+  const phase=PLAN['Swim'].phases[sphase];
+  return(
     <div>
       <div style={{background:SW+'1A',border:`1px solid ${SW}44`,borderRadius:12,padding:'11px 14px',marginBottom:12}}>
         <div style={{color:SW,fontSize:13,fontWeight:700,marginBottom:8}}>Pool Warm-Up</div>
-        {SWU_EX.map((ex, i) => {
-          const c = COACHING[ex.name] || {};
-          return (
-            <div key={i} style={{background:'#070E1A',border:'1px solid #1E2D40',borderRadius:7,padding:'8px 10px',marginBottom:6}}>
-              <div style={{color:'#CBD5E1',fontSize:12,fontWeight:600}}>{ex.name}</div>
-              <div style={{color:SW,fontSize:11}}>{ex.reps}</div>
-              <div style={{color:'#475569',fontSize:11}}>{c.tips ? c.tips[0] : ''}</div>
-            </div>
-          );
-        })}
+        {SWU_EX.map((ex,i)=>{const c=COACHING[ex.name]||{};return <div key={i} style={{background:'#070E1A',border:'1px solid #1E2D40',borderRadius:7,padding:'8px 10px',marginBottom:6}}><div style={{color:'#CBD5E1',fontSize:12,fontWeight:600}}>{ex.name}</div><div style={{color:SW,fontSize:11}}>{ex.reps}</div><div style={{color:'#475569',fontSize:11}}>{c.tips?c.tips[0]:''}</div></div>;})}
       </div>
       <div style={{background:SW+'1A',border:`1px solid ${SW}44`,borderRadius:12,padding:'11px 14px',marginBottom:12}}>
         <div style={{color:SW,fontSize:13,fontWeight:700,marginBottom:8}}>Main Session</div>
-        <div style={{display:'flex',gap:6,marginBottom:10}}>
-          {PLAN['Swim'].phases.map((ph, i) => (
-            <button key={i} onClick={() => setSphase(i)} style={{flex:1,padding:'5px 4px',borderRadius:6,border:`1px solid ${sphase===i ? SW : '#1E3A5F'}`,background:sphase===i ? SW+'22' : 'transparent',color:sphase===i ? SW : '#475569',cursor:'pointer',fontSize:11,fontWeight:600}}>{ph.label}</button>
-          ))}
-        </div>
-        <div style={{background:'#070E1A',borderRadius:8,padding:'10px 12px',marginBottom:10}}>
-          {phase.sets.map((s, i) => (
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:i<phase.sets.length-1?'1px solid #1E2D40':'none'}}>
-              <span style={{color:'#CBD5E1',fontSize:12}}>{s.name}</span>
-              <span style={{color:SW,fontSize:12,fontFamily:'monospace'}}>{s.target}</span>
-            </div>
-          ))}
-        </div>
+        <div style={{display:'flex',gap:6,marginBottom:10}}>{PLAN['Swim'].phases.map((ph,i)=><button key={i} onClick={()=>setSphase(i)} style={{flex:1,padding:'5px 4px',borderRadius:6,border:`1px solid ${sphase===i?SW:'#1E3A5F'}`,background:sphase===i?SW+'22':'transparent',color:sphase===i?SW:'#475569',cursor:'pointer',fontSize:11,fontWeight:600}}>{ph.label}</button>)}</div>
+        <div style={{background:'#070E1A',borderRadius:8,padding:'10px 12px',marginBottom:10}}>{phase.sets.map((s,i)=><div key={i} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:i<phase.sets.length-1?'1px solid #1E2D40':'none'}}><span style={{color:'#CBD5E1',fontSize:12}}>{s.name}</span><span style={{color:SW,fontSize:12,fontFamily:'monospace'}}>{s.target}</span></div>)}</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
-          {[{k:'distance',l:'Distance',u:'m',p:'1200'},{k:'duration',l:'Duration',u:'min',p:'35'},{k:'avgHR',l:'Avg HR',u:'bpm',p:'125'},{k:'strokes',l:'Strokes',u:'',p:'Back, Free'}].map(f => (
+          {[{k:'distance',l:'Distance',u:'m',p:'1200'},{k:'duration',l:'Duration',u:'min',p:'35'},{k:'avgHR',l:'Avg HR',u:'bpm',p:'125'},{k:'strokes',l:'Strokes',u:'',p:'Back, Free'}].map(f=>(
             <div key={f.k} style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px'}}>
               <div style={{color:'#475569',fontSize:10,marginBottom:3}}>{f.l}</div>
-              <div style={{display:'flex',alignItems:'center',gap:3}}>
-                <input placeholder={f.p} value={data[f.k]||''} onChange={e => onChange({...data,[f.k]:e.target.value})} style={{flex:1,background:'transparent',border:'none',color:SW,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>
-                {f.u && <span style={{color:'#334155',fontSize:10}}>{f.u}</span>}
-              </div>
+              <div style={{display:'flex',alignItems:'center',gap:3}}><input placeholder={f.p} value={data[f.k]||''} onChange={e=>onChange({...data,[f.k]:e.target.value})} style={{flex:1,background:'transparent',border:'none',color:SW,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>{f.u&&<span style={{color:'#334155',fontSize:10}}>{f.u}</span>}</div>
             </div>
           ))}
         </div>
         <div style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px'}}>
           <div style={{color:'#475569',fontSize:11,marginBottom:6}}>Right shoulder felt...</div>
-          <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
-            {['No issues','Mild discomfort','Restricted ROM','Had to modify'].map(opt => (
-              <button key={opt} onClick={() => onChange({...data,shoulder:opt})} style={{flex:1,minWidth:70,padding:'5px 4px',borderRadius:6,border:`1px solid ${data.shoulder===opt ? SW : '#1E3A5F'}`,background:data.shoulder===opt ? SW+'22' : 'transparent',color:data.shoulder===opt ? SW : '#475569',cursor:'pointer',fontSize:10}}>{opt}</button>
-            ))}
-          </div>
+          <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{['No issues','Mild discomfort','Restricted ROM','Had to modify'].map(opt=><button key={opt} onClick={()=>onChange({...data,shoulder:opt})} style={{flex:1,minWidth:70,padding:'5px 4px',borderRadius:6,border:`1px solid ${data.shoulder===opt?SW:'#1E3A5F'}`,background:data.shoulder===opt?SW+'22':'transparent',color:data.shoulder===opt?SW:'#475569',cursor:'pointer',fontSize:10}}>{opt}</button>)}</div>
         </div>
       </div>
     </div>
   );
 }
 
-function RunLogger({data, onChange, week}) {
-  const ph = week <= 4 ? PLAN['Run'].phases[0] : week <= 8 ? PLAN['Run'].phases[1] : week%2 !== 0 ? PLAN['Run'].phases[2] : PLAN['Run'].phases[3];
-  return (
+function RunLogger({data,onChange,week}){
+  const ph=week<=4?PLAN['Run'].phases[0]:week<=8?PLAN['Run'].phases[1]:week%2!==0?PLAN['Run'].phases[2]:PLAN['Run'].phases[3];
+  return(
     <div>
       <div style={{background:O+'1A',border:`1px solid ${O}44`,borderRadius:12,padding:'11px 14px',marginBottom:12}}>
         <div style={{color:'#475569',fontSize:11,marginBottom:2}}>Week {week} Target</div>
@@ -1122,186 +622,129 @@ function RunLogger({data, onChange, week}) {
         <div style={{color:'#CBD5E1',fontSize:12,marginTop:2}}>{ph.target}</div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
-        {[{k:'distance',l:'Distance',u:'km',p:'5.0'},{k:'duration',l:'Duration',u:'min',p:'30'},{k:'avgHR',l:'Avg HR',u:'bpm',p:'125'},{k:'peakHR',l:'Peak HR',u:'bpm',p:'148'},{k:'avgPace',l:'Avg Pace',u:'/km',p:'6:00'},{k:'zone',l:'Zone',u:'',p:'Zone 2'}].map(f => (
+        {[{k:'distance',l:'Distance',u:'km',p:'5.0'},{k:'duration',l:'Duration',u:'min',p:'30'},{k:'avgHR',l:'Avg HR',u:'bpm',p:'125'},{k:'peakHR',l:'Peak HR',u:'bpm',p:'148'},{k:'avgPace',l:'Avg Pace',u:'/km',p:'6:00'},{k:'zone',l:'Zone',u:'',p:'Zone 2'}].map(f=>(
           <div key={f.k} style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px'}}>
             <div style={{color:'#475569',fontSize:10,marginBottom:3}}>{f.l}</div>
-            <div style={{display:'flex',alignItems:'center',gap:3}}>
-              <input placeholder={f.p} value={data[f.k]||''} onChange={e => onChange({...data,[f.k]:e.target.value})} style={{flex:1,background:'transparent',border:'none',color:O,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>
-              {f.u && <span style={{color:'#334155',fontSize:10}}>{f.u}</span>}
-            </div>
+            <div style={{display:'flex',alignItems:'center',gap:3}}><input placeholder={f.p} value={data[f.k]||''} onChange={e=>onChange({...data,[f.k]:e.target.value})} style={{flex:1,background:'transparent',border:'none',color:O,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>{f.u&&<span style={{color:'#334155',fontSize:10}}>{f.u}</span>}</div>
           </div>
         ))}
       </div>
       <div style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px',marginBottom:10}}>
         <div style={{color:'#475569',fontSize:11,marginBottom:6}}>How did it feel?</div>
-        <div style={{display:'flex',gap:6}}>
-          {['Easy','Steady','Hard','Too hard'].map(opt => (
-            <button key={opt} onClick={() => onChange({...data,feel:opt})} style={{flex:1,padding:'5px 4px',borderRadius:6,border:`1px solid ${data.feel===opt ? O : '#1E3A5F'}`,background:data.feel===opt ? O+'22' : 'transparent',color:data.feel===opt ? O : '#475569',cursor:'pointer',fontSize:11}}>{opt}</button>
-          ))}
-        </div>
+        <div style={{display:'flex',gap:6}}>{['Easy','Steady','Hard','Too hard'].map(opt=><button key={opt} onClick={()=>onChange({...data,feel:opt})} style={{flex:1,padding:'5px 4px',borderRadius:6,border:`1px solid ${data.feel===opt?O:'#1E3A5F'}`,background:data.feel===opt?O+'22':'transparent',color:data.feel===opt?O:'#475569',cursor:'pointer',fontSize:11}}>{opt}</button>)}</div>
       </div>
-      <textarea placeholder="Notes..." value={data.notes||''} onChange={e => onChange({...data,notes:e.target.value})} style={{width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',padding:'9px 11px',fontSize:12,outline:'none',resize:'vertical',minHeight:60,boxSizing:'border-box'}}/>
+      <textarea placeholder="Notes..." value={data.notes||''} onChange={e=>onChange({...data,notes:e.target.value})} style={{width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',padding:'9px 11px',fontSize:12,outline:'none',resize:'vertical',minHeight:60,boxSizing:'border-box'}}/>
     </div>
   );
 }
 
-function RevPanel({session, hist, color}) {
-  const [st, setSt] = useState('idle');
-  const [fb, setFb] = useState('');
-  const sum = s => {
-    const ig = ['Gym A','Gym B','Gym C'].includes(s.type);
-    let t = `Session: ${s.type} | Week: ${s.week}\n`;
-    if (s.data && s.data.workoutNotes) t += `Notes: ${s.data.workoutNotes}\n`;
-    t += '\n';
-    const d = s.data || {};
-    if (ig) {
-      (d.sections || []).forEach(sec => {
-        t += `[${sec.title}]\n`;
-        (sec.supersets || []).forEach(ss => {
-          t += `${ss.label}:\n`;
-          (ss.exercises || []).forEach(ex => {
-            t += `${ex.name}\n`;
-            (ex.sets || []).forEach((s2, i) => {
-              if (s2.weight || s2.reps) t += `  Set ${i+1}: ${s2.weight||'?'}kg x ${s2.reps||'?'}${s2.done?' done':''}\n`;
-            });
-            if (ex.rpe) t += `  RPE: ${ex.rpe}\n`;
-          });
-        });
-      });
-    } else if (s.type === 'Run') {
-      t += `Distance: ${d.distance||'?'}km | Duration: ${d.duration||'?'}min | Avg HR: ${d.avgHR||'?'}bpm\nPace: ${d.avgPace||'?'}/km | Zone: ${d.zone||'?'} | Feel: ${d.feel||'?'}\n`;
-    } else if (s.type === 'Swim') {
-      t += `Distance: ${d.distance||'?'}m | Duration: ${d.duration||'?'}min | Shoulder: ${d.shoulder||'?'}\n`;
-    } else if (s.type === 'Bike') {
-      t += `Duration: ${d.duration||'?'}min | Avg HR: ${d.avgHR||'?'}bpm | Zone: ${d.zone||'?'} | Legs: ${d.legs||'?'}\n`;
-    }
+function RevPanel({session,hist,color}){
+  const[st,setSt]=useState('idle');const[fb,setFb]=useState('');
+  const sum=s=>{
+    const ig=['Gym A','Gym B','Gym C'].includes(s.type);
+    let t=`Session: ${s.type} | Week: ${s.week}\n`;
+    if(s.data&&s.data.workoutNotes)t+=`Notes: ${s.data.workoutNotes}\n`;
+    t+='\n';const d=s.data||{};
+    if(ig){(d.sections||[]).forEach(sec=>{t+=`[${sec.title}]\n`;(sec.supersets||[]).forEach(ss=>{t+=`${ss.label}:\n`;(ss.exercises||[]).forEach(ex=>{t+=`${ex.name}\n`;(ex.sets||[]).forEach((s2,i)=>{if(s2.weight||s2.reps)t+=`  Set ${i+1}: ${s2.weight||'?'}kg x ${s2.reps||'?'}${s2.done?' done':''}\n`;});if(ex.rpe)t+=`  RPE: ${ex.rpe}\n`;});});});}
+    else if(s.type==='Run')t+=`Distance: ${d.distance||'?'}km | Duration: ${d.duration||'?'}min | Avg HR: ${d.avgHR||'?'}bpm\nPace: ${d.avgPace||'?'}/km | Zone: ${d.zone||'?'} | Feel: ${d.feel||'?'}\n`;
+    else if(s.type==='Swim')t+=`Distance: ${d.distance||'?'}m | Duration: ${d.duration||'?'}min | Shoulder: ${d.shoulder||'?'}\n`;
+    else if(s.type==='Bike')t+=`Duration: ${d.duration||'?'}min | Avg HR: ${d.avgHR||'?'}bpm | Zone: ${d.zone||'?'} | Legs: ${d.legs||'?'}\n`;
     return t;
   };
-  const go = async () => {
+  const go=async()=>{
     setSt('loading');
-    try {
-      const s = sum(session);
-      const prev = (hist || []).filter(h => h.type === session.type && h.id !== session.id).slice(0, 3);
-      const pt = prev.length ? '\nPREVIOUS SESSIONS:\n' + prev.map(sum).join('\n') : '';
-      const res = await fetch('https://api.anthropic.com/v1/messages', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `You are an expert personal trainer reviewing workout data for Chris, 35yo, 79kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing. Week ${session.week} of 12. Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`,
-        messages: [{role:'user', content:`SESSION:\n${s}${pt}`}]
-      })});
-      const d = await res.json();
-      setFb((d.content && d.content[0] && d.content[0].text) || 'Unable to generate feedback.');
-      setSt('done');
-    } catch(e) {
-      setFb('Error: ' + e.message);
-      setSt('error');
-    }
+    try{
+      const s=sum(session);
+      const prev=(hist||[]).filter(h=>h.type===session.type&&h.id!==session.id).slice(0,3);
+      const pt=prev.length?'\nPREVIOUS SESSIONS:\n'+prev.map(sum).join('\n'):'';
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing. Week ${session.week} of 12. Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`,messages:[{role:'user',content:`SESSION:\n${s}${pt}`}]})});
+      const d=await res.json();
+      setFb((d.content&&d.content[0]&&d.content[0].text)||'Unable to generate feedback.');setSt('done');
+    }catch(e){setFb('Error: '+e.message);setSt('error');}
   };
-  const render = t => t.split('\n').map((l, i) => {
-    if (!l.trim()) return <div key={i} style={{height:6}}/>;
-    const p = l.split(/\*\*(.*?)\*\*/g);
-    return <div key={i} style={{marginBottom:4,lineHeight:1.6}}>{p.map((x, j) => j%2===1 ? <span key={j} style={{color:'#E2E8F0',fontWeight:700,fontSize:13}}>{x}</span> : <span key={j} style={{color:'#94A3B8',fontSize:13}}>{x}</span>)}</div>;
+  const render=t=>t.split('\n').map((l,i)=>{
+    if(!l.trim())return <div key={i} style={{height:6}}/>;
+    const p=l.split(/\*\*(.*?)\*\*/g);
+    return <div key={i} style={{marginBottom:4,lineHeight:1.6}}>{p.map((x,j)=>j%2===1?<span key={j} style={{color:'#E2E8F0',fontWeight:700,fontSize:13}}>{x}</span>:<span key={j} style={{color:'#94A3B8',fontSize:13}}>{x}</span>)}</div>;
   });
-  return (
+  return(
     <div style={{marginTop:16}}>
-      {st==='idle' && <button onClick={go} style={{width:'100%',padding:'13px',background:`linear-gradient(135deg,${color}44,${color}22)`,border:`1px solid ${color}`,borderRadius:10,color,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span>🤖</span> Get Claude Feedback</button>}
-      {st==='loading' && <div style={{background:'#0D1B2E',border:`1px solid ${color}44`,borderRadius:10,padding:'20px',textAlign:'center'}}><div style={{color,fontSize:13,marginBottom:10}}>Analysing your session...</div><div style={{display:'flex',justifyContent:'center',gap:6}}>{[0,1,2].map(i => <div key={i} style={{width:6,height:6,borderRadius:'50%',background:color,animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}</div></div>}
-      {(st==='done'||st==='error') && <div style={{background:'#0D1B2E',border:`1px solid ${color}44`,borderRadius:10,padding:'16px'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,paddingBottom:10,borderBottom:'1px solid #1E2D40'}}><span style={{color,fontSize:13,fontWeight:700}}>Claude Feedback</span><button onClick={() => setSt('idle')} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',padding:'3px 8px',cursor:'pointer',fontSize:11}}>Refresh</button></div>{render(fb)}</div>}
+      {st==='idle'&&<button onClick={go} style={{width:'100%',padding:'13px',background:`linear-gradient(135deg,${color}44,${color}22)`,border:`1px solid ${color}`,borderRadius:10,color,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span>🤖</span> Get Claude Feedback</button>}
+      {st==='loading'&&<div style={{background:'#0D1B2E',border:`1px solid ${color}44`,borderRadius:10,padding:'20px',textAlign:'center'}}><div style={{color,fontSize:13,marginBottom:10}}>Analysing your session...</div><div style={{display:'flex',justifyContent:'center',gap:6}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:'50%',background:color,animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}</div></div>}
+      {(st==='done'||st==='error')&&<div style={{background:'#0D1B2E',border:`1px solid ${color}44`,borderRadius:10,padding:'16px'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,paddingBottom:10,borderBottom:'1px solid #1E2D40'}}><span style={{color,fontSize:13,fontWeight:700}}>Claude Feedback</span><button onClick={()=>setSt('idle')} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',padding:'3px 8px',cursor:'pointer',fontSize:11}}>Refresh</button></div>{render(fb)}</div>}
     </div>
   );
 }
 
 // ── APP ───────────────────────────────────────────────────────────────────────
-function App() {
-  const [screen, setScreen] = useState('home');
-  const [atype, setAtype] = useState(null);
-  const [week, setWeek] = useState(1);
-  const [startDate, setStartDate] = useState('');
-  const [showDP, setShowDP] = useState(false);
-  const [hist, setHist] = useState([]);
-  const [gdata, setGdata] = useState({});
-  const [cdata, setCdata] = useState({});
-  const [wnotes, setWnotes] = useState('');
-  const [sphase, setSphase] = useState(0);
-  const [restDur, setRestDur] = useState(90);
-  const [done2, setDone2] = useState(null);
-  const [view, setView] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const userId = uid();
-  const asr = useRef(null);
+function App(){
+  const[screen,setScreen]=useState('home');
+  const[atype,setAtype]=useState(null);
+  const[week,setWeek]=useState(1);
+  const[startDate,setStartDate]=useState('');
+  const[showDP,setShowDP]=useState(false);
+  const[hist,setHist]=useState([]);
+  const[gdata,setGdata]=useState({});
+  const[cdata,setCdata]=useState({});
+  const[wnotes,setWnotes]=useState('');
+  const[sphase,setSphase]=useState(0);
+  const[restDur,setRestDur]=useState(90);
+  const[done2,setDone2]=useState(null);
+  const[view,setView]=useState(null);
+  const[saving,setSaving]=useState(false);
+  const[loaded,setLoaded]=useState(false);
+  const userId=uid();const asr=useRef(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const sd = localStorage.getItem('tl-start');
-        if (sd) { setStartDate(sd); setWeek(calcWeek(sd)); }
-        const rows = await db('GET', `/sessions?user_id=eq.${userId}&order=session_date.desc`);
-        if (rows && rows.length) setHist(rows);
-        const drafts = await db('GET', `/drafts?user_id=eq.${userId}`);
-        if (drafts && drafts.length) {
-          const dr = drafts[0]; setAtype(dr.type);
-          const d = dr.data || {};
-          setGdata(d.gymData || {}); setCdata(d.cardioData || {});
-          setWnotes(d.workoutNotes || ''); setSphase(d.swimPhase || 0); setScreen('log');
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const sd=localStorage.getItem('tl-start');
+        if(sd){setStartDate(sd);setWeek(calcWeek(sd));}
+        const rows=await db('GET',`/sessions?user_id=eq.${userId}&order=session_date.desc`);
+        if(rows&&rows.length)setHist(rows);
+        const drafts=await db('GET',`/drafts?user_id=eq.${userId}`);
+        if(drafts&&drafts.length){
+          const dr=drafts[0];setAtype(dr.type);
+          const d=dr.data||{};setGdata(d.gymData||{});setCdata(d.cardioData||{});setWnotes(d.workoutNotes||'');setSphase(d.swimPhase||0);setScreen('log');
         }
-      } catch(e) { console.error(e); }
+      }catch(e){console.error(e);}
       setLoaded(true);
     })();
-  }, []);
+  },[]);
 
-  const applyStart = date => { setStartDate(date); localStorage.setItem('tl-start', date); setWeek(calcWeek(date)); setShowDP(false); };
-  const saveDraft = useCallback(async (type, w, data) => {
-    if (!type) return;
-    try { await db('POST', '/drafts?on_conflict=user_id', {user_id:userId, type, week:w, data, updated_at:new Date().toISOString()}); } catch {}
-  }, [userId]);
-  useEffect(() => {
-    if (atype && screen === 'log') {
-      if (asr.current) clearTimeout(asr.current);
-      asr.current = setTimeout(() => saveDraft(atype, week, {gymData:gdata, cardioData:cdata, workoutNotes:wnotes, swimPhase:sphase}), 800);
-    }
-  }, [gdata, cdata, wnotes, sphase]);
-  const delDraft = async () => { try { await db('DELETE', `/drafts?user_id=eq.${userId}`); } catch {} };
-  const startSess = type => { setAtype(type); setGdata({}); setCdata({}); setWnotes(''); setScreen('log'); };
-  const hgc = (si, ssi, ei, val) => setGdata(d => ({...d, [si]: {...(d[si]||{}), [ssi]: {...((d[si]&&d[si][ssi])||{}), [ei]: val}}}));
+  const applyStart=date=>{setStartDate(date);localStorage.setItem('tl-start',date);setWeek(calcWeek(date));setShowDP(false);};
+  const saveDraft=useCallback(async(type,w,data)=>{if(!type)return;try{await db('POST','/drafts?on_conflict=user_id',{user_id:userId,type,week:w,data,updated_at:new Date().toISOString()});}catch{}},[userId]);
+  useEffect(()=>{if(atype&&screen==='log'){if(asr.current)clearTimeout(asr.current);asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase}),800);}},[gdata,cdata,wnotes,sphase]);
+  const delDraft=async()=>{try{await db('DELETE',`/drafts?user_id=eq.${userId}`);}catch{}};
+  const startSess=type=>{setAtype(type);setGdata({});setCdata({});setWnotes('');setScreen('log');};
+  const hgc=(si,ssi,ei,val)=>setGdata(d=>({...d,[si]:{...(d[si]||{}),[ssi]:{...((d[si]&&d[si][ssi])||{}),[ei]:val}}}));
 
-  const finish = async () => {
-    const ig = ['Gym A','Gym B','Gym C'].includes(atype);
-    const plan = PLAN[atype]; let data = {workoutNotes: wnotes};
-    if (ig) {
-      data.sections = plan.sections.map((sec, si) => ({
-        title: sec.title,
-        supersets: sec.supersets.map((ss, ssi) => ({
-          label: ss.label,
-          exercises: ss.exercises.map((ex, ei) => ({
-            name: ex.name,
-            ...((gdata[si] && gdata[si][ssi] && gdata[si][ssi][ei]) || {})
-          }))
-        }))
-      }));
-    } else { data = {...cdata, workoutNotes: wnotes}; }
-    const session = {id:Date.now(), user_id:userId, type:atype, session_date:new Date().toISOString(), week, data};
-    setHist(h => [session, ...h]); setSaving(true);
-    try { await db('POST', '/sessions', session); } catch(e) { console.error(e); }
-    await delDraft(); setSaving(false);
-    setDone2(session); setScreen('review'); setAtype(null);
+  const finish=async()=>{
+    const ig=['Gym A','Gym B','Gym C'].includes(atype);
+    const plan=PLAN[atype];let data={workoutNotes:wnotes};
+    if(ig){data.sections=plan.sections.map((sec,si)=>({title:sec.title,supersets:sec.supersets.map((ss,ssi)=>({label:ss.label,exercises:ss.exercises.map((ex,ei)=>({name:ex.name,...((gdata[si]&&gdata[si][ssi]&&gdata[si][ssi][ei])||{})}))}))}));}
+    else{data={...cdata,workoutNotes:wnotes};}
+    const session={id:Date.now(),user_id:userId,type:atype,session_date:new Date().toISOString(),week,data};
+    setHist(h=>[session,...h]);setSaving(true);
+    try{await db('POST','/sessions',session);}catch(e){console.error(e);}
+    await delDraft();setSaving(false);setDone2(session);setScreen('review');setAtype(null);
   };
 
-  const plan = atype ? PLAN[atype] : null;
-  const col = plan ? plan.color : A;
-  const ig = atype && ['Gym A','Gym B','Gym C'].includes(atype);
-  const dtw = hist.filter(s => s.week === week).map(s => s.type);
-  const rc = done2 && PLAN[done2.type] ? PLAN[done2.type].color : A;
-  const navScreen = (screen === 'log' || screen === 'review') ? 'home' : screen;
+  const plan=atype?PLAN[atype]:null;
+  const col=plan?plan.color:A;
+  const ig=atype&&['Gym A','Gym B','Gym C'].includes(atype);
+  const dtw=hist.filter(s=>s.week===week).map(s=>s.type);
+  const rc=done2&&PLAN[done2.type]?PLAN[done2.type].color:A;
+  const navScreen=(screen==='log'||screen==='review')?'home':screen;
 
-  if (!loaded) return (
+  if(!loaded)return(
     <div style={{background:'#070E1A',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:10}}>
-      <div style={{display:'flex',gap:6}}>{[0,1,2].map(i => <div key={i} style={{width:8,height:8,borderRadius:'50%',background:A,animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}</div>
+      <div style={{display:'flex',gap:6}}>{[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:'50%',background:A,animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}</div>
       <div style={{color:'#475569',fontSize:12}}>Loading Training Log...</div>
     </div>
   );
 
-  return (
+  return(
     <div style={{background:'#070E1A',minHeight:'100vh',color:'#E2E8F0',maxWidth:520,margin:'0 auto',paddingBottom:80}}>
 
       {/* HEADER */}
@@ -1314,225 +757,159 @@ function App() {
           <div style={{textAlign:'right'}}>
             <div style={{color:'#475569',fontSize:10,marginBottom:3}}>WEEK</div>
             <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <button onClick={() => setWeek(w => Math.max(1,w-1))} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',width:24,height:24,cursor:'pointer',fontSize:16}}>‹</button>
-              <button onClick={() => setShowDP(v => !v)} style={{background:'none',border:'none',cursor:'pointer',padding:0,textAlign:'center'}}>
+              <button onClick={()=>setWeek(w=>Math.max(1,w-1))} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',width:24,height:24,cursor:'pointer',fontSize:16}}>‹</button>
+              <button onClick={()=>setShowDP(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',padding:0,textAlign:'center'}}>
                 <div style={{color:A,fontSize:22,fontFamily:'monospace',fontWeight:700,minWidth:28}}>{week}</div>
-                <div style={{color:'#1E3A5F',fontSize:8}}>{startDate ? 'auto' : 'set date'}</div>
+                <div style={{color:'#1E3A5F',fontSize:8}}>{startDate?'auto':'set date'}</div>
               </button>
-              <button onClick={() => setWeek(w => Math.min(12,w+1))} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',width:24,height:24,cursor:'pointer',fontSize:16}}>›</button>
+              <button onClick={()=>setWeek(w=>Math.min(12,w+1))} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',width:24,height:24,cursor:'pointer',fontSize:16}}>›</button>
             </div>
           </div>
         </div>
-        {showDP && (
-          <div className="fi" style={{background:'#0D1B2E',border:`1px solid ${A}33`,borderRadius:10,padding:'12px 14px',marginTop:10}}>
+        {showDP&&(
+          <div style={{background:'#0D1B2E',border:`1px solid ${A}33`,borderRadius:10,padding:'12px 14px',marginTop:10}}>
             <div style={{color:'#94A3B8',fontSize:12,marginBottom:8}}>Set plan start date — week auto-calculates</div>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
-              <input type="date" value={startDate} onChange={e => applyStart(e.target.value)} style={{flex:1,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:A,padding:'7px 10px',fontSize:13,outline:'none'}}/>
-              <button onClick={() => setShowDP(false)} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'7px 12px',cursor:'pointer',fontSize:12}}>Done</button>
+              <input type="date" value={startDate} onChange={e=>applyStart(e.target.value)} style={{flex:1,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:A,padding:'7px 10px',fontSize:13,outline:'none'}}/>
+              <button onClick={()=>setShowDP(false)} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'7px 12px',cursor:'pointer',fontSize:12}}>Done</button>
             </div>
-            {startDate && <div style={{color:'#475569',fontSize:11,marginTop:6}}>Currently Week {calcWeek(startDate)} of 12</div>}
+            {startDate&&<div style={{color:'#475569',fontSize:11,marginTop:6}}>Currently Week {calcWeek(startDate)} of 12</div>}
           </div>
         )}
         <div style={{display:'flex',marginTop:12,borderBottom:'1px solid #1E2D40'}}>
-          {[['home','Sessions'],['exercises','Exercises'],['history','History']].map(([s,label]) => (
-            <button key={s} onClick={() => { setScreen(s); setAtype(null); }}
-              style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen===s ? A : '#475569',fontSize:12,fontWeight:navScreen===s ? 600 : 400,cursor:'pointer',borderBottom:navScreen===s ? `2px solid ${A}` : '2px solid transparent',textAlign:'center'}}>
-              {label}
-            </button>
+          {[['home','Sessions'],['exercises','Exercises'],['history','History']].map(([s,label])=>(
+            <button key={s} onClick={()=>{setScreen(s);setAtype(null);}} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen===s?A:'#475569',fontSize:12,fontWeight:navScreen===s?600:400,cursor:'pointer',borderBottom:navScreen===s?`2px solid ${A}`:'2px solid transparent',textAlign:'center'}}>{label}</button>
           ))}
-          {saving && <span style={{color:'#334155',fontSize:10,alignSelf:'center',paddingRight:8,flexShrink:0}}>saving...</span>}
-          {screen==='log' && !saving && <span style={{color:'#1E3A5F',fontSize:10,alignSelf:'center',paddingRight:8,flexShrink:0}}>auto-saving</span>}
+          {saving&&<span style={{color:'#334155',fontSize:10,alignSelf:'center',paddingRight:8,flexShrink:0}}>saving...</span>}
+          {screen==='log'&&!saving&&<span style={{color:'#1E3A5F',fontSize:10,alignSelf:'center',paddingRight:8,flexShrink:0}}>auto-saving</span>}
         </div>
       </div>
 
       {/* HOME */}
-      {screen==='home' && (
+      {screen==='home'&&(
         <div style={{padding:'16px 20px 0'}}>
           <div style={{marginBottom:16}}>
             <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Week {week} Progress</div>
             <div style={{display:'flex',gap:5}}>
-              {DAYS.map(day => {
-                const exp = DMAP[day]; const dn = dtw.includes(exp); const rest = exp === 'Rest';
-                return (
-                  <div key={day} style={{flex:1,textAlign:'center'}}>
-                    <div style={{fontSize:9,color:'#334155',marginBottom:3,fontFamily:'monospace'}}>{day}</div>
-                    <div style={{height:30,borderRadius:6,background:rest?'#0D1B2E':dn?G+'33':'#0D1B2E',border:`1px solid ${rest?'#1E2D40':dn?G+'88':'#1E3A5F'}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                      <span style={{fontSize:9,color:rest?'#1E3A5F':dn?G:'#334155',fontWeight:600}}>{rest?'–':dn?'✓':exp.replace('Gym ','')}</span>
-                    </div>
+              {DAYS.map(day=>{const exp=DMAP[day],dn=dtw.includes(exp),rest=exp==='Rest';return(
+                <div key={day} style={{flex:1,textAlign:'center'}}>
+                  <div style={{fontSize:9,color:'#334155',marginBottom:3,fontFamily:'monospace'}}>{day}</div>
+                  <div style={{height:30,borderRadius:6,background:rest?'#0D1B2E':dn?G+'33':'#0D1B2E',border:`1px solid ${rest?'#1E2D40':dn?G+'88':'#1E3A5F'}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    <span style={{fontSize:9,color:rest?'#1E3A5F':dn?G:'#334155',fontWeight:600}}>{rest?'–':dn?'✓':exp.replace('Gym ','')}</span>
                   </div>
-                );
-              })}
+                </div>
+              );})}
             </div>
           </div>
           <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:10}}>Start Session</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-            {Object.entries(PLAN).map(([name, p]) => {
-              const dn = dtw.includes(name);
-              return (
-                <button key={name} onClick={() => startSess(name)} style={{padding:'14px 12px',background:'#0A1628',border:`1px solid ${dn?p.color+'88':p.color+'44'}`,borderRadius:12,cursor:'pointer',textAlign:'left',position:'relative',overflow:'hidden'}}>
-                  {dn && <div style={{position:'absolute',top:8,right:8,width:7,height:7,background:G,borderRadius:'50%'}}/>}
-                  <div style={{fontSize:20,fontFamily:'monospace',fontWeight:900,color:p.color,marginBottom:3,lineHeight:1}}>{p.icon}</div>
-                  <div style={{color:'#E2E8F0',fontSize:13,fontWeight:600}}>{name}</div>
-                  <div style={{color:'#334155',fontSize:10,marginTop:2}}>{p.subtitle.split(' ').slice(0,3).join(' ')}...</div>
-                </button>
-              );
-            })}
+            {Object.entries(PLAN).map(([name,p])=>{const dn=dtw.includes(name);return(
+              <button key={name} onClick={()=>startSess(name)} style={{padding:'14px 12px',background:'#0A1628',border:`1px solid ${dn?p.color+'88':p.color+'44'}`,borderRadius:12,cursor:'pointer',textAlign:'left',position:'relative',overflow:'hidden'}}>
+                {dn&&<div style={{position:'absolute',top:8,right:8,width:7,height:7,background:G,borderRadius:'50%'}}/>}
+                <div style={{fontSize:20,fontFamily:'monospace',fontWeight:900,color:p.color,marginBottom:3,lineHeight:1}}>{p.icon}</div>
+                <div style={{color:'#E2E8F0',fontSize:13,fontWeight:600}}>{name}</div>
+                <div style={{color:'#334155',fontSize:10,marginTop:2}}>{p.subtitle.split(' ').slice(0,3).join(' ')}...</div>
+              </button>
+            );})}
           </div>
-          {hist.length > 0 && (
+          {hist.length>0&&(
             <div>
               <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Recent</div>
-              {hist.slice(0,4).map(s => {
-                const p = PLAN[s.type];
-                return (
-                  <div key={s.id} onClick={() => setView(s)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,marginBottom:7,cursor:'pointer'}}>
-                    <div style={{width:34,height:34,borderRadius:7,background:p?p.color+'22':'#1E2D40',border:`1px solid ${p?p.color+'44':'#1E2D40'}`,display:'flex',alignItems:'center',justifyContent:'center',color:p?p.color:A,fontSize:15,fontFamily:'monospace',fontWeight:900,flexShrink:0}}>{p?p.icon:'?'}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{color:'#CBD5E1',fontSize:13,fontWeight:600}}>{s.type}</div>
-                      <div style={{color:'#334155',fontSize:11}}>{fmt(s.session_date)} · Wk {s.week}</div>
-                    </div>
-                    <div style={{color:'#1E3A5F'}}>›</div>
-                  </div>
-                );
-              })}
+              {hist.slice(0,4).map(s=>{const p=PLAN[s.type];return(
+                <div key={s.id} onClick={()=>setView(s)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,marginBottom:7,cursor:'pointer'}}>
+                  <div style={{width:34,height:34,borderRadius:7,background:p?p.color+'22':'#1E2D40',border:`1px solid ${p?p.color+'44':'#1E2D40'}`,display:'flex',alignItems:'center',justifyContent:'center',color:p?p.color:A,fontSize:15,fontFamily:'monospace',fontWeight:900,flexShrink:0}}>{p?p.icon:'?'}</div>
+                  <div style={{flex:1,minWidth:0}}><div style={{color:'#CBD5E1',fontSize:13,fontWeight:600}}>{s.type}</div><div style={{color:'#334155',fontSize:11}}>{fmt(s.session_date)} · Wk {s.week}</div></div>
+                  <div style={{color:'#1E3A5F'}}>›</div>
+                </div>
+              );})}
             </div>
           )}
         </div>
       )}
 
-      {/* EXERCISES */}
-      {screen==='exercises' && <ExerciseLibrary hist={hist}/>}
+      {screen==='exercises'&&<ExerciseLibrary hist={hist}/>}
 
       {/* LOG */}
-      {screen==='log' && atype && (
+      {screen==='log'&&atype&&(
         <div style={{padding:'14px 20px 0'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-            <div>
-              <div style={{color:col,fontSize:18,fontWeight:700}}>{atype}</div>
-              <div style={{color:'#475569',fontSize:11}}>{plan ? plan.subtitle : ''}</div>
-            </div>
-            <button onClick={() => { setScreen('home'); setAtype(null); }} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Cancel</button>
+            <div><div style={{color:col,fontSize:18,fontWeight:700}}>{atype}</div><div style={{color:'#475569',fontSize:11}}>{plan?plan.subtitle:''}</div></div>
+            <button onClick={()=>{setScreen('home');setAtype(null);}} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Cancel</button>
           </div>
-          {ig && (
+          {ig&&(
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,padding:'8px 12px',background:'#0A1628',border:'1px solid #1E3A5F',borderRadius:8}}>
               <span style={{color:'#475569',fontSize:12,flexShrink:0}}>⏱ Rest</span>
               <div style={{display:'flex',gap:5,flex:1,flexWrap:'wrap'}}>
-                {ROPT.map(o => (
-                  <button key={o.v} onClick={() => setRestDur(o.v)} style={{padding:'3px 9px',borderRadius:5,border:`1px solid ${restDur===o.v ? A : '#1E3A5F'}`,background:restDur===o.v ? A+'22' : 'transparent',color:restDur===o.v ? A : '#475569',cursor:'pointer',fontSize:11,fontWeight:restDur===o.v ? 700 : 400}}>{o.l}</button>
-                ))}
+                {ROPT.map(o=><button key={o.v} onClick={()=>setRestDur(o.v)} style={{padding:'3px 9px',borderRadius:5,border:`1px solid ${restDur===o.v?A:'#1E3A5F'}`,background:restDur===o.v?A+'22':'transparent',color:restDur===o.v?A:'#475569',cursor:'pointer',fontSize:11,fontWeight:restDur===o.v?700:400}}>{o.l}</button>)}
               </div>
             </div>
           )}
-          {ig && plan.sections.map((sec, si) => <SecBlock key={si} sec={sec} si={si} secData={gdata[si]||{}} restDur={restDur} hist={hist} sessionType={atype} onChange={hgc}/>)}
-          {atype==='Bike' && <BikeLogger data={cdata} onChange={setCdata} week={week}/>}
-          {atype==='Swim' && <SwimLogger data={cdata} onChange={setCdata} sphase={sphase} setSphase={setSphase}/>}
-          {atype==='Run' && <RunLogger data={cdata} onChange={setCdata} week={week}/>}
+          {ig&&plan.sections.map((sec,si)=><SecBlock key={si} sec={sec} si={si} secData={gdata[si]||{}} restDur={restDur} hist={hist} sessionType={atype} onChange={hgc}/>)}
+          {atype==='Bike'&&<BikeLogger data={cdata} onChange={setCdata} week={week}/>}
+          {atype==='Swim'&&<SwimLogger data={cdata} onChange={setCdata} sphase={sphase} setSphase={setSphase}/>}
+          {atype==='Run'&&<RunLogger data={cdata} onChange={setCdata} week={week}/>}
           <div style={{background:'#0A1628',border:'1px solid #1E3A5F',borderRadius:10,padding:'12px 14px',marginTop:4,marginBottom:14}}>
             <div style={{color:'#475569',fontSize:11,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>Workout Notes</div>
-            <textarea placeholder="How did the session feel overall?" value={wnotes} onChange={e => setWnotes(e.target.value)} style={{width:'100%',background:'transparent',border:'none',color:'#CBD5E1',fontSize:13,outline:'none',resize:'vertical',minHeight:70,boxSizing:'border-box',lineHeight:1.5}}/>
+            <textarea placeholder="How did the session feel overall?" value={wnotes} onChange={e=>setWnotes(e.target.value)} style={{width:'100%',background:'transparent',border:'none',color:'#CBD5E1',fontSize:13,outline:'none',resize:'vertical',minHeight:70,boxSizing:'border-box',lineHeight:1.5}}/>
           </div>
           <button onClick={finish} style={{width:'100%',marginBottom:16,padding:'14px',background:`linear-gradient(135deg,${col}44,${col}22)`,border:`1px solid ${col}88`,borderRadius:10,color:col,fontSize:14,fontWeight:700,cursor:'pointer'}}>Complete Session ✓</button>
         </div>
       )}
 
       {/* REVIEW */}
-      {screen==='review' && done2 && (
+      {screen==='review'&&done2&&(
         <div style={{padding:'14px 20px 0'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-            <div>
-              <div style={{color:rc,fontSize:18,fontWeight:700}}>{done2.type} — Done ✓</div>
-              <div style={{color:'#475569',fontSize:11}}>{fmt(done2.session_date)} · Week {done2.week}</div>
-            </div>
-            <button onClick={() => setScreen('home')} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Home</button>
+            <div><div style={{color:rc,fontSize:18,fontWeight:700}}>{done2.type} — Done ✓</div><div style={{color:'#475569',fontSize:11}}>{fmt(done2.session_date)} · Week {done2.week}</div></div>
+            <button onClick={()=>setScreen('home')} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Home</button>
           </div>
-          {done2.data && done2.data.workoutNotes && (
-            <div style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,padding:'10px 12px',marginBottom:12}}>
-              <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Your Notes</div>
-              <div style={{color:'#CBD5E1',fontSize:13}}>{done2.data.workoutNotes}</div>
-            </div>
-          )}
+          {done2.data&&done2.data.workoutNotes&&<div style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,padding:'10px 12px',marginBottom:12}}><div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Your Notes</div><div style={{color:'#CBD5E1',fontSize:13}}>{done2.data.workoutNotes}</div></div>}
           <RevPanel session={done2} hist={hist} color={rc}/>
         </div>
       )}
 
       {/* HISTORY */}
-      {screen==='history' && (
+      {screen==='history'&&(
         <div style={{padding:'16px 20px 0'}}>
           <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:10}}>All Sessions ({hist.length})</div>
-          {hist.length === 0 && <div style={{textAlign:'center',padding:'60px 0',color:'#1E3A5F'}}><div style={{fontSize:28,marginBottom:8}}>○</div><div style={{fontSize:13}}>No sessions yet</div></div>}
-          {hist.map(s => {
-            const p = PLAN[s.type];
-            return (
-              <div key={s.id} onClick={() => setView(s)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,marginBottom:7,cursor:'pointer'}}>
-                <div style={{width:34,height:34,borderRadius:7,background:p?p.color+'22':'#1E2D40',border:`1px solid ${p?p.color+'44':'#1E2D40'}`,display:'flex',alignItems:'center',justifyContent:'center',color:p?p.color:A,fontSize:15,fontFamily:'monospace',fontWeight:900,flexShrink:0}}>{p?p.icon:'?'}</div>
-                <div style={{flex:1}}>
-                  <div style={{color:'#CBD5E1',fontSize:13,fontWeight:600}}>{s.type}</div>
-                  <div style={{color:'#334155',fontSize:11}}>{fmt(s.session_date)} · Wk {s.week}</div>
-                </div>
-                <div style={{color:'#1E3A5F'}}>›</div>
-              </div>
-            );
-          })}
+          {hist.length===0&&<div style={{textAlign:'center',padding:'60px 0',color:'#1E3A5F'}}><div style={{fontSize:28,marginBottom:8}}>○</div><div style={{fontSize:13}}>No sessions yet</div></div>}
+          {hist.map(s=>{const p=PLAN[s.type];return(
+            <div key={s.id} onClick={()=>setView(s)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,marginBottom:7,cursor:'pointer'}}>
+              <div style={{width:34,height:34,borderRadius:7,background:p?p.color+'22':'#1E2D40',border:`1px solid ${p?p.color+'44':'#1E2D40'}`,display:'flex',alignItems:'center',justifyContent:'center',color:p?p.color:A,fontSize:15,fontFamily:'monospace',fontWeight:900,flexShrink:0}}>{p?p.icon:'?'}</div>
+              <div style={{flex:1}}><div style={{color:'#CBD5E1',fontSize:13,fontWeight:600}}>{s.type}</div><div style={{color:'#334155',fontSize:11}}>{fmt(s.session_date)} · Wk {s.week}</div></div>
+              <div style={{color:'#1E3A5F'}}>›</div>
+            </div>
+          );})}
         </div>
       )}
 
       {/* SESSION DETAIL MODAL */}
-      {view && (
-        <div style={{position:'fixed',inset:0,background:'#000000bb',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={() => setView(null)}>
-          <div style={{background:'#0A1628',border:`1px solid ${PLAN[view.type]?PLAN[view.type].color:'#334155'}44`,borderRadius:14,padding:20,maxWidth:460,width:'100%',maxHeight:'88vh',overflowY:'auto'}} onClick={e => e.stopPropagation()}>
+      {view&&(
+        <div style={{position:'fixed',inset:0,background:'#000000bb',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setView(null)}>
+          <div style={{background:'#0A1628',border:`1px solid ${PLAN[view.type]?PLAN[view.type].color:'#334155'}44`,borderRadius:14,padding:20,maxWidth:460,width:'100%',maxHeight:'88vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-              <div>
-                <div style={{color:PLAN[view.type]?PLAN[view.type].color:A,fontSize:17,fontWeight:700}}>{view.type}</div>
-                <div style={{color:'#475569',fontSize:12}}>{fmt(view.session_date)} — Week {view.week}</div>
-              </div>
-              <button onClick={() => setView(null)} style={{background:'none',border:'none',color:'#475569',fontSize:22,cursor:'pointer'}}>×</button>
+              <div><div style={{color:PLAN[view.type]?PLAN[view.type].color:A,fontSize:17,fontWeight:700}}>{view.type}</div><div style={{color:'#475569',fontSize:12}}>{fmt(view.session_date)} — Week {view.week}</div></div>
+              <button onClick={()=>setView(null)} style={{background:'none',border:'none',color:'#475569',fontSize:22,cursor:'pointer'}}>×</button>
             </div>
-            {view.data && view.data.workoutNotes && (
-              <div style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,padding:'10px 12px',marginBottom:12}}>
-                <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Workout Notes</div>
-                <div style={{color:'#CBD5E1',fontSize:13}}>{view.data.workoutNotes}</div>
-              </div>
-            )}
-            {['Gym A','Gym B','Gym C'].includes(view.type) && view.data && view.data.sections && view.data.sections.map((sec, si) => (
+            {view.data&&view.data.workoutNotes&&<div style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,padding:'10px 12px',marginBottom:12}}><div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Workout Notes</div><div style={{color:'#CBD5E1',fontSize:13}}>{view.data.workoutNotes}</div></div>}
+            {['Gym A','Gym B','Gym C'].includes(view.type)&&view.data&&view.data.sections&&view.data.sections.map((sec,si)=>(
               <div key={si} style={{marginBottom:12}}>
                 <div style={{color:'#94A3B8',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,marginBottom:6,paddingBottom:4,borderBottom:'1px solid #1E2D40'}}>{sec.title}</div>
-                {(sec.supersets||[]).map((ss, ssi) => (
+                {(sec.supersets||[]).map((ss,ssi)=>(
                   <div key={ssi} style={{marginBottom:10}}>
                     <div style={{color:'#475569',fontSize:10,marginBottom:5}}>{ss.label}</div>
-                    {(ss.exercises||[]).map((ex, ei) => {
-                      const sets = ex.sets || [];
-                      if (!sets.some(s => s.weight || s.reps)) return null;
-                      const vc = PLAN[view.type] ? PLAN[view.type].color : A;
-                      return (
-                        <div key={ei} style={{marginBottom:6,padding:'8px 10px',background:'#0D1B2E',borderRadius:7}}>
-                          <div style={{color:'#CBD5E1',fontSize:12,fontWeight:600,marginBottom:4}}>{ex.name}</div>
-                          {sets.map((s, si2) => (s.weight||s.reps) && (
-                            <div key={si2} style={{display:'flex',gap:8,fontSize:11,fontFamily:'monospace',color:'#475569',marginBottom:1}}>
-                              <span>Set {si2+1}:</span>
-                              <span style={{color:vc}}>{s.weight||'–'}kg</span>
-                              <span>×</span>
-                              <span style={{color:'#94A3B8'}}>{s.reps||'–'} reps</span>
-                              {s.done && <span style={{color:G}}>✓</span>}
-                            </div>
-                          ))}
-                          {ex.rpe && <div style={{marginTop:4,fontSize:11,color:'#475569'}}>RPE {ex.rpe}</div>}
-                        </div>
-                      );
+                    {(ss.exercises||[]).map((ex,ei)=>{
+                      const sets=ex.sets||[];if(!sets.some(s=>s.weight||s.reps))return null;
+                      const vc=PLAN[view.type]?PLAN[view.type].color:A;
+                      return <div key={ei} style={{marginBottom:6,padding:'8px 10px',background:'#0D1B2E',borderRadius:7}}><div style={{color:'#CBD5E1',fontSize:12,fontWeight:600,marginBottom:4}}>{ex.name}</div>{sets.map((s,si2)=>(s.weight||s.reps)&&<div key={si2} style={{display:'flex',gap:8,fontSize:11,fontFamily:'monospace',color:'#475569',marginBottom:1}}><span>Set {si2+1}:</span><span style={{color:vc}}>{s.weight||'–'}kg</span><span>×</span><span style={{color:'#94A3B8'}}>{s.reps||'–'} reps</span>{s.done&&<span style={{color:G}}>✓</span>}</div>)}{ex.rpe&&<div style={{marginTop:4,fontSize:11,color:'#475569'}}>RPE {ex.rpe}</div>}</div>;
                     })}
                   </div>
                 ))}
               </div>
             ))}
-            {!['Gym A','Gym B','Gym C'].includes(view.type) && view.data && (
+            {!['Gym A','Gym B','Gym C'].includes(view.type)&&view.data&&(
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
-                {Object.entries(view.data).filter(([k]) => k!=='notes'&&k!=='workoutNotes'&&view.data[k]).map(([k,v]) => {
-                  const vc = PLAN[view.type] ? PLAN[view.type].color : A;
-                  return (
-                    <div key={k} style={{background:'#0D1B2E',borderRadius:8,padding:'8px 10px'}}>
-                      <div style={{color:'#475569',fontSize:10,textTransform:'capitalize'}}>{k.replace(/([A-Z])/g,' $1')}</div>
-                      <div style={{color:vc,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{v}</div>
-                    </div>
-                  );
-                })}
+                {Object.entries(view.data).filter(([k])=>k!=='notes'&&k!=='workoutNotes'&&view.data[k]).map(([k,v])=>{const vc=PLAN[view.type]?PLAN[view.type].color:A;return <div key={k} style={{background:'#0D1B2E',borderRadius:8,padding:'8px 10px'}}><div style={{color:'#475569',fontSize:10,textTransform:'capitalize'}}>{k.replace(/([A-Z])/g,' $1')}</div><div style={{color:vc,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{v}</div></div>;})}
               </div>
             )}
             <RevPanel session={view} hist={hist} color={PLAN[view.type]?PLAN[view.type].color:A}/>
