@@ -26,7 +26,7 @@ input[type=date]{color-scheme:dark}
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const{useState,useEffect,useCallback,useRef}=React;
+const{useState,useEffect,useCallback,useRef,useMemo}=React;
 const SB='https://gvzkxjynpmjnexbmhqgb.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emt4anlucG1qbmV4Ym1ocWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3Njk4ODcsImV4cCI6MjA4OTM0NTg4N30.1BzFmAWsr72dnyMoJgUPQrBFoyh-w_-tdPgnrvcoE5s';
 const A='#38BDF8',G='#4ADE80',O='#FB923C',R='#F87171',PU='#A78BFA',PK='#F472B6',SW='#22D3EE',BK='#FBBF24';
@@ -37,24 +37,60 @@ async function db(method,path,body){
 }
 function uid(){let id=localStorage.getItem('tl-uid');if(!id){id='chris-'+Math.random().toString(36).slice(2,10);localStorage.setItem('tl-uid',id);}return id;}
 const fmt=iso=>new Date(iso).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-
-function calcWeek(sd){
-  if(!sd)return 1;
-  const diff=new Date()-new Date(sd);
-  return Math.max(1,Math.min(12,Math.floor(diff/(1000*60*60*24*7))+1));
-}
-
+function calcWeek(sd){if(!sd)return 1;const diff=new Date()-new Date(sd);return Math.max(1,Math.min(12,Math.floor(diff/(1000*60*60*24*7))+1));}
 function getPrevSession(hist,type){return hist.filter(s=>s.type===type)[0]||null;}
-
 function getPrevExData(prev,secTitle,exName){
   if(!prev?.data?.sections)return null;
-  for(const sec of prev.data.sections){
-    if(sec.title===secTitle){
+  for(const sec of prev.data.sections){if(sec.title===secTitle){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){const ds=(ex.sets||[]).filter(s=>s.weight||s.reps);if(ds.length)return ds;}}}}}
+  return null;
+}
+function canProgress(hist,type,secTitle,exName,repsStr){
+  const sessions=hist.filter(s=>s.type===type).slice(0,2);
+  if(sessions.length<2)return false;
+  const top=parseInt((repsStr||'').split('-').pop());
+  if(isNaN(top))return false;
+  return sessions.every(session=>{
+    if(!session.data?.sections)return false;
+    for(const sec of session.data.sections){if(sec.title===secTitle){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){const sets=ex.sets||[];return sets.length>0&&sets.every(s=>s.done&&parseInt(s.reps)>=top);}}}}}
+    return false;
+  });
+}
+
+// Get personal best for an exercise from history
+function getPersonalBest(hist,exName){
+  let best=null;let bestDate=null;
+  for(const session of hist){
+    if(!session.data?.sections)continue;
+    for(const sec of session.data.sections){
       for(const ss of sec.supersets||[]){
         for(const ex of ss.exercises||[]){
           if(ex.name===exName){
-            const ds=(ex.sets||[]).filter(s=>s.weight||s.reps);
-            if(ds.length)return ds;
+            for(const s of ex.sets||[]){
+              const w=parseFloat(s.weight);const r=parseInt(s.reps);
+              if(w&&r&&s.done){
+                if(!best||w>best.weight||(w===best.weight&&r>best.reps)){
+                  best={weight:w,reps:r};bestDate=session.session_date;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return best?{...best,date:bestDate}:null;
+}
+
+// Get last time an exercise was done
+function getLastLogged(hist,exName){
+  for(const session of hist){
+    if(!session.data?.sections)continue;
+    for(const sec of session.data.sections){
+      for(const ss of sec.supersets||[]){
+        for(const ex of ss.exercises||[]){
+          if(ex.name===exName){
+            const doneSets=(ex.sets||[]).filter(s=>s.weight&&s.reps&&s.done);
+            if(doneSets.length)return{date:session.session_date,sets:doneSets,sessionType:session.type,week:session.week};
           }
         }
       }
@@ -63,70 +99,47 @@ function getPrevExData(prev,secTitle,exName){
   return null;
 }
 
-function canProgress(hist,type,secTitle,exName,repsStr){
-  const sessions=hist.filter(s=>s.type===type).slice(0,2);
-  if(sessions.length<2)return false;
-  const top=parseInt((repsStr||'').split('-').pop());
-  if(isNaN(top))return false;
-  return sessions.every(session=>{
-    if(!session.data?.sections)return false;
-    for(const sec of session.data.sections){
-      if(sec.title===secTitle){
-        for(const ss of sec.supersets||[]){
-          for(const ex of ss.exercises||[]){
-            if(ex.name===exName){
-              const sets=ex.sets||[];
-              return sets.length>0&&sets.every(s=>s.done&&parseInt(s.reps)>=top);
-            }
-          }
-        }
-      }
-    }
-    return false;
-  });
-}
-
 const SREHAB=[
-  {name:'Band External Rotation at Side',sets:3,reps:'15',notes:'Right arm only - light band, elbow at 90deg'},
-  {name:'Side-Lying External Rotation (DB)',sets:2,reps:'12',notes:'Right arm - very light DB, stop before sharp sensation'},
-  {name:'Prone Y Raise',sets:2,reps:'10',notes:'Face down, raise arms into Y shape'},
-  {name:'Prone T Raise',sets:2,reps:'10',notes:'Face down, raise arms into T shape'},
-  {name:'Serratus Anterior Wall Press',sets:2,reps:'12',notes:'Hands on wall, push away - feel shoulder blade move'},
-  {name:'Sleeper Stretch',sets:2,reps:'30s',notes:'Right side, push forearm toward floor - do not force'},
+  {name:'Band External Rotation at Side',sets:3,reps:'15',notes:'Right arm only - light band, elbow at 90deg',category:'Shoulder Rehab',muscle:'Rotator Cuff'},
+  {name:'Side-Lying External Rotation (DB)',sets:2,reps:'12',notes:'Right arm - very light DB, stop before sharp sensation',category:'Shoulder Rehab',muscle:'Rotator Cuff'},
+  {name:'Prone Y Raise',sets:2,reps:'10',notes:'Face down, raise arms into Y shape - bodyweight or very light',category:'Shoulder Rehab',muscle:'Lower Trap'},
+  {name:'Prone T Raise',sets:2,reps:'10',notes:'Face down, raise arms into T shape - bodyweight or very light',category:'Shoulder Rehab',muscle:'Mid Trap'},
+  {name:'Serratus Anterior Wall Press',sets:2,reps:'12',notes:'Hands on wall, push away - feel shoulder blade move forward',category:'Shoulder Rehab',muscle:'Serratus'},
+  {name:'Sleeper Stretch',sets:2,reps:'30s',notes:'Right side, push forearm toward floor - do not force',category:'Shoulder Rehab',muscle:'Posterior Capsule'},
 ];
 const STRETCH=[
-  {name:'Hip Flexor Lunge Stretch',sets:2,reps:'45s each side',notes:'Back knee down, drive hips forward'},
-  {name:'Lying Figure-Four Glute',sets:2,reps:'45s each side',notes:'Cross ankle over knee, pull toward chest'},
-  {name:'Standing Hamstring Stretch',sets:2,reps:'45s each side',notes:'Hinge forward, keep back flat'},
-  {name:'Thoracic Extension over Roller',sets:1,reps:'60s',notes:'Roller mid-back, support head'},
-  {name:'Wall Chest Opener',sets:1,reps:'30s each side',notes:'Right arm: only as far as comfortable'},
-  {name:"Child's Pose with Side Reach",sets:1,reps:'30s each side',notes:'Walk hands to one side'},
-  {name:'90/90 Hip Stretch',sets:2,reps:'45s each side',notes:'Both legs at 90deg, hinge forward'},
+  {name:'Hip Flexor Lunge Stretch',sets:2,reps:'45s each side',notes:'Back knee down, drive hips forward gently',category:'Stretch',muscle:'Hip Flexor'},
+  {name:'Lying Figure-Four Glute Stretch',sets:2,reps:'45s each side',notes:'Cross ankle over knee, pull toward chest',category:'Stretch',muscle:'Glute'},
+  {name:'Standing Hamstring Stretch',sets:2,reps:'45s each side',notes:'Hinge forward from hips, keep back flat',category:'Stretch',muscle:'Hamstring'},
+  {name:'Thoracic Extension over Roller',sets:1,reps:'60s',notes:'Roller mid-back, support head, let spine extend',category:'Stretch',muscle:'Thoracic Spine'},
+  {name:'Wall Chest Opener',sets:1,reps:'30s each side',notes:'Right arm: only as far as comfortable - no forcing',category:'Stretch',muscle:'Chest / Shoulder'},
+  {name:"Child's Pose with Side Reach",sets:1,reps:'30s each side',notes:'Walk hands to one side - feel lat stretch',category:'Stretch',muscle:'Lat / Spine'},
+  {name:'90/90 Hip Stretch',sets:2,reps:'45s each side',notes:'Both legs at 90deg, sit tall, hinge forward',category:'Stretch',muscle:'Hip / Glute'},
 ];
 const SWU=[
-  {name:'Shoulder Circles',sets:1,reps:'10 each direction',notes:'Pain-free range only'},
-  {name:'Band External Rotations',sets:1,reps:'12 each side',notes:'Activation only - lighter than rehab'},
-  {name:'Scapular Shrugs',sets:1,reps:'10',notes:'Shrug shoulder blades up and together'},
+  {name:'Shoulder Circles',sets:1,reps:'10 each direction',notes:'Pain-free range only - slow and controlled',category:'Swim Warm-Up',muscle:'Shoulder'},
+  {name:'Band External Rotations',sets:1,reps:'12 each side',notes:'Activation only - lighter than rehab',category:'Swim Warm-Up',muscle:'Rotator Cuff'},
+  {name:'Scapular Shrugs',sets:1,reps:'10',notes:'Shrug shoulder blades up and together',category:'Swim Warm-Up',muscle:'Trap / Serratus'},
 ];
 
 const PLAN={
 'Gym A':{color:A,icon:'A',subtitle:'Lower + Horizontal Push/Pull + Core',sections:[
   {title:'Main Session',color:A,supersets:[
     {label:'Superset 1',note:'Hinge + Pull - alternate, rest after both',exercises:[
-      {name:'Romanian Deadlift',sets:3,reps:'8-10',notes:'Hip hinge, full posterior chain - brace hard'},
-      {name:'Bent-Over DB / Kettlebell Row',sets:3,reps:'8-12',notes:'Neutral grip, trunk as stabiliser'},
+      {name:'Romanian Deadlift',sets:3,reps:'8-10',notes:'Hip hinge, full posterior chain - brace hard',category:'Hinge',muscle:'Hamstring / Glute / Lower Back'},
+      {name:'Bent-Over DB / Kettlebell Row',sets:3,reps:'8-12',notes:'Neutral grip, trunk as stabiliser - pull to hip',category:'Pull',muscle:'Back / Bicep'},
     ]},
     {label:'Superset 2',note:'Lower Push + Upper Push - alternate, rest after both',exercises:[
-      {name:'Leg Press',sets:3,reps:'8-12',notes:'Feet shoulder-width, drive through full foot'},
-      {name:'Flat DB Press (neutral grip)',sets:3,reps:'8-12',notes:'Elbows at 45deg, no shoulder impingement'},
+      {name:'Leg Press',sets:3,reps:'8-12',notes:'Feet shoulder-width, drive through full foot',category:'Quad',muscle:'Quad / Glute'},
+      {name:'Flat DB Press (neutral grip)',sets:3,reps:'8-12',notes:'Elbows at 45deg, no shoulder impingement',category:'Push',muscle:'Chest / Tricep'},
     ]},
     {label:'Superset 3',note:'Unilateral Lower - alternate legs, 60s rest',exercises:[
-      {name:'DB Split Squat (front foot elevated)',sets:3,reps:'10',notes:'Front foot on step, torso upright'},
-      {name:'Lying Leg Curl',sets:3,reps:'10-12',notes:'3 seconds lowering'},
+      {name:'DB Split Squat (front foot elevated)',sets:3,reps:'10',notes:'Front foot on step, torso upright, full depth',category:'Squat',muscle:'Quad / Glute'},
+      {name:'Lying Leg Curl',sets:3,reps:'10-12',notes:'3 seconds lowering - controlled eccentric',category:'Hamstring',muscle:'Hamstring'},
     ]},
     {label:'Core Superset',note:'Anti-rotation + Anti-extension - minimal rest',exercises:[
-      {name:'Pallof Press',sets:3,reps:'10',notes:'Press out, hold 2s, return'},
-      {name:'Dead Bug',sets:3,reps:'8',notes:'Breathe out fully as arm/leg lower'},
+      {name:'Pallof Press',sets:3,reps:'10',notes:'Press out, hold 2s, return - resist rotation',category:'Core',muscle:'Core / Oblique'},
+      {name:'Dead Bug',sets:3,reps:'8',notes:'Breathe out fully as arm/leg lower - lower back stays flat',category:'Core',muscle:'Core'},
     ]},
   ]},
   {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest between exercises',exercises:SREHAB}]},
@@ -135,46 +148,46 @@ const PLAN={
 'Gym B':{color:PU,icon:'B',subtitle:'Squat + Vertical Pull + Trunk Stability',sections:[
   {title:'Main Session',color:PU,supersets:[
     {label:'Superset 1',note:'Squat + Vertical Pull - alternate, 90s rest',exercises:[
-      {name:'Barbell Squat / Goblet Squat',sets:3,reps:'8-10',notes:'Progress to barbell over weeks'},
-      {name:'Pull-Up / Lat Pulldown (neutral grip)',sets:3,reps:'6-10',notes:'Right arm within comfortable ROM'},
+      {name:'Barbell Squat / Goblet Squat',sets:3,reps:'8-10',notes:'Chest up, knees track toes - progress to barbell over weeks',category:'Squat',muscle:'Quad / Glute'},
+      {name:'Pull-Up / Lat Pulldown (neutral grip)',sets:3,reps:'6-10',notes:'Right arm within comfortable ROM - full hang at bottom',category:'Pull',muscle:'Lat / Bicep'},
     ]},
     {label:'Superset 2',note:'Hip Hinge + Upper Push - alternate, 60-90s rest',exercises:[
-      {name:'Hip Thrust (Barbell or Machine)',sets:3,reps:'10-12',notes:'Full glute squeeze at top, chin tucked'},
-      {name:'Low-Incline DB Press (neutral grip)',sets:3,reps:'8-12',notes:'15-30deg incline, elbows at 45deg'},
+      {name:'Hip Thrust (Barbell or Machine)',sets:3,reps:'10-12',notes:'Full glute squeeze at top, chin tucked, shoulders on bench',category:'Hinge',muscle:'Glute'},
+      {name:'Low-Incline DB Press (neutral grip)',sets:3,reps:'8-12',notes:'15-30deg incline, elbows at 45deg - upper chest',category:'Push',muscle:'Chest / Tricep'},
     ]},
     {label:'Superset 3',note:'Row + Hamstring - alternate, 60s rest',exercises:[
-      {name:'Single-Arm DB Row (incline bench)',sets:3,reps:'10-12',notes:'Pull to hip, full stretch at bottom'},
-      {name:'Lying Leg Curl',sets:2,reps:'10-12',notes:'3 seconds lowering'},
+      {name:'Single-Arm DB Row (incline bench)',sets:3,reps:'10-12',notes:'Support on incline, pull to hip, full stretch at bottom',category:'Pull',muscle:'Back / Bicep'},
+      {name:'Lying Leg Curl',sets:2,reps:'10-12',notes:'3 seconds lowering',category:'Hamstring',muscle:'Hamstring'},
     ]},
     {label:'Core Superset',note:'Lateral + Flexion - minimal rest',exercises:[
-      {name:'Side Plank',sets:3,reps:'20-30s',notes:'Hips square, body in straight line'},
-      {name:'Reverse Crunch',sets:3,reps:'10-15',notes:'Curl pelvis toward chest'},
+      {name:'Side Plank',sets:3,reps:'20-30s',notes:'Hips square, body in straight line - no sagging',category:'Core',muscle:'Oblique / Core'},
+      {name:'Reverse Crunch',sets:3,reps:'10-15',notes:'Curl pelvis toward chest - lower back stays flat',category:'Core',muscle:'Lower Ab'},
     ]},
   ]},
-  {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest between exercises',exercises:SREHAB}]},
-  {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch fully',exercises:STRETCH}]},
+  {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
+  {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch',exercises:STRETCH}]},
 ]},
 'Gym C':{color:G,icon:'C',subtitle:'Single-Leg + Upper Hypertrophy + Rotational Core',sections:[
   {title:'Main Session',color:G,supersets:[
     {label:'Superset 1',note:'Unilateral Lower + Row - alternate, 90s rest',exercises:[
-      {name:'Bulgarian Split Squat',sets:3,reps:'10',notes:'Rear foot elevated - full depth'},
-      {name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12',notes:'Alternate grip weekly'},
+      {name:'Bulgarian Split Squat',sets:3,reps:'10',notes:'Rear foot elevated - upright torso, full depth, slow descent',category:'Squat',muscle:'Quad / Glute'},
+      {name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12',notes:'Hinge to 45deg, pull to lower rib - alternate grip weekly',category:'Pull',muscle:'Back / Bicep'},
     ]},
     {label:'Superset 2',note:'Hip Hinge + Chest Fly - alternate, 60-90s rest',exercises:[
-      {name:'45deg Back Extension / KB Good Morning',sets:3,reps:'10-12',notes:'Squeeze glutes at top'},
-      {name:'Cable Chest Fly (chest height)',sets:3,reps:'12-15',notes:'Chest height - protects shoulder'},
+      {name:'45deg Back Extension / KB Good Morning',sets:3,reps:'10-12',notes:'Control descent, squeeze glutes at top',category:'Hinge',muscle:'Hamstring / Glute / Lower Back'},
+      {name:'Cable Chest Fly (chest height)',sets:3,reps:'12-15',notes:'Set at chest height - slight forward lean, wide arc to centre',category:'Push',muscle:'Chest'},
     ]},
     {label:'Superset 3',note:'Push + Hamstring - alternate, 60s rest',exercises:[
-      {name:'Push-Up Variation',sets:3,reps:'10-15',notes:'Archer / close-grip / weighted vest'},
-      {name:'Lying Leg Curl',sets:3,reps:'10-12',notes:'3-second eccentric'},
+      {name:'Push-Up Variation',sets:3,reps:'10-15',notes:'Archer / close-grip / weighted vest - elbows at 45deg',category:'Push',muscle:'Chest / Tricep'},
+      {name:'Lying Leg Curl',sets:3,reps:'10-12',notes:'3-second eccentric - hamstring lengthening focus',category:'Hamstring',muscle:'Hamstring'},
     ]},
     {label:'Core Superset',note:'Rotational + Anti-extension - minimal rest',exercises:[
-      {name:'Cable Wood Chop',sets:3,reps:'10',notes:'Rotate from core, not arms'},
-      {name:'Bird Dog',sets:2,reps:'8',notes:'3-second hold, spine neutral'},
+      {name:'Cable Wood Chop',sets:3,reps:'10',notes:'Rotate from core, not arms - eyes follow hands',category:'Core',muscle:'Oblique / Core'},
+      {name:'Bird Dog',sets:2,reps:'8',notes:'3-second hold at full extension - spine neutral throughout',category:'Core',muscle:'Core / Lower Back'},
     ]},
   ]},
-  {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest between exercises',exercises:SREHAB}]},
-  {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch fully',exercises:STRETCH}]},
+  {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
+  {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch',exercises:STRETCH}]},
 ]},
 'Bike':{color:BK,icon:'B',subtitle:'Zone 2 Active Recovery - Thursday',isBike:true,
   phases:[
@@ -200,10 +213,207 @@ const PLAN={
 },
 };
 
+// Build full exercise library from PLAN
+function buildExerciseLibrary(){
+  const lib=[];const seen=new Set();
+  const gymSessions=['Gym A','Gym B','Gym C'];
+  for(const [sessionName,plan] of Object.entries(PLAN)){
+    if(!plan.sections)continue;
+    for(const sec of plan.sections){
+      for(const ss of sec.supersets||[]){
+        for(const ex of ss.exercises||[]){
+          const key=ex.name;
+          if(!seen.has(key)){
+            seen.add(key);
+            lib.push({
+              name:ex.name,
+              sets:ex.sets,
+              reps:ex.reps,
+              notes:ex.notes||'',
+              category:ex.category||sec.title,
+              muscle:ex.muscle||'',
+              sessions:[]
+            });
+          }
+          const entry=lib.find(e=>e.name===ex.name);
+          if(entry&&!entry.sessions.includes(sessionName)){
+            entry.sessions.push(sessionName);
+          }
+        }
+      }
+    }
+  }
+  // Also add swim warm-up
+  for(const ex of SWU){
+    if(!seen.has(ex.name)){
+      seen.add(ex.name);
+      lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,notes:ex.notes,category:'Swim Warm-Up',muscle:ex.muscle||'',sessions:['Swim']});
+    }
+  }
+  return lib.sort((a,b)=>a.name.localeCompare(b.name));
+}
+
+const EXERCISE_LIBRARY=buildExerciseLibrary();
+
+const CATEGORIES=['All','Squat','Hinge','Push','Pull','Core','Hamstring','Shoulder Rehab','Stretch','Swim Warm-Up'];
+
 const ROPT=[{l:'30s',v:30},{l:'45s',v:45},{l:'60s',v:60},{l:'90s',v:90},{l:'2min',v:120},{l:'3min',v:180}];
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DMAP={Mon:'Gym A',Tue:'Swim',Wed:'Gym B',Thu:'Bike',Fri:'Gym C',Sat:'Run',Sun:'Rest'};
 
+// ── EXERCISE LIBRARY TAB ────────────────────────────────────────────────────
+function ExerciseLibrary({hist}){
+  const[search,setSearch]=useState('');
+  const[filter,setFilter]=useState('All');
+  const[expanded,setExpanded]=useState(null);
+
+  const filtered=useMemo(()=>{
+    return EXERCISE_LIBRARY.filter(ex=>{
+      const matchSearch=search===''||ex.name.toLowerCase().includes(search.toLowerCase())||ex.muscle.toLowerCase().includes(search.toLowerCase())||ex.notes.toLowerCase().includes(search.toLowerCase());
+      const matchFilter=filter==='All'||ex.category===filter;
+      return matchSearch&&matchFilter;
+    });
+  },[search,filter]);
+
+  const sessionColor=(s)=>{
+    const p=PLAN[s];return p?p.color:A;
+  };
+
+  return(
+    <div style={{padding:'16px 20px 0'}}>
+      {/* Search */}
+      <div style={{position:'relative',marginBottom:10}}>
+        <input
+          placeholder="Search exercises, muscles..."
+          value={search}
+          onChange={e=>setSearch(e.target.value)}
+          style={{width:'100%',background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:10,color:'#E2E8F0',padding:'10px 14px 10px 36px',fontSize:13,outline:'none'}}
+        />
+        <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'#334155',fontSize:14}}>⌕</span>
+        {search&&<button onClick={()=>setSearch('')} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#475569',cursor:'pointer',fontSize:16}}>×</button>}
+      </div>
+
+      {/* Category filters */}
+      <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:10,marginBottom:12}}>
+        {CATEGORIES.map(cat=>(
+          <button key={cat} onClick={()=>setFilter(cat)}
+            style={{padding:'5px 11px',borderRadius:20,border:`1px solid ${filter===cat?A:'#1E3A5F'}`,background:filter===cat?A+'22':'transparent',color:filter===cat?A:'#475569',cursor:'pointer',fontSize:11,fontWeight:filter===cat?700:400,whiteSpace:'nowrap',flexShrink:0}}>
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Count */}
+      <div style={{color:'#334155',fontSize:11,marginBottom:12}}>{filtered.length} exercise{filtered.length!==1?'s':''}</div>
+
+      {/* Exercise list */}
+      {filtered.map(ex=>{
+        const pb=getPersonalBest(hist,ex.name);
+        const last=getLastLogged(hist,ex.name);
+        const isExp=expanded===ex.name;
+        const catColor=ex.category==='Shoulder Rehab'?PK:ex.category==='Stretch'?G:ex.category==='Swim Warm-Up'?SW:ex.category==='Core'?PU:ex.category==='Push'?A:ex.category==='Pull'?O:ex.category==='Hinge'?'#FB923C':ex.category==='Squat'?PU:ex.category==='Hamstring'?G:A;
+
+        return(
+          <div key={ex.name} className="fi" style={{background:'#0D1B2E',border:`1px solid ${isExp?catColor+'55':'#1E2D40'}`,borderRadius:10,marginBottom:8,overflow:'hidden',transition:'border-color 0.2s'}}>
+            <button onClick={()=>setExpanded(isExp?null:ex.name)} style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'12px 14px',textAlign:'left'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                <div style={{flex:1,marginRight:8}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
+                    <span style={{color:'#E2E8F0',fontSize:13,fontWeight:600}}>{ex.name}</span>
+                    <span style={{background:catColor+'22',color:catColor,border:`1px solid ${catColor}33`,borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:600,flexShrink:0}}>{ex.category}</span>
+                  </div>
+                  <div style={{color:'#475569',fontSize:11}}>{ex.muscle}</div>
+                </div>
+                <div style={{textAlign:'right',flexShrink:0}}>
+                  {pb?(
+                    <div>
+                      <div style={{color:G,fontSize:12,fontFamily:'monospace',fontWeight:700}}>{pb.weight}kg × {pb.reps}</div>
+                      <div style={{color:'#334155',fontSize:10}}>PB</div>
+                    </div>
+                  ):(
+                    <div style={{color:'#1E3A5F',fontSize:11}}>No data yet</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sessions it appears in */}
+              <div style={{display:'flex',gap:4,marginTop:6,flexWrap:'wrap'}}>
+                {ex.sessions.map(s=>(
+                  <span key={s} style={{background:sessionColor(s)+'22',color:sessionColor(s),border:`1px solid ${sessionColor(s)}33`,borderRadius:4,padding:'1px 6px',fontSize:10}}>{s}</span>
+                ))}
+              </div>
+            </button>
+
+            {/* Expanded detail */}
+            {isExp&&(
+              <div className="fi" style={{borderTop:'1px solid #1E2D40',padding:'12px 14px'}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+                  <div style={{background:'#070E1A',borderRadius:8,padding:'8px 10px'}}>
+                    <div style={{color:'#475569',fontSize:10,marginBottom:2}}>Target Sets × Reps</div>
+                    <div style={{color:catColor,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{ex.sets} × {ex.reps}</div>
+                  </div>
+                  <div style={{background:'#070E1A',borderRadius:8,padding:'8px 10px'}}>
+                    <div style={{color:'#475569',fontSize:10,marginBottom:2}}>Muscle Group</div>
+                    <div style={{color:'#CBD5E1',fontSize:12,fontWeight:600}}>{ex.muscle||'—'}</div>
+                  </div>
+                </div>
+
+                {ex.notes&&(
+                  <div style={{background:'#070E1A',borderRadius:8,padding:'10px 12px',marginBottom:10}}>
+                    <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Coaching Notes</div>
+                    <div style={{color:'#94A3B8',fontSize:13,lineHeight:1.6}}>{ex.notes}</div>
+                  </div>
+                )}
+
+                {pb&&(
+                  <div style={{background:G+'11',border:`1px solid ${G}33`,borderRadius:8,padding:'10px 12px',marginBottom:10}}>
+                    <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Personal Best</div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <div style={{color:G,fontSize:16,fontFamily:'monospace',fontWeight:700}}>{pb.weight}kg × {pb.reps} reps</div>
+                      <div style={{color:'#334155',fontSize:11}}>{fmt(pb.date)}</div>
+                    </div>
+                  </div>
+                )}
+
+                {last&&(
+                  <div style={{background:'#070E1A',borderRadius:8,padding:'10px 12px',marginBottom:10}}>
+                    <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>Last Logged</div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+                      <span style={{color:'#CBD5E1',fontSize:12}}>{last.sessionType} · Wk {last.week}</span>
+                      <span style={{color:'#334155',fontSize:11}}>{fmt(last.date)}</span>
+                    </div>
+                    {last.sets.map((s,i)=>(
+                      <div key={i} style={{display:'flex',gap:8,fontSize:11,fontFamily:'monospace',color:'#475569',marginBottom:1}}>
+                        <span>Set {i+1}:</span>
+                        <span style={{color:catColor}}>{s.weight}kg</span>
+                        <span>×</span>
+                        <span style={{color:'#94A3B8'}}>{s.reps} reps</span>
+                        {s.done&&<span style={{color:G}}>✓</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!pb&&!last&&(
+                  <div style={{color:'#334155',fontSize:12,textAlign:'center',padding:'8px 0'}}>No sessions logged for this exercise yet</div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {filtered.length===0&&(
+        <div style={{textAlign:'center',padding:'40px 0',color:'#334155'}}>
+          <div style={{fontSize:24,marginBottom:8}}>⌕</div>
+          <div style={{fontSize:13}}>No exercises found</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── TIMER ───────────────────────────────────────────────────────────────────
 function Timer({duration,onDone}){
   const[rem,setRem]=useState(duration);const[active,setActive]=useState(true);
   useEffect(()=>{if(!active)return;if(rem<=0){onDone();return;}const t=setTimeout(()=>setRem(r=>r-1),1000);return()=>clearTimeout(t);},[rem,active]);
@@ -252,7 +462,7 @@ function ExCard({exDef,data,onChange,color,prevSets,progress}){
     if(i===0&&!p.done&&val.done&&val.weight&&val.reps){for(let j=1;j<s.length;j++){if(!s[j].weight&&!s[j].reps)s[j]={...s[j],weight:val.weight,reps:val.reps};}}
     onChange({...data,sets:s});
   };
-  const isUpper=/(press|curl|fly|row|pulldown|pull-up)/i.test(exDef.name);
+  const isUpper=/(press|curl|fly|row|pulldown|pull-up|chop|bird)/i.test(exDef.name);
   const jump=isUpper?'2.5':'5';
   return(
     <div className="fi" style={{background:'#070E1A',border:`1px solid ${progress?G+'99':complete?c+'55':'#1E2D40'}`,borderRadius:8,padding:'10px 12px',marginBottom:8}}>
@@ -357,7 +567,7 @@ function BikeLogger({data,onChange,week}){
       <div style={{background:BK+'1A',border:`1px solid ${BK}44`,borderRadius:12,padding:'11px 14px',marginBottom:12}}>
         <div style={{color:BK,fontSize:13,fontWeight:700,marginBottom:4}}>Week {week} Target</div>
         <div style={{color:'#CBD5E1',fontSize:13}}>{phase.target}</div>
-        <div style={{color:'#475569',fontSize:11,marginTop:6}}>Zone 2: 111–130 bpm · Active recovery — flush legs from Gym B</div>
+        <div style={{color:'#475569',fontSize:11,marginTop:6}}>Zone 2: 111–130 bpm · Active recovery</div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
         {[{k:'duration',l:'Duration',u:'min',p:'40'},{k:'avgHR',l:'Avg HR',u:'bpm',p:'122'},{k:'distance',l:'Distance',u:'km',p:'15'},{k:'zone',l:'Zone',u:'',p:'Zone 2'}].map(f=>(
@@ -496,7 +706,7 @@ function RevPanel({session,hist,color}){
       const s=sum(session);
       const prev=(hist||[]).filter(h=>h.type===session.type&&h.id!==session.id).slice(0,3);
       const pt=prev.length?'\nPREVIOUS SESSIONS:\n'+prev.map(sum).join('\n'):'';
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 - 20-45deg ROM deficit, no overhead pressing. Week ${session.week} of 12. Progression rule: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8.\n\nProvide: 1) Brief overall assessment (2-3 sentences) 2) Exercise highlights - flag weights to progress, RPE concerns, good form notes 3) Shoulder check if gym session 4) One specific action for next session. Use exact weights and numbers. Under 350 words. Use **bold** headers.`,messages:[{role:'user',content:`SESSION:\n${s}${pt}`}]})});
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 - 20-45deg ROM deficit, no overhead pressing. Week ${session.week} of 12. Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights - flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`,messages:[{role:'user',content:`SESSION:\n${s}${pt}`}]})});
       const d=await res.json();
       setFb(d.content?.[0]?.text||'Unable to generate feedback.');setSt('done');
     }catch(e){setFb('Error: '+e.message);setSt('error');}
@@ -515,6 +725,7 @@ function RevPanel({session,hist,color}){
   );
 }
 
+// ── APP ──────────────────────────────────────────────────────────────────────
 function App(){
   const[screen,setScreen]=useState('home');
   const[atype,setAtype]=useState(null);
@@ -552,23 +763,9 @@ function App(){
     })();
   },[]);
 
-  const applyStart=date=>{
-    setStartDate(date);localStorage.setItem('tl-start',date);
-    setWeek(calcWeek(date));setShowDP(false);
-  };
-
-  const saveDraft=useCallback(async(type,w,data)=>{
-    if(!type)return;
-    try{await db('POST','/drafts?on_conflict=user_id',{user_id:userId,type,week:w,data,updated_at:new Date().toISOString()});}catch{}
-  },[userId]);
-
-  useEffect(()=>{
-    if(atype&&screen==='log'){
-      if(asr.current)clearTimeout(asr.current);
-      asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase}),800);
-    }
-  },[gdata,cdata,wnotes,sphase]);
-
+  const applyStart=date=>{setStartDate(date);localStorage.setItem('tl-start',date);setWeek(calcWeek(date));setShowDP(false);};
+  const saveDraft=useCallback(async(type,w,data)=>{if(!type)return;try{await db('POST','/drafts?on_conflict=user_id',{user_id:userId,type,week:w,data,updated_at:new Date().toISOString()});}catch{}},[userId]);
+  useEffect(()=>{if(atype&&screen==='log'){if(asr.current)clearTimeout(asr.current);asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase}),800);}},[gdata,cdata,wnotes,sphase]);
   const delDraft=async()=>{try{await db('DELETE',`/drafts?user_id=eq.${userId}`);}catch{}};
   const startSess=type=>{setAtype(type);setGdata({});setCdata({});setWnotes('');setScreen('log');};
   const hgc=(si,ssi,ei,val)=>setGdata(d=>({...d,[si]:{...(d[si]||{}),[ssi]:{...(d[si]?.[ssi]||{}),[ei]:val}}}));
@@ -581,8 +778,7 @@ function App(){
     const session={id:Date.now(),user_id:userId,type:atype,session_date:new Date().toISOString(),week,data};
     setHist(h=>[session,...h]);setSaving(true);
     try{await db('POST','/sessions',session);}catch(e){console.error(e);}
-    await delDraft();setSaving(false);
-    setDone2(session);setScreen('review');setAtype(null);
+    await delDraft();setSaving(false);setDone2(session);setScreen('review');setAtype(null);
   };
 
   const plan=atype?PLAN[atype]:null;
@@ -597,6 +793,8 @@ function App(){
       <div style={{color:'#475569',fontSize:12}}>Loading Training Log...</div>
     </div>
   );
+
+  const navScreen=screen==='log'||screen==='review'?'home':screen;
 
   return(
     <div style={{background:'#070E1A',minHeight:'100vh',color:'#E2E8F0',maxWidth:520,margin:'0 auto',paddingBottom:80}}>
@@ -623,7 +821,7 @@ function App(){
 
         {showDP&&(
           <div className="fi" style={{background:'#0D1B2E',border:`1px solid ${A}33`,borderRadius:10,padding:'12px 14px',marginTop:10}}>
-            <div style={{color:'#94A3B8',fontSize:12,marginBottom:8}}>Set your plan start date — week auto-calculates from here</div>
+            <div style={{color:'#94A3B8',fontSize:12,marginBottom:8}}>Set plan start date — week auto-calculates</div>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
               <input type="date" value={startDate} onChange={e=>applyStart(e.target.value)} style={{flex:1,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:A,padding:'7px 10px',fontSize:13,outline:'none'}}/>
               <button onClick={()=>setShowDP(false)} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'7px 12px',cursor:'pointer',fontSize:12}}>Done</button>
@@ -632,14 +830,16 @@ function App(){
           </div>
         )}
 
+        {/* NAV — 3 tabs */}
         <div style={{display:'flex',gap:2,marginTop:12,borderBottom:'1px solid #1E2D40'}}>
-          {['home','history'].map(s=>(
-            <button key={s} onClick={()=>{setScreen(s);setAtype(null);}} style={{padding:'8px 16px',background:'none',border:'none',color:screen===s&&screen!=='log'&&screen!=='review'?A:'#475569',fontSize:13,fontWeight:screen===s&&screen!=='log'&&screen!=='review'?600:400,cursor:'pointer',borderBottom:screen===s&&screen!=='log'&&screen!=='review'?`2px solid ${A}`:'2px solid transparent',textTransform:'capitalize'}}>
-              {s==='home'?'Sessions':'History'}
+          {[['home','Sessions'],['exercises','Exercises'],['history','History']].map(([s,label])=>(
+            <button key={s} onClick={()=>{setScreen(s);setAtype(null);}}
+              style={{padding:'8px 12px',background:'none',border:'none',color:navScreen===s?A:'#475569',fontSize:12,fontWeight:navScreen===s?600:400,cursor:'pointer',borderBottom:navScreen===s?`2px solid ${A}`:'2px solid transparent',flex:1}}>
+              {label}
             </button>
           ))}
           {saving&&<span style={{marginLeft:'auto',color:'#334155',fontSize:10,alignSelf:'center',paddingRight:4}}>saving...</span>}
-          {screen==='log'&&!saving&&<span style={{marginLeft:'auto',color:'#1E3A5F',fontSize:10,alignSelf:'center',paddingRight:4}}>auto-saving</span>}
+          {screen==='log'&&!saving&&<span style={{color:'#1E3A5F',fontSize:10,alignSelf:'center',paddingRight:4}}>auto-saving</span>}
         </div>
       </div>
 
@@ -687,6 +887,9 @@ function App(){
           )}
         </div>
       )}
+
+      {/* EXERCISES TAB */}
+      {screen==='exercises'&&<ExerciseLibrary hist={hist}/>}
 
       {/* LOG */}
       {screen==='log'&&atype&&(
