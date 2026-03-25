@@ -44,7 +44,7 @@ const GIF_SEARCH={
   'Leg Press':'leg press',
   'Flat DB Press (neutral grip)':'dumbbell bench press',
   'DB Split Squat (front foot elevated)':'split squat',
-  'Lying Leg Curl':'lying leg curl',
+  'Prone Dumbbell Leg Curl':'prone leg curl dumbbell',
   'Pallof Press':'cable pallof press',
   'Dead Bug':'dead bug',
   'Barbell Squat / Goblet Squat':'goblet squat',
@@ -171,7 +171,7 @@ const COACHING={
   'Leg Press':{muscle:'Quad / Glute / Hamstring',category:'Quad',tips:['Feet shoulder-width at the middle of the platform. Too high = more glute; too low = more knee stress.','Lower until knees are at 90 degrees or past — do not let hips tuck or lower back lift off the pad.','Drive through your full foot, not just the heel. Heel-only pressing disengages the quad.','Keep a slight bend at the top — do not fully lock out. This keeps tension on the muscle.','Take 2 to 3 seconds to lower the weight. The eccentric builds more muscle than the concentric.']},
   'Flat DB Press (neutral grip)':{muscle:'Chest / Tricep / Front Delt',category:'Push',tips:['Neutral grip (palms facing each other) keeps elbows at 45 degrees — significantly reducing rotator cuff strain.','Lower with full control to your chest. Feel the stretch across the pec at the bottom.','Press up and slightly inward — dumbbells converge at the top to increase chest contraction.','Think about trying to crush the dumbbells together throughout the set. This increases chest fibre recruitment.','Drive your shoulder blades into the bench. Do not let the shoulders roll forward.']},
   'DB Split Squat (front foot elevated)':{muscle:'Quad / Glute / Hip Flexor',category:'Squat',tips:['Elevate the front foot on a step or plate — increases range of motion and quad emphasis.','Split stance wide enough that your knee tracks over your toes without going far past them.','Keep the torso upright. Leaning forward shifts the load to the glute — both valid, be intentional.','The back knee drops straight down toward the floor. Do not let it flare outward.','Drive through the front heel to stand. Feel the quad working through the full range.','Take 2 to 3 seconds on the way down. Complete all reps on one leg before switching.']},
-  'Lying Leg Curl':{muscle:'Hamstring',category:'Hamstring',tips:['Adjust the pad so it sits just above the ankle, not at mid-calf. Better mechanical leverage.','Press your hips firmly into the pad throughout. Do not let them lift — this protects the lower back.','Curl all the way up — aim to fully contract the hamstring at the top.','The 3-second eccentric lowering is critical. This controlled stretch under load is the primary hypertrophy driver.','Point toes slightly toward shins (dorsiflexion) to increase hamstring recruitment.','No momentum or swinging. Every rep clean and controlled.']},
+  'Prone Dumbbell Leg Curl':{muscle:'Hamstring',category:'Hamstring',tips:['Lie face down on a flat bench. Hold a dumbbell vertically between your feet — grip it firmly with both feet crossed at the ankle.','The dumbbell should feel secure before you start. Take a moment to settle it — rushing this causes it to drop.','Curl both legs up toward your glutes in a controlled arc. Aim for full hamstring contraction at the top.','The 3-second eccentric lowering is critical. This controlled stretch under load is the primary hypertrophy driver for the hamstring.','Keep your hips pressed firmly into the bench throughout. Do not let them lift off as you curl.','No swinging or momentum. If the dumbbell is too heavy to control cleanly, drop the weight — form matters more than load here.','This is a direct replacement for the lying leg curl machine. The movement pattern is identical — only the load delivery differs.']},
   'Pallof Press':{muscle:'Core / Oblique',category:'Core',tips:['Cable at chest height. Stand sideways to the machine, feet shoulder-width, slight knee bend.','This is an anti-rotation exercise — resist the cable pulling you sideways, do not create movement.','Press the handle directly out and hold for 2 seconds. Feel the obliques working to prevent rotation.','Return slowly to the chest. Do not let the cable yank you back — control the return.','Further from the cable = more rotational force. Progress distance before adding weight.','Hips square, feet rooted. No leaning or shifting. The benefit comes entirely from the stillness.']},
   'Dead Bug':{muscle:'Deep Core / TVA',category:'Core',tips:['Lie on your back, lower back pressed firmly into the floor. This contact must be maintained throughout.','Arms toward the ceiling, knees bent at 90 degrees, shins parallel to the floor.','Breathe out fully before moving — this activates the deep transverse abdominis.','Slowly lower the opposite arm and leg simultaneously. Only go as far as you can keep the lower back flat.','Return to start. Breathe in, breathe out again before the next rep.','If your lower back arches away from the floor, you have gone too far.']},
   'Barbell Squat / Goblet Squat':{muscle:'Quad / Glute / Core',category:'Squat',tips:['Start with goblet squat (dumbbell at chest) to establish the pattern before loading a barbell.','Feet shoulder-width or slightly wider, toes turned out 15 to 30 degrees.','Brace your core completely before descending — create a rigid trunk throughout the rep.','Squat to at least parallel — thighs horizontal or below. Depth is where the stimulus is greatest.','Knees track in line with toes throughout. Do not allow them to cave inward.','For barbell: bar on upper traps (high bar) or rear delts (low bar). Elbows under the bar.']},
@@ -229,32 +229,73 @@ const SWU_EX=[
   {name:'Scapular Shrugs',sets:1,reps:'10'},
 ];
 
+// ── WARM-UP COACHING & DATA ───────────────────────────────────────────────────
+const WARMUP_COACHING={
+  '5 Min Light Cardio':{muscle:'Full Body / Cardiovascular',category:'Warm-Up',tips:['Bike, row, or brisk walk — purpose is to raise core temperature and heart rate gently.','Keep intensity low. You should be able to hold a conversation throughout.','This primes blood flow to the muscles you are about to train. Do not skip it.','Especially important first thing in the morning when joints and muscles are stiff.']},
+  'Hip Circles':{muscle:'Hip / Glute / Lumbar',category:'Warm-Up',tips:['Hands on hips or holding a wall. Make slow, deliberate circles with the hips.','Gradually increase the range of motion as the joint warms up.','Do both directions — the stiff direction tells you where mobility work is needed.','This lubricates the hip joint and activates the glute medius before lower body work.']},
+  'Leg Swings (Front / Back)':{muscle:'Hip Flexor / Hamstring',category:'Warm-Up',tips:['Stand side-on to a wall, hold it for balance.','Swing the leg forward and back in a controlled arc — let it reach full range without forcing.','Keep your torso upright and still throughout. Only the leg moves.','10 swings front-to-back on each leg. Dynamically lengthens the hip flexors and hamstrings.']},
+  'Glute Bridge (Warm-Up)':{muscle:'Glute / Hamstring / Core',category:'Warm-Up',tips:['Lie on your back, knees bent, feet flat on the floor.','Drive through your heels and squeeze the glutes to lift the hips.','Hold at the top for 1 second — feel the glutes fire, not the lower back.','This is activation, not loading. Keep it controlled and intentional.']},
+  'Cat-Cow':{muscle:'Thoracic Spine / Lumbar / Core',category:'Warm-Up',tips:['On all fours, hands under shoulders, knees under hips.','Cat: exhale and round the spine upward, tuck the pelvis, chin to chest.','Cow: inhale and let the spine sag, lift the head and tailbone.','Move slowly and breathe with each transition. Mobilises the entire spine.','Especially valuable in the morning to reduce spinal stiffness before loading.']},
+  'Shoulder Rolls (Warm-Up)':{muscle:'Trap / Rotator Cuff / Scapula',category:'Warm-Up',tips:['Roll both shoulders forward in slow circles, then backward.','Keep the neck relaxed throughout. Focus on the shoulder blade moving cleanly.','This activates the trapezius and prepares the scapular stabilisers before pressing or pulling.','Right shoulder: stay within pain-free range. Small circles are fine — do not force range.']},
+  'Bodyweight Squat (Warm-Up)':{muscle:'Quad / Glute / Hip / Ankle',category:'Warm-Up',tips:['Feet shoulder-width, toes turned out 15-30 degrees.','Squat deep — below parallel if possible. Arms forward as a counterbalance.','Move slowly, pause at the bottom, stand tall.','Warms up the entire lower body chain and primes the squat pattern before loading.']},
+  'Thoracic Rotation':{muscle:'Thoracic Spine / Oblique',category:'Warm-Up',tips:['Half-kneeling position with one knee up. Hands behind your head.','Rotate your upper body toward the raised knee side. Hold at end range for 1-2 seconds.','This mobilises the thoracic spine — the region most affected by rowing and pressing.','Particularly important before Gym B to ensure the upper back can extend freely.']},
+  'Walking Hip Flexor Lunge':{muscle:'Hip Flexor / Quad / Glute',category:'Warm-Up',tips:['Step forward into a lunge. Back knee briefly touches the ground.','Pause at the bottom and feel the hip flexor of the back leg stretching.','Drive through the front heel to stand, bring the back foot forward, repeat.','10 steps alternating legs. Dynamically opens the hips before single-leg work.']},
+  'Single-Leg Balance':{muscle:'Ankle / Glute Med / Core',category:'Warm-Up',tips:['Stand on one leg, soft bend in the knee. Hold for 20-30 seconds.','Eyes forward. Close your eyes to increase proprioceptive challenge once stable.','Activates the stabilising muscles around the ankle and knee before single-leg loading.','Particularly important before Bulgarian Split Squats — pre-activates the same stabilisers.']},
+};
+const WARMUP_A=[
+  {name:'5 Min Light Cardio',sets:1,reps:'5 min'},
+  {name:'Hip Circles',sets:1,reps:'10 each direction'},
+  {name:'Leg Swings (Front / Back)',sets:1,reps:'10 each leg'},
+  {name:'Glute Bridge (Warm-Up)',sets:2,reps:'10'},
+  {name:'Cat-Cow',sets:1,reps:'10 reps'},
+  {name:'Shoulder Rolls (Warm-Up)',sets:1,reps:'10 each direction'},
+];
+const WARMUP_B=[
+  {name:'5 Min Light Cardio',sets:1,reps:'5 min'},
+  {name:'Hip Circles',sets:1,reps:'10 each direction'},
+  {name:'Bodyweight Squat (Warm-Up)',sets:2,reps:'10'},
+  {name:'Thoracic Rotation',sets:1,reps:'8 each side'},
+  {name:'Cat-Cow',sets:1,reps:'10 reps'},
+  {name:'Shoulder Rolls (Warm-Up)',sets:1,reps:'10 each direction'},
+];
+const WARMUP_C=[
+  {name:'5 Min Light Cardio',sets:1,reps:'5 min'},
+  {name:'Hip Circles',sets:1,reps:'10 each direction'},
+  {name:'Walking Hip Flexor Lunge',sets:1,reps:'10 steps'},
+  {name:'Single-Leg Balance',sets:1,reps:'20s each side'},
+  {name:'Cat-Cow',sets:1,reps:'10 reps'},
+  {name:'Shoulder Rolls (Warm-Up)',sets:1,reps:'10 each direction'},
+];
+
 const PLAN={
   'Gym A':{color:A,icon:'A',subtitle:'Lower + Horizontal Push/Pull + Core',sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up Sequence',note:'5-8 min — do not skip, especially morning sessions',exercises:WARMUP_A}]},
     {title:'Main Session',color:A,supersets:[
       {label:'Superset 1',note:'Hinge + Pull — alternate, rest after both',exercises:[{name:'Romanian Deadlift',sets:3,reps:'8-10'},{name:'Bent-Over DB / Kettlebell Row',sets:3,reps:'8-12'}]},
       {label:'Superset 2',note:'Lower Push + Upper Push — alternate, rest after both',exercises:[{name:'Leg Press',sets:3,reps:'8-12'},{name:'Flat DB Press (neutral grip)',sets:3,reps:'8-12'}]},
-      {label:'Superset 3',note:'Unilateral Lower — alternate legs, 60s rest',exercises:[{name:'DB Split Squat (front foot elevated)',sets:3,reps:'10'},{name:'Lying Leg Curl',sets:3,reps:'10-12'}]},
+      {label:'Superset 3',note:'Unilateral Lower — alternate legs, 60s rest',exercises:[{name:'DB Split Squat (front foot elevated)',sets:3,reps:'10'},{name:'Prone Dumbbell Leg Curl',sets:3,reps:'10-12'}]},
       {label:'Core Superset',note:'Anti-rotation + Anti-extension — minimal rest',exercises:[{name:'Pallof Press',sets:3,reps:'10'},{name:'Dead Bug',sets:3,reps:'8'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest between exercises',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch fully',exercises:STRETCH_EX}]},
   ]},
   'Gym B':{color:PU,icon:'B',subtitle:'Squat + Vertical Pull + Trunk Stability',sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up Sequence',note:'5-8 min — thoracic and hip focus before squatting',exercises:WARMUP_B}]},
     {title:'Main Session',color:PU,supersets:[
       {label:'Superset 1',note:'Squat + Vertical Pull — alternate, 90s rest',exercises:[{name:'Barbell Squat / Goblet Squat',sets:3,reps:'8-10'},{name:'Pull-Up / Lat Pulldown (neutral grip)',sets:3,reps:'6-10'}]},
       {label:'Superset 2',note:'Hip Hinge + Upper Push — alternate, 60-90s rest',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:3,reps:'10-12'},{name:'Low-Incline DB Press (neutral grip)',sets:3,reps:'8-12'}]},
-      {label:'Superset 3',note:'Row + Hamstring — alternate, 60s rest',exercises:[{name:'Single-Arm DB Row (incline bench)',sets:3,reps:'10-12'},{name:'Lying Leg Curl',sets:2,reps:'10-12'}]},
+      {label:'Superset 3',note:'Row + Hamstring — alternate, 60s rest',exercises:[{name:'Single-Arm DB Row (incline bench)',sets:3,reps:'10-12'},{name:'Prone Dumbbell Leg Curl',sets:2,reps:'10-12'}]},
       {label:'Core Superset',note:'Lateral + Flexion — minimal rest',exercises:[{name:'Side Plank',sets:3,reps:'20-30s'},{name:'Reverse Crunch',sets:3,reps:'10-15'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch',exercises:STRETCH_EX}]},
   ]},
   'Gym C':{color:G,icon:'C',subtitle:'Single-Leg + Upper Hypertrophy + Rotational Core',sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up Sequence',note:'5-8 min — balance and hip focus before single-leg work',exercises:WARMUP_C}]},
     {title:'Main Session',color:G,supersets:[
       {label:'Superset 1',note:'Unilateral Lower + Row — alternate, 90s rest',exercises:[{name:'Bulgarian Split Squat',sets:3,reps:'10'},{name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12'}]},
       {label:'Superset 2',note:'Hip Hinge + Chest Fly — alternate, 60-90s rest',exercises:[{name:'45deg Back Extension / KB Good Morning',sets:3,reps:'10-12'},{name:'Cable Chest Fly (chest height)',sets:3,reps:'12-15'}]},
-      {label:'Superset 3',note:'Push + Hamstring — alternate, 60s rest',exercises:[{name:'Push-Up Variation',sets:3,reps:'10-15'},{name:'Lying Leg Curl',sets:3,reps:'10-12'}]},
+      {label:'Superset 3',note:'Push + Hamstring — alternate, 60s rest',exercises:[{name:'Push-Up Variation',sets:3,reps:'10-15'},{name:'Prone Dumbbell Leg Curl',sets:3,reps:'10-12'}]},
       {label:'Core Superset',note:'Rotational + Anti-extension — minimal rest',exercises:[{name:'Cable Wood Chop',sets:3,reps:'10'},{name:'Bird Dog',sets:2,reps:'8'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
@@ -276,6 +317,15 @@ function buildLibrary(){
     for(const sec of plan.sections){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(!seen.has(ex.name)){seen.add(ex.name);const c=COACHING[ex.name]||{};lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,category:c.category||sec.title,muscle:c.muscle||'',sessions:[],tips:c.tips||[]});}const entry=lib.find(e=>e.name===ex.name);if(entry&&!entry.sessions.includes(sessionName))entry.sessions.push(sessionName);}}}
   }
   for(const ex of SWU_EX){if(!seen.has(ex.name)){seen.add(ex.name);const c=COACHING[ex.name]||{};lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,category:'Swim Warm-Up',muscle:c.muscle||'',sessions:['Swim'],tips:c.tips||[]});}}
+  // Add warm-up exercises from all three sessions
+  const allWarmup=[...WARMUP_A,...WARMUP_B,...WARMUP_C];
+  for(const ex of allWarmup){
+    if(!seen.has(ex.name)){
+      seen.add(ex.name);
+      const c=WARMUP_COACHING[ex.name]||{};
+      lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,category:'Warm-Up',muscle:c.muscle||'',sessions:['Gym A','Gym B','Gym C'].filter((_,i)=>[WARMUP_A,WARMUP_B,WARMUP_C][i].some(w=>w.name===ex.name)),tips:c.tips||[]});
+    }
+  }
   return lib.sort((a,b)=>a.name.localeCompare(b.name));
 }
 const LIBRARY=buildLibrary();
@@ -301,8 +351,16 @@ function ExerciseGif({exName,color}){
     });
     return()=>{cancelled=true;};
   },[exName]);
-  if(loading)return <div className="shimmer" style={{width:'100%',height:220,borderRadius:12,marginBottom:14}}/>;
-  if(failed||!gifUrl)return null;
+  if(loading)return <div className="shimmer" style={{width:'100%',height:180,borderRadius:12,marginBottom:14}}/>;
+  if(failed||!gifUrl)return(
+    <div style={{background:'#0D1B2E',border:`1px solid ${color}22`,borderRadius:10,padding:'12px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
+      <span style={{fontSize:20}}>🎬</span>
+      <div>
+        <div style={{color:'#334155',fontSize:12}}>GIF unavailable</div>
+        <div style={{color:'#1E3A5F',fontSize:10,marginTop:2}}>Check coaching notes below</div>
+      </div>
+    </div>
+  );
   return(
     <div style={{borderRadius:12,overflow:'hidden',marginBottom:14,background:'#0D1B2E',border:`1px solid ${color}33`,position:'relative'}}>
       <img src={gifUrl} alt={exName} style={{width:'100%',display:'block',maxHeight:260,objectFit:'contain',background:'#0D1B2E'}} onError={()=>setFailed(true)}/>
@@ -429,19 +487,68 @@ function ExerciseLibrary({hist}){
 }
 
 // ── TIMER ─────────────────────────────────────────────────────────────────────
+// Two-knock sound via Web Audio API — no external files
+function playKnock(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,0.13].forEach(delay=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.type='sine';osc.frequency.value=520;
+      gain.gain.setValueAtTime(0,ctx.currentTime+delay);
+      gain.gain.linearRampToValueAtTime(0.4,ctx.currentTime+delay+0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.22);
+      osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+0.25);
+    });
+  }catch{}
+}
+
+// Timer uses Date.now() so it survives tab switching, phone lock, music app switches
 function Timer({duration,onDone}){
-  const[rem,setRem]=useState(duration);const[active,setActive]=useState(true);
-  useEffect(()=>{if(!active)return;if(rem<=0){onDone();return;}const t=setTimeout(()=>setRem(r=>r-1),1000);return()=>clearTimeout(t);},[rem,active]);
+  const endAt=useRef(Date.now()+duration*1000);
+  const pauseLeft=useRef(null);
+  const[rem,setRem]=useState(duration);
+  const[active,setActive]=useState(true);
+
+  // Tick every 250ms — catches up instantly when tab becomes visible
+  useEffect(()=>{
+    if(!active)return;
+    const id=setInterval(()=>{
+      const r=Math.max(0,Math.ceil((endAt.current-Date.now())/1000));
+      setRem(r);
+      if(r<=0){clearInterval(id);playKnock();onDone();}
+    },250);
+    return()=>clearInterval(id);
+  },[active]);
+
+  // Re-check immediately when tab/app regains focus
+  useEffect(()=>{
+    const onVisible=()=>{
+      if(document.visibilityState==='visible'&&active){
+        const r=Math.max(0,Math.ceil((endAt.current-Date.now())/1000));
+        setRem(r);
+        if(r<=0){playKnock();onDone();}
+      }
+    };
+    document.addEventListener('visibilitychange',onVisible);
+    return()=>document.removeEventListener('visibilitychange',onVisible);
+  },[active]);
+
+  const togglePause=()=>{
+    if(active){pauseLeft.current=(endAt.current-Date.now());}
+    else{endAt.current=Date.now()+(pauseLeft.current||0);}
+    setActive(a=>!a);
+  };
   const r=26,circ=2*Math.PI*r,c=rem>duration*0.5?G:rem>duration*0.25?O:R;
   return(
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',padding:'14px 0',background:'#0A1628',borderRadius:12,border:`1px solid ${c}44`,margin:'10px 0'}}>
       <div style={{color:'#475569',fontSize:11,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Rest Timer</div>
       <div style={{position:'relative',width:66,height:66}}>
-        <svg width="66" height="66" style={{transform:'rotate(-90deg)'}}><circle cx="33" cy="33" r={r} fill="none" stroke="#1E2D40" strokeWidth="5"/><circle cx="33" cy="33" r={r} fill="none" stroke={c} strokeWidth="5" strokeDasharray={`${circ*(rem/duration)} ${circ}`} strokeLinecap="round" style={{transition:'stroke-dasharray 1s linear,stroke 0.3s'}}/></svg>
+        <svg width="66" height="66" style={{transform:'rotate(-90deg)'}}><circle cx="33" cy="33" r={r} fill="none" stroke="#1E2D40" strokeWidth="5"/><circle cx="33" cy="33" r={r} fill="none" stroke={c} strokeWidth="5" strokeDasharray={`${circ*(rem/duration)} ${circ}`} strokeLinecap="round" style={{transition:'stroke-dasharray 0.3s linear,stroke 0.3s'}}/></svg>
         <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{color:c,fontSize:18,fontFamily:'monospace',fontWeight:700}}>{rem}</span></div>
       </div>
       <div style={{display:'flex',gap:8,marginTop:10}}>
-        <button onClick={()=>setActive(a=>!a)} style={{background:'none',border:`1px solid ${c}44`,borderRadius:6,color:c,padding:'4px 12px',cursor:'pointer',fontSize:12}}>{active?'Pause':'Resume'}</button>
+        <button onClick={togglePause} style={{background:'none',border:`1px solid ${c}44`,borderRadius:6,color:c,padding:'4px 12px',cursor:'pointer',fontSize:12}}>{active?'Pause':'Resume'}</button>
         <button onClick={onDone} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 12px',cursor:'pointer',fontSize:12}}>Skip</button>
       </div>
     </div>
@@ -638,7 +745,21 @@ function RunLogger({data,onChange,week}){
   );
 }
 
-function RevPanel({session,hist,color}){
+// Claude API proxy — routes through Supabase edge function to avoid CORS/key issues on GitHub Pages
+const PROXY_URL='https://gvzkxjynpmjnexbmhqgb.supabase.co/functions/v1/claude-proxy';
+async function callClaude(system,messages,max_tokens=1000){
+  const res=await fetch(PROXY_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+SK},
+    body:JSON.stringify({system,messages,max_tokens})
+  });
+  if(!res.ok)throw new Error('API error '+res.status);
+  const d=await res.json();
+  if(d.error)throw new Error(d.error);
+  return(d.content&&d.content[0]&&d.content[0].text)||'No response.';
+}
+
+function RevPanel({session,hist,color,onFeedback}){
   const[st,setSt]=useState('idle');const[fb,setFb]=useState('');
   const sum=s=>{
     const ig=['Gym A','Gym B','Gym C'].includes(s.type);
@@ -657,9 +778,10 @@ function RevPanel({session,hist,color}){
       const s=sum(session);
       const prev=(hist||[]).filter(h=>h.type===session.type&&h.id!==session.id).slice(0,3);
       const pt=prev.length?'\nPREVIOUS SESSIONS:\n'+prev.map(sum).join('\n'):'';
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing. Week ${session.week} of 12. Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`,messages:[{role:'user',content:`SESSION:\n${s}${pt}`}]})});
-      const d=await res.json();
-      setFb((d.content&&d.content[0]&&d.content[0].text)||'Unable to generate feedback.');setSt('done');
+      const system=`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79.3kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing. Week ${session.week} of 12. Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`;
+      const text=await callClaude(system,[{role:'user',content:`SESSION:\n${s}${pt}`}]);
+      setFb(text);setSt('done');
+      if(onFeedback)onFeedback(`**Post-Session: ${session.type} (Week ${session.week})**\n\n${text}`);
     }catch(e){setFb('Error: '+e.message);setSt('error');}
   };
   const render=t=>t.split('\n').map((l,i)=>{
@@ -672,6 +794,121 @@ function RevPanel({session,hist,color}){
       {st==='idle'&&<button onClick={go} style={{width:'100%',padding:'13px',background:`linear-gradient(135deg,${color}44,${color}22)`,border:`1px solid ${color}`,borderRadius:10,color,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span>🤖</span> Get Claude Feedback</button>}
       {st==='loading'&&<div style={{background:'#0D1B2E',border:`1px solid ${color}44`,borderRadius:10,padding:'20px',textAlign:'center'}}><div style={{color,fontSize:13,marginBottom:10}}>Analysing your session...</div><div style={{display:'flex',justifyContent:'center',gap:6}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:'50%',background:color,animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}</div></div>}
       {(st==='done'||st==='error')&&<div style={{background:'#0D1B2E',border:`1px solid ${color}44`,borderRadius:10,padding:'16px'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,paddingBottom:10,borderBottom:'1px solid #1E2D40'}}><span style={{color,fontSize:13,fontWeight:700}}>Claude Feedback</span><button onClick={()=>setSt('idle')} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',padding:'3px 8px',cursor:'pointer',fontSize:11}}>Refresh</button></div>{render(fb)}</div>}
+    </div>
+  );
+}
+
+const PT_SYSTEM=`You are Claude PT — an expert personal trainer and performance coach for Chris. Key context:
+- Chris, 35yo male, 79.3kg, London
+- 12-week hypertrophy + cardiovascular plan (gym ×3, swim, bike, run, sauna Saturday)
+- Right shoulder surgery November 2024 — 20-45° ROM deficit, no overhead pressing. All pressing: neutral grip ≤30° incline.
+- Body composition baseline (25 Mar 2026): 79.3kg, 19.7% body fat, 63.7kg lean mass, visceral fat 6 (excellent)
+- Protein target: 142g/day (1.8g/kg). Warm meals, meat/fish based. No cold foods.
+- Supplements: Creatine 5g + UC-II Collagen 40mg + Vit C 500mg on waking. Omega-3, Multi, Zinc, D3+K2 post-workout. Magnesium before bed.
+- Progression rules: hit top rep range ALL sets across 2 consecutive sessions → +2.5kg upper, +5kg lower
+- HR zones (max 185bpm): Zone 2: 111-130 | Zone 3: 130-148 | Zone 4: 148-167
+- App: krizmc98000.github.io/training-log
+Be direct, specific, and practical. Use exact numbers. Reference Chris's history when provided. Keep answers concise unless asked to elaborate.`;
+
+function ClaudePT({messages,setMessages}){
+  const[input,setInput]=useState('');
+  const[loading,setLoading]=useState(false);
+  const bottomRef=useRef(null);
+
+  useEffect(()=>{
+    if(bottomRef.current)bottomRef.current.scrollIntoView({behavior:'smooth'});
+  },[messages]);
+
+  const send=async()=>{
+    const txt=input.trim();
+    if(!txt||loading)return;
+    const userMsg={role:'user',content:txt,ts:Date.now()};
+    const next=[...messages,userMsg];
+    setMessages(next);setInput('');setLoading(true);
+    try{
+      const apiMsgs=next.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content}));
+      const text=await callClaude(PT_SYSTEM,apiMsgs,1200);
+      setMessages(m=>[...m,{role:'assistant',content:text,ts:Date.now()}]);
+    }catch(e){
+      setMessages(m=>[...m,{role:'assistant',content:'Error: '+e.message,ts:Date.now()}]);
+    }
+    setLoading(false);
+  };
+
+  const renderMsg=content=>{
+    return content.split('\n').map((line,i)=>{
+      if(!line.trim())return <div key={i} style={{height:5}}/>;
+      const parts=line.split(/\*\*(.*?)\*\*/g);
+      return <div key={i} style={{marginBottom:3,lineHeight:1.6}}>{parts.map((x,j)=>j%2===1?<span key={j} style={{color:'#E2E8F0',fontWeight:700}}>{x}</span>:<span key={j}>{x}</span>)}</div>;
+    });
+  };
+
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 130px)'}}>
+      {/* Header */}
+      <div style={{padding:'12px 20px 8px',borderBottom:'1px solid #1E2D40',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:G,flexShrink:0}}/>
+          <span style={{color:'#E2E8F0',fontSize:14,fontWeight:700}}>Claude PT</span>
+          <span style={{color:'#334155',fontSize:11,marginLeft:4}}>AI Personal Trainer</span>
+        </div>
+        <div style={{color:'#1E3A5F',fontSize:10,marginTop:3}}>Post-session feedback appears here automatically</div>
+      </div>
+
+      {/* Messages */}
+      <div style={{flex:1,overflowY:'auto',padding:'12px 20px'}}>
+        {messages.length===0&&(
+          <div style={{textAlign:'center',padding:'40px 0 20px'}}>
+            <div style={{fontSize:28,marginBottom:10}}>💪</div>
+            <div style={{color:'#475569',fontSize:13,marginBottom:6}}>Your AI PT is ready</div>
+            <div style={{color:'#334155',fontSize:12,lineHeight:1.6}}>Ask about your training, nutrition, recovery, or check in on progress. Post-session feedback will also appear here automatically.</div>
+            <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:6}}>
+              {['How should I eat on rest days?','What should I focus on in Week 2?','My right shoulder felt tight today — is that normal?','How do I know if I\'m recovering enough?'].map((q,i)=>(
+                <button key={i} onClick={()=>{setInput(q);}} style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,color:'#475569',padding:'8px 12px',cursor:'pointer',fontSize:12,textAlign:'left'}}>{q}</button>
+              ))}
+            </div>
+          </div>
+        )}
+        {messages.map((msg,i)=>(
+          <div key={i} style={{marginBottom:14,display:'flex',flexDirection:'column',alignItems:msg.role==='user'?'flex-end':'flex-start'}}>
+            {msg.role==='system-note'?(
+              <div style={{background:'#0A1628',border:'1px solid #1E2D40',borderRadius:8,padding:'8px 12px',maxWidth:'95%',width:'100%'}}>
+                <div style={{color:'#38BDF8',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:6,fontWeight:700}}>Post-Session Feedback</div>
+                <div style={{color:'#94A3B8',fontSize:12}}>{renderMsg(msg.content)}</div>
+              </div>
+            ):(
+              <div style={{maxWidth:'85%',background:msg.role==='user'?A+'22':'#0D1B2E',border:`1px solid ${msg.role==='user'?A+'44':'#1E2D40'}`,borderRadius:msg.role==='user'?'12px 12px 4px 12px':'12px 12px 12px 4px',padding:'10px 13px'}}>
+                <div style={{color:msg.role==='user'?A:'#94A3B8',fontSize:13,lineHeight:1.65}}>{renderMsg(msg.content)}</div>
+              </div>
+            )}
+          </div>
+        ))}
+        {loading&&(
+          <div style={{display:'flex',gap:5,padding:'8px 0'}}>
+            {[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:'50%',background:A,animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}
+          </div>
+        )}
+        <div ref={bottomRef}/>
+      </div>
+
+      {/* Input */}
+      <div style={{padding:'10px 20px 24px',borderTop:'1px solid #1E2D40',flexShrink:0,background:'#070E1A'}}>
+        <div style={{display:'flex',gap:8,alignItems:'flex-end'}}>
+          <textarea
+            placeholder="Ask your PT anything..."
+            value={input}
+            onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}
+            style={{flex:1,background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:10,color:'#E2E8F0',padding:'10px 12px',fontSize:13,outline:'none',resize:'none',minHeight:42,maxHeight:120,lineHeight:1.5,boxSizing:'border-box'}}
+            rows={1}
+          />
+          <button onClick={send} disabled={!input.trim()||loading}
+            style={{width:40,height:40,borderRadius:10,background:input.trim()&&!loading?A+'33':'#0D1B2E',border:`1px solid ${input.trim()&&!loading?A:'#1E3A5F'}`,color:input.trim()&&!loading?A:'#334155',cursor:input.trim()&&!loading?'pointer':'default',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            ↑
+          </button>
+        </div>
+        <div style={{color:'#1E3A5F',fontSize:9,marginTop:5,textAlign:'center'}}>Enter to send · Shift+Enter for new line</div>
+      </div>
     </div>
   );
 }
@@ -694,7 +931,12 @@ function App(){
   const[view,setView]=useState(null);
   const[saving,setSaving]=useState(false);
   const[loaded,setLoaded]=useState(false);
+  const[ptMessages,setPtMessages]=useState(()=>{try{const s=localStorage.getItem('tl-pt-msgs');return s?JSON.parse(s):[];}catch{return[];}});
   const userId=uid();const asr=useRef(null);
+
+  // Persist PT messages to localStorage
+  useEffect(()=>{try{localStorage.setItem('tl-pt-msgs',JSON.stringify(ptMessages.slice(-100)));}catch{}},[ptMessages]);
+  const addPtFeedback=useCallback(text=>{setPtMessages(m=>[...m,{role:'system-note',content:text,ts:Date.now()}]);},[]);
 
   useEffect(()=>{
     (async()=>{
@@ -736,7 +978,7 @@ function App(){
   const ig=atype&&['Gym A','Gym B','Gym C'].includes(atype);
   const dtw=hist.filter(s=>s.week===week).map(s=>s.type);
   const rc=done2&&PLAN[done2.type]?PLAN[done2.type].color:A;
-  const navScreen=(screen==='log'||screen==='review')?'home':screen;
+  const navScreen=screen==='review'?'home':screen==='log'?'live':screen;
 
   if(!loaded)return(
     <div style={{background:'#070E1A',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:10}}>
@@ -777,12 +1019,19 @@ function App(){
             {startDate&&<div style={{color:'#475569',fontSize:11,marginTop:6}}>Currently Week {calcWeek(startDate)} of 12</div>}
           </div>
         )}
-        <div style={{display:'flex',marginTop:12,borderBottom:'1px solid #1E2D40'}}>
-          {[['home','Sessions'],['exercises','Exercises'],['history','History']].map(([s,label])=>(
-            <button key={s} onClick={()=>{setScreen(s);setAtype(null);}} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen===s?A:'#475569',fontSize:12,fontWeight:navScreen===s?600:400,cursor:'pointer',borderBottom:navScreen===s?`2px solid ${A}`:'2px solid transparent',textAlign:'center'}}>{label}</button>
-          ))}
-          {saving&&<span style={{color:'#334155',fontSize:10,alignSelf:'center',paddingRight:8,flexShrink:0}}>saving...</span>}
-          {screen==='log'&&!saving&&<span style={{color:'#1E3A5F',fontSize:10,alignSelf:'center',paddingRight:8,flexShrink:0}}>auto-saving</span>}
+        <div style={{display:'flex',marginTop:12,borderBottom:'1px solid #1E2D40',overflowX:'auto'}}>
+          {/* Sessions tab — never kills live session */}
+          <button onClick={()=>setScreen('home')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='home'?A:'#475569',fontSize:12,fontWeight:navScreen==='home'?600:400,cursor:'pointer',borderBottom:navScreen==='home'?`2px solid ${A}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap'}}>Sessions</button>
+          {/* LIVE tab — only visible when a session is active */}
+          {atype&&(
+            <button onClick={()=>setScreen('log')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='live'?O:'#FB923C88',fontSize:12,fontWeight:700,cursor:'pointer',borderBottom:navScreen==='live'?`2px solid ${O}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap',position:'relative'}}>
+              <span style={{marginRight:4}}>⬤</span>Live
+              {saving&&<span style={{color:'#334155',fontSize:9,position:'absolute',bottom:0,left:'50%',transform:'translateX(-50%)'}}>saving</span>}
+            </button>
+          )}
+          <button onClick={()=>setScreen('exercises')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='exercises'?A:'#475569',fontSize:12,fontWeight:navScreen==='exercises'?600:400,cursor:'pointer',borderBottom:navScreen==='exercises'?`2px solid ${A}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap'}}>Exercises</button>
+          <button onClick={()=>setScreen('history')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='history'?A:'#475569',fontSize:12,fontWeight:navScreen==='history'?600:400,cursor:'pointer',borderBottom:navScreen==='history'?`2px solid ${A}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap'}}>History</button>
+          <button onClick={()=>setScreen('claudept')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='claudept'?PU:'#475569',fontSize:12,fontWeight:navScreen==='claudept'?600:400,cursor:'pointer',borderBottom:navScreen==='claudept'?`2px solid ${PU}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap'}}>Claude PT</button>
         </div>
       </div>
 
@@ -874,7 +1123,7 @@ function App(){
             <button onClick={()=>setScreen('home')} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Home</button>
           </div>
           {done2.data&&done2.data.workoutNotes&&<div style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,padding:'10px 12px',marginBottom:12}}><div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Your Notes</div><div style={{color:'#CBD5E1',fontSize:13}}>{done2.data.workoutNotes}</div></div>}
-          <RevPanel session={done2} hist={hist} color={rc}/>
+          <RevPanel session={done2} hist={hist} color={rc} onFeedback={addPtFeedback}/>
         </div>
       )}
 
@@ -891,6 +1140,11 @@ function App(){
             </div>
           );})}
         </div>
+      )}
+
+      {/* CLAUDE PT */}
+      {screen==='claudept'&&(
+        <ClaudePT messages={ptMessages} setMessages={setPtMessages}/>
       )}
 
       {/* SESSION DETAIL MODAL */}
@@ -922,7 +1176,7 @@ function App(){
                 {Object.entries(view.data).filter(([k])=>k!=='notes'&&k!=='workoutNotes'&&view.data[k]).map(([k,v])=>{const vc=PLAN[view.type]?PLAN[view.type].color:A;return <div key={k} style={{background:'#0D1B2E',borderRadius:8,padding:'8px 10px'}}><div style={{color:'#475569',fontSize:10,textTransform:'capitalize'}}>{k.replace(/([A-Z])/g,' $1')}</div><div style={{color:vc,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{v}</div></div>;})}
               </div>
             )}
-            <RevPanel session={view} hist={hist} color={PLAN[view.type]?PLAN[view.type].color:A}/>
+            <RevPanel session={view} hist={hist} color={PLAN[view.type]?PLAN[view.type].color:A} onFeedback={addPtFeedback}/>
           </div>
         </div>
       )}
