@@ -57,7 +57,8 @@ const GIF_SEARCH={
   'Bulgarian Split Squat':'bulgarian split squat',
   'Bent-Over Barbell / DB Row':'barbell bent over row',
   '45deg Back Extension / KB Good Morning':'back extension',
-  'Cable Chest Fly (chest height)':'cable fly',
+  'Cable Lateral Raise':'cable lateral raise',
+  'Standing Calf Raise':'standing calf raise',
   'Push-Up Variation':'push up',
   'Cable Wood Chop':'cable wood chop',
   'Bird Dog':'bird dog',
@@ -119,12 +120,14 @@ async function fetchExerciseGif(exName){
     }
   }catch{}
 
-  // Persist to Supabase — fire and forget (even null saved so we don't retry)
-  fetch(SB+'/rest/v1/exercise_gifs',{
-    method:'POST',
-    headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify({exercise_name:exName,gif_url:gifUrl,fetched_at:new Date().toISOString()})
-  }).catch(()=>{});
+  // Persist to Supabase only on success — don't cache nulls so rate-limited exercises retry next time
+  if(gifUrl){
+    fetch(SB+'/rest/v1/exercise_gifs',{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({exercise_name:exName,gif_url:gifUrl,fetched_at:new Date().toISOString()})
+    }).catch(()=>{});
+  }
 
   memCache[exName]=gifUrl;
   return gifUrl;
@@ -184,7 +187,8 @@ const COACHING={
   'Bulgarian Split Squat':{muscle:'Quad / Glute / Hip Flexor',category:'Squat',tips:['Rear foot elevated on a bench, laces down or ball of foot on the pad.','Step forward enough that your front knee does not travel far past your toes at the bottom.','Upright torso = more quad. Slight forward lean = more glute.','Drop the back knee straight down toward the floor. Slow and controlled — 3 seconds.','Drive through the front heel to stand. Do not push off with the back foot.','One of the most demanding lower body exercises available. Respect the load.']},
   'Bent-Over Barbell / DB Row':{muscle:'Back / Bicep / Rear Delt',category:'Pull',tips:['Hinge to roughly 45 degrees and hold that position firmly throughout.','Pull to your lower ribcage — not your belly, not your upper chest.','Alternate grip weekly: overhand for more upper back, underhand for more lat and bicep.','Lead with the elbow. Your hand is just a hook.','Lower with full control — do not drop it. The eccentric matters as much as the pull.','Core braced throughout. No spinal rotation as you row.']},
   '45deg Back Extension / KB Good Morning':{muscle:'Hamstring / Glute / Lower Back',category:'Hinge',tips:['For back extension: position the pad just above your hip bones, not at your waist.','Hinge from the hips — feel the hamstring stretch on the way down. Not a lower back crunch.','For KB good morning: hold at your chest. Hinge until you feel a full hamstring stretch, then drive hips forward.','Squeeze glutes hard at the top — full hip extension on every rep.','2 to 3 seconds on the descent. The controlled eccentric is the primary stimulus.','Keep a neutral spine. The movement happens at the hip, not in the lumbar spine.']},
-  'Cable Chest Fly (chest height)':{muscle:'Chest / Front Delt',category:'Push',tips:['Set cables at chest height. This angle maximises pec activation with the shoulder in a safe position.','Step forward so arms are slightly behind the cable line at the start — creates a full pec stretch.','Slight forward lean (10 to 15 degrees) to align with the chest fibres.','Think about hugging a large tree — the arc comes from the shoulder joint, not elbow bending.','Maintain a soft bend in the elbow throughout. Do not fully extend or fully flex the arm.','Squeeze the pecs hard as hands come together. Hold for one second.']},
+  'Cable Lateral Raise':{muscle:'Medial Deltoid',category:'Push',tips:['Set the cable to the lowest position. Stand side-on, cable in the far hand — this gives a better line of pull for the medial delt than a dumbbell.','Keep a slight forward lean (10-15 degrees) and a soft bend in the elbow throughout.','Raise your arm out to the side and stop at shoulder height — do not go above. Especially important for your right shoulder.','Lead with your elbow, not your wrist. Think about lifting your elbow up and out.','Lower slowly — 3 seconds down. The eccentric is where the medial delt stimulus is greatest.','Start light (5-7kg max). This muscle responds well to volume and controlled reps, not heavy loading.','This directly targets shoulder width — the medial deltoid is the muscle that creates the widest-shoulder look from the front.']},
+  'Standing Calf Raise':{muscle:'Gastrocnemius / Soleus',category:'Lower Body',tips:['Stand on a step or plate edge with heels hanging off. Feet hip-width, toes pointing slightly forward.','Lower your heels as far as possible to get a full stretch at the bottom — this is the range most people skip and where the growth stimulus is.','Drive up onto your toes as high as possible. Squeeze hard at the top for 1 full second.','Take 3 seconds to lower down. Rushed reps with no range of motion are largely wasted.','The gastrocnemius (the visible calf muscle) responds best to full-range, controlled reps. Do not bounce out of the bottom.','Calves are high-endurance muscles — higher rep ranges (12-20) with controlled eccentrics tend to produce better results than low reps heavy.']},'Step forward so arms are slightly behind the cable line at the start — creates a full pec stretch.','Slight forward lean (10 to 15 degrees) to align with the chest fibres.','Think about hugging a large tree — the arc comes from the shoulder joint, not elbow bending.','Maintain a soft bend in the elbow throughout. Do not fully extend or fully flex the arm.','Squeeze the pecs hard as hands come together. Hold for one second.']},
   'Push-Up Variation':{muscle:'Chest / Tricep / Core',category:'Push',tips:['Hands slightly wider than shoulder-width. Elbows at 45 degrees — not flared wide.','Rigid plank from head to heel. No sagging hips, no piked hips.','Lower your chest to the floor. Full range every rep. No half reps.','Archer push-up: shift your weight to one arm as you lower — significantly increases unilateral load.','Close-grip: hands under the shoulders, elbows close to the body — more tricep emphasis.','Pause at the bottom for 1 second to remove elastic rebound and increase time under tension.']},
   'Cable Wood Chop':{muscle:'Oblique / Core / Shoulder',category:'Core',tips:['Stand sideways to the cable, feet shoulder-width, slight knee bend.','The rotation comes from your core and hips rotating together — not arm pulling.','Let your eyes follow your hands. This ensures the rotation is real, not just arm swing.','The trail hip should open as you rotate. Think full trunk rotation, loaded and controlled.','Control the return — the cable will try to pull you back. Resist it with the same muscles.']},
   'Bird Dog':{muscle:'Core / Lower Back / Glute',category:'Core',tips:['On all fours: hands under shoulders, knees under hips. Spine neutral — not arched or rounded.','Extend the opposite arm and leg simultaneously. Move slowly — speed defeats the purpose.','Hold for a full 3 seconds at full extension. The extended hold recruits more deep stabiliser muscle.','Keep your hips completely level. Do not let the extending hip hike up.','Reach your heel toward the wall behind you rather than lifting your leg toward the ceiling.','This builds coordination between the glutes and opposite shoulder — relevant to running and lifting.']},
@@ -274,7 +278,7 @@ const PLAN={
       {label:'Superset 1',note:'Hinge + Pull — alternate, rest after both',exercises:[{name:'Romanian Deadlift',sets:3,reps:'8-10'},{name:'Bent-Over DB / Kettlebell Row',sets:3,reps:'8-12'}]},
       {label:'Superset 2',note:'Lower Push + Upper Push — alternate, rest after both',exercises:[{name:'Leg Press',sets:3,reps:'8-12'},{name:'Flat DB Press (neutral grip)',sets:3,reps:'8-12'}]},
       {label:'Superset 3',note:'Unilateral Lower — alternate legs, 60s rest',exercises:[{name:'DB Split Squat (front foot elevated)',sets:3,reps:'10'},{name:'Prone Dumbbell Leg Curl',sets:3,reps:'10-12'}]},
-      {label:'Core Superset',note:'Anti-rotation + Anti-extension — minimal rest',exercises:[{name:'Pallof Press',sets:3,reps:'10'},{name:'Dead Bug',sets:3,reps:'8'}]},
+      {label:'Core + Calf Finisher',note:'Anti-rotation + Anti-extension + Calf — minimal rest between, 60s after round',exercises:[{name:'Pallof Press',sets:3,reps:'10'},{name:'Dead Bug',sets:3,reps:'8'},{name:'Standing Calf Raise',sets:3,reps:'15-20'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest between exercises',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch fully',exercises:STRETCH_EX}]},
@@ -294,7 +298,7 @@ const PLAN={
     {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up Sequence',note:'5-8 min — balance and hip focus before single-leg work',exercises:WARMUP_C}]},
     {title:'Main Session',color:G,supersets:[
       {label:'Superset 1',note:'Unilateral Lower + Row — alternate, 90s rest',exercises:[{name:'Bulgarian Split Squat',sets:3,reps:'10'},{name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12'}]},
-      {label:'Superset 2',note:'Hip Hinge + Chest Fly — alternate, 60-90s rest',exercises:[{name:'45deg Back Extension / KB Good Morning',sets:3,reps:'10-12'},{name:'Cable Chest Fly (chest height)',sets:3,reps:'12-15'}]},
+      {label:'Superset 2',note:'Hip Hinge + Chest Fly + Lateral Raise — rotate through, 60s rest after all three',exercises:[{name:'45deg Back Extension / KB Good Morning',sets:3,reps:'10-12'},{name:'Cable Chest Fly (chest height)',sets:3,reps:'12-15'},{name:'Cable Lateral Raise',sets:3,reps:'12-15'}]},
       {label:'Superset 3',note:'Push + Hamstring — alternate, 60s rest',exercises:[{name:'Push-Up Variation',sets:3,reps:'10-15'},{name:'Prone Dumbbell Leg Curl',sets:3,reps:'10-12'}]},
       {label:'Core Superset',note:'Rotational + Anti-extension — minimal rest',exercises:[{name:'Cable Wood Chop',sets:3,reps:'10'},{name:'Bird Dog',sets:2,reps:'8'}]},
     ]},
@@ -616,15 +620,17 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist}){
 function SSBlock({ss,ssData,onChange,color,restDur,secTitle,hist,sessionType}){
   const[col,setCol]=useState(false);const[timer,setTimer]=useState(false);const prev=useRef(0);
   const prevSession=getPrevSession(hist,sessionType);
+  const tot=ss.exercises.reduce((a,ex)=>a+(ex.sets||1),0);
+  const dn=ss.exercises.reduce((a,ex,ei)=>a+((ssData[ei]?ssData[ei].sets||[]:[]).filter(s=>s.done).length),0);
+  // Auto-collapse when all sets in superset are done
+  useEffect(()=>{if(dn===tot&&tot>0){setTimer(false);setCol(true);}},[dn,tot]);
   useEffect(()=>{
     if(ss.exercises.length<=1)return;
     const mins=ss.exercises.map((_,ei)=>(ssData[ei]?ssData[ei].sets||[]:[]).filter(s=>s.done).length);
     const m=Math.min(...mins);
-    if(m>prev.current&&m>0&&!timer)setTimer(true);
+    if(m>prev.current&&m>0&&!timer&&dn<tot)setTimer(true);
     prev.current=m;
   },[ssData]);
-  const tot=ss.exercises.reduce((a,ex)=>a+(ex.sets||1),0);
-  const dn=ss.exercises.reduce((a,ex,ei)=>a+((ssData[ei]?ssData[ei].sets||[]:[]).filter(s=>s.done).length),0);
   return(
     <div style={{marginBottom:12}}>
       <button onClick={()=>setCol(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',background:`linear-gradient(135deg,${color}1A,${color}0A)`,border:`1px solid ${color}33`,borderRadius:10,padding:'9px 13px',cursor:'pointer',marginBottom:col?0:8}}>
@@ -931,11 +937,23 @@ function App(){
   const[view,setView]=useState(null);
   const[saving,setSaving]=useState(false);
   const[loaded,setLoaded]=useState(false);
-  const[ptMessages,setPtMessages]=useState(()=>{try{const s=localStorage.getItem('tl-pt-msgs');return s?JSON.parse(s):[];}catch{return[];}});
+  const[ptMessages,setPtMessages]=useState(()=>{
+    try{
+      // Try localStorage first, fall back to sessionStorage
+      const s=localStorage.getItem('tl-pt-msgs')||sessionStorage.getItem('tl-pt-msgs');
+      return s?JSON.parse(s):[];
+    }catch{return[];}
+  });
   const userId=uid();const asr=useRef(null);
 
-  // Persist PT messages to localStorage
-  useEffect(()=>{try{localStorage.setItem('tl-pt-msgs',JSON.stringify(ptMessages.slice(-100)));}catch{}},[ptMessages]);
+  // Persist PT messages to both storages
+  useEffect(()=>{
+    try{
+      const data=JSON.stringify(ptMessages.slice(-100));
+      localStorage.setItem('tl-pt-msgs',data);
+      sessionStorage.setItem('tl-pt-msgs',data);
+    }catch{}
+  },[ptMessages]);
   const addPtFeedback=useCallback(text=>{setPtMessages(m=>[...m,{role:'system-note',content:text,ts:Date.now()}]);},[]);
 
   useEffect(()=>{
@@ -1002,8 +1020,8 @@ function App(){
             <div style={{display:'flex',alignItems:'center',gap:6}}>
               <button onClick={()=>setWeek(w=>Math.max(1,w-1))} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',width:24,height:24,cursor:'pointer',fontSize:16}}>‹</button>
               <button onClick={()=>setShowDP(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',padding:0,textAlign:'center'}}>
-                <div style={{color:A,fontSize:22,fontFamily:'monospace',fontWeight:700,minWidth:28}}>{week}</div>
-                <div style={{color:'#1E3A5F',fontSize:8}}>{startDate?'auto':'set date'}</div>
+                <div style={{color:startDate?A:O,fontSize:22,fontFamily:'monospace',fontWeight:700,minWidth:28}}>{week}</div>
+                <div style={{color:startDate?'#1E3A5F':O,fontSize:8,fontWeight:startDate?400:700}}>{startDate?'auto':'tap to set!'}</div>
               </button>
               <button onClick={()=>setWeek(w=>Math.min(12,w+1))} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',width:24,height:24,cursor:'pointer',fontSize:16}}>›</button>
             </div>
