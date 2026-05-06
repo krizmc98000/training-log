@@ -78,6 +78,19 @@ const GIF_SEARCH={
   'Shoulder Circles':'arm circles',
   'Band External Rotations':'band external rotation',
   'Scapular Shrugs':'scapular shrug',
+  'Seated Leg Curl (machine)':'seated leg curl',
+  'Seated Leg Extension (machine)':'leg extension',
+  'Hack Squat / Seated Leg Press':'hack squat',
+  'Chest-Supported T-Bar Row':'t bar row',
+  'Chest-Supported DB Row':'chest supported dumbbell row',
+  'Glute Bridge (Barbell or DB)':'barbell glute bridge',
+  'Half-Kneeling Pallof Press (left knee)':'kneeling pallof press',
+  'Half-Kneeling Cable Wood Chop (left knee)':'kneeling cable chop',
+  'Modified Side Plank (from knee)':'side plank knee',
+  'Seated Cable Row':'seated cable row',
+  'Seated Hip CARs':'hip circles seated',
+  'Seated Cat-Cow':'cat cow',
+  'Seated Thoracic Rotation':'seated thoracic rotation',
 };
 
 // ── 3-LAYER GIF CACHE ────────────────────────────────────────────────────────
@@ -209,6 +222,19 @@ const COACHING={
   'Shoulder Circles':{muscle:'Shoulder / Rotator Cuff',category:'Swim Warm-Up',tips:['Stand tall. Circle the arm slowly — forward circles first, then backward.','Keep the movement pain-free throughout. Stop if you feel any catching.','Start with small circles and gradually increase the range as the joint warms up.']},
   'Band External Rotations':{muscle:'Rotator Cuff',category:'Swim Warm-Up',tips:['Same movement as your rehab external rotation, but with a lighter band.','This is preparation, not a fatigue exercise. Keep the load minimal.','Goal is to activate and wake up the rotator cuff before it is loaded by freestyle.']},
   'Scapular Shrugs':{muscle:'Trap / Serratus / Rhomboid',category:'Swim Warm-Up',tips:['Stand or sit tall. Shrug both shoulder blades upward, then pull them back and down.','Think: up, back, down — in a slow controlled loop.','Each rep should be deliberate — feel the muscles between and around the shoulder blades working.']},
+  'Seated Leg Curl (machine)':{muscle:'Hamstring',category:'Foot Recovery',tips:['Set the machine so the pad sits just above the back of your ankle (Achilles area), not on your calf.','Adjust the back pad so your knees line up with the pivot point of the machine.','Curl both legs down toward your glutes in a controlled arc. Focus on full hamstring contraction at the end.','3-second eccentric on the way back up — this is where most of the hypertrophy stimulus comes from.','Foot is fully supported throughout — zero ground reaction force on the metatarsals.','Your primary hamstring movement during the foot recovery block. Push intensity here to make up for missing posterior chain work elsewhere.']},
+  'Seated Leg Extension (machine)':{muscle:'Quadricep',category:'Foot Recovery',tips:['Pad should sit just above your ankle, in front of the shin. Adjust seat so knees align with the pivot.','Drive the weight up by extending the knee — squeeze the quad hard at the top for 1 full second.','Lower with full control over 3 seconds. Quads grow on the eccentric.','Toes can point neutral or slightly outward. Feel free to vary across sessions to hit the quad differently.','Your foot is fully supported — no ground force at all. Push the load harder than usual since this is your only quad volume right now.','12-15 reps with controlled tempo will produce more growth than 6 heavy reps with momentum.']},
+  'Hack Squat / Seated Leg Press':{muscle:'Quad / Glute / Hamstring',category:'Foot Recovery',tips:['Place feet mid-platform, shoulder-width apart. Avoid the very edge of the platform where heel/toe pressure spikes.','Distribute pressure across the whole foot — neither heel-only nor ball-only. This minimizes any point pressure on the 5th metatarsal.','Lower until knees are at 90 degrees or slightly past. Do not let the lower back come off the pad.','Drive through full foot to extend. Stop just short of locking out at the top to maintain quad tension.','Take 2-3 seconds on the descent. The eccentric is where the muscle grows.','If any foot discomfort, stop immediately. Substitute with leg extensions only.']},
+  'Chest-Supported T-Bar Row':{muscle:'Back / Bicep / Rear Delt',category:'Foot Recovery',tips:['Chest pressed firmly into the pad throughout. The pad supports your bodyweight — no foot drive needed.','Pull the bar toward your lower chest/upper abdomen. Lead with the elbows.','Squeeze the shoulder blades together hard at the top. Hold for 1 second.','Lower with full control over 2-3 seconds — the eccentric is critical.','Neutral or pronated grip both work. Neutral is shoulder-friendlier for your right arm.','This is one of the best back exercises during foot recovery — full lat stimulus with zero standing load.']},
+  'Chest-Supported DB Row':{muscle:'Back / Bicep / Rear Delt',category:'Foot Recovery',tips:['Set an incline bench to roughly 30 degrees. Lie face down with chest fully on the bench.','Hold a DB in each hand, arms extended below you.','Pull both DBs toward your hips simultaneously. Elbows track close to the body.','Squeeze shoulder blades together at the top, hold 1 second.','Lower with control. Full stretch at the bottom — let the DBs hang.','Same movement quality as a regular row but zero spinal loading and zero foot involvement.']},
+  'Glute Bridge (Barbell or DB)':{muscle:'Glute / Hamstring',category:'Foot Recovery',tips:['Lie on your back, knees bent, feet flat on the floor at hip-width.','Place the barbell or DBs across your hips (use a pad if barbell — your hip bones will thank you).','Drive through your heels and squeeze the glutes hard to lift the hips.','Push your hips up until your body forms a straight line from knees to shoulders. Hold for 1 second.','Lower with control over 2 seconds. Do not slam back down.','Foot stays flat with the entire surface in contact with the floor — distributes load far better than a hip thrust drive position.','For your foot specifically: keep your weight slightly toward the heel rather than the ball of the foot.']},
+  'Half-Kneeling Pallof Press (left knee)':{muscle:'Core / Oblique',category:'Foot Recovery',tips:['Set cable to chest height. Kneel on your LEFT knee with your right knee up — your right (sore) foot lifts off the floor or rests very lightly behind you.','Hands together at your sternum. Press the handle out and hold for 2 seconds.','Resist the cable trying to rotate you toward the machine — anti-rotation is the goal.','Slow, controlled return. Keep the press level — do not let it dip toward the cable.','The half-kneeling position keeps your right foot completely off the floor — no ground reaction force.','If kneeling is uncomfortable, do this seated on a bench with the same pressing pattern.']},
+  'Half-Kneeling Cable Wood Chop (left knee)':{muscle:'Oblique / Core',category:'Foot Recovery',tips:['Cable set high. Kneel on your LEFT knee, right knee up. Your right (sore) foot lifts off the floor or rests lightly.','Grip cable handle with both hands above your shoulder.','Pull diagonally down and across to the opposite hip. Rotate from the trunk, not the arms.','Eyes follow the hands — confirms full rotation.','Control the return. The cable will try to pull you back — resist with the obliques.','Same movement pattern as standing but no foot load at all.']},
+  'Modified Side Plank (from knee)':{muscle:'Oblique / QL / Glute Med',category:'Foot Recovery',tips:['Side-lying with your forearm on the floor, elbow under your shoulder.','Bend the bottom knee at 90 degrees — your shin and lower leg are on the floor.','Keep the top leg straight and stacked above the bottom leg, or for less load just keep both knees stacked.','Lift your hips so your body forms a straight line from knees to head.','Right foot stays off the floor in either variant — zero metatarsal involvement.','Hold for 20-30 seconds. The from-knee version still produces strong oblique and QL contraction.']},
+  'Seated Cable Row':{muscle:'Back / Bicep / Mid Back',category:'Foot Recovery',tips:['Sit on the bench with feet flat on the platform. Slight knee bend.','Pull the handle to your lower ribs/upper abdomen. Elbows track close to the body.','Squeeze shoulder blades together hard at the back position. Hold 1 second.','Lower with full control over 2-3 seconds. Allow a full stretch through the lats at the front.','Maintain an upright torso — do not let the lower back round at the front.','Feet on the platform are passive — no ground force, no metatarsal load.']},
+  'Seated Hip CARs':{muscle:'Hip Joint / Capsule',category:'Foot Recovery Warm-Up',tips:['Sit on a bench or chair, both feet flat on floor.','Lift one knee toward your chest, then circle it outward in the largest controlled circle you can make.','Move slowly — quality over speed. Each circle should take 3-5 seconds.','8 reps each direction, each leg. Keep the standing leg planted.','This wakes up the hip joint capsule and the hip stabilisers without any ground impact on the foot.']},
+  'Seated Cat-Cow':{muscle:'Thoracic Spine / Lumbar / Core',category:'Foot Recovery Warm-Up',tips:['Sit at the edge of a chair or bench, hands on your thighs.','Cat: round the spine, tuck the pelvis, drop the chin to chest. Exhale fully.','Cow: arch the spine, lift the chest and chin, stick the tailbone back. Inhale fully.','Move slowly with each breath. 10 reps total.','Mobilises the entire spine without any standing load on the foot.']},
+  'Seated Thoracic Rotation':{muscle:'Thoracic Spine / Oblique',category:'Foot Recovery Warm-Up',tips:['Sit tall on a bench. Hands behind your head, elbows wide.','Rotate your upper body to one side — keep the hips facing forward and stable.','Hold the end range for 1-2 seconds. Feel the stretch through the mid-back.','Return to centre, then rotate the other way. 8 reps each side.','Especially valuable before pulling sessions — primes the thoracic spine.']},
 };
 
 const SREHAB=[
@@ -271,6 +297,13 @@ const WARMUP_C=[
   {name:'Cat-Cow',sets:1,reps:'10 reps'},
   {name:'Shoulder Rolls (Warm-Up)',sets:1,reps:'10 each direction'},
 ];
+// Foot-recovery seated warm-up — no standing/loading
+const WARMUP_FOOT=[
+  {name:'Seated Hip CARs',sets:1,reps:'8 each direction, each leg'},
+  {name:'Seated Cat-Cow',sets:1,reps:'10 reps'},
+  {name:'Seated Thoracic Rotation',sets:1,reps:'8 each side'},
+  {name:'Shoulder Rolls (Warm-Up)',sets:1,reps:'10 each direction'},
+];
 
 const PLAN={
   'Gym A':{color:A,icon:'A',subtitle:'Lower + Horizontal Push/Pull + Core',sections:[
@@ -305,6 +338,39 @@ const PLAN={
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each stretch',exercises:STRETCH_EX}]},
+  ]},
+  'Gym A2':{color:R,icon:'A2',subtitle:'Foot Recovery — Seated Lower + Push/Pull',footRecovery:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Seated Warm-Up',note:'Foot stays off the floor — no standing warm-ups during recovery block',exercises:WARMUP_FOOT}]},
+    {title:'Main Session',color:R,supersets:[
+      {label:'Superset 1',note:'Hamstring + Pull — fully supported, 60-90s rest',exercises:[{name:'Seated Leg Curl (machine)',sets:4,reps:'10-12'},{name:'Chest-Supported T-Bar Row',sets:4,reps:'10-12'}]},
+      {label:'Superset 2',note:'Quad + Push — alternate, 60s rest',exercises:[{name:'Seated Leg Extension (machine)',sets:4,reps:'12-15'},{name:'Flat DB Press (neutral grip)',sets:4,reps:'8-12'}]},
+      {label:'Superset 3',note:'Hamstring + Anti-rotation — alternate, 60s rest',exercises:[{name:'Prone Dumbbell Leg Curl',sets:3,reps:'10-12'},{name:'Half-Kneeling Pallof Press (left knee)',sets:3,reps:'10 each side'}]},
+      {label:'Core Finisher',note:'Anti-extension — NO calf raises during foot recovery',exercises:[{name:'Dead Bug',sets:3,reps:'8 each side'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Skip standing hamstring stretch — substitute lying hamstring stretch',exercises:STRETCH_EX}]},
+  ]},
+  'Gym B2':{color:R,icon:'B2',subtitle:'Foot Recovery — Quad + Vertical Pull + Trunk',footRecovery:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Seated Warm-Up',note:'Foot stays off the floor',exercises:WARMUP_FOOT}]},
+    {title:'Main Session',color:R,supersets:[
+      {label:'Superset 1',note:'Quad + Vertical Pull — both seated, 90s rest',exercises:[{name:'Hack Squat / Seated Leg Press',sets:4,reps:'8-10'},{name:'Pull-Up / Lat Pulldown (neutral grip)',sets:4,reps:'8-10'}]},
+      {label:'Superset 2',note:'Glute + Push — alternate, 60-90s rest',exercises:[{name:'Glute Bridge (Barbell or DB)',sets:4,reps:'10-12'},{name:'Low-Incline DB Press (neutral grip)',sets:4,reps:'8-12'}]},
+      {label:'Superset 3',note:'Row + Hamstring — both supported, 60s rest',exercises:[{name:'Single-Arm DB Row (incline bench)',sets:3,reps:'10/side'},{name:'Seated Leg Curl (machine)',sets:3,reps:'10-12'}]},
+      {label:'Core Superset',note:'Lateral + Flexion — minimal rest',exercises:[{name:'Modified Side Plank (from knee)',sets:3,reps:'20-30s left side only'},{name:'Reverse Crunch',sets:3,reps:'12'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Skip standing hamstring stretch',exercises:STRETCH_EX}]},
+  ]},
+  'Gym C2':{color:R,icon:'C2',subtitle:'Foot Recovery — Upper Hypertrophy Focus',footRecovery:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Seated Warm-Up',note:'Extra thoracic mobility before pulling',exercises:WARMUP_FOOT}]},
+    {title:'Main Session',color:R,supersets:[
+      {label:'Superset 1',note:'Pull + Hinge Isolation — alternate, 60s rest',exercises:[{name:'Chest-Supported DB Row',sets:4,reps:'10-12'},{name:'45deg Back Extension / KB Good Morning',sets:4,reps:'12'}]},
+      {label:'Superset 2',note:'Chest Fly + Lateral Raise + Hamstring — 60s rest after all three',exercises:[{name:'Cable Chest Fly (chest height)',sets:4,reps:'12-15'},{name:'Cable Lateral Raise',sets:4,reps:'12-15'},{name:'Prone Dumbbell Leg Curl',sets:3,reps:'10-12'}]},
+      {label:'Superset 3',note:'Push + Pull — alternate, 60s rest',exercises:[{name:'Push-Up Variation',sets:4,reps:'12-15'},{name:'Seated Cable Row',sets:4,reps:'10-12'}]},
+      {label:'Core Superset',note:'Rotational + Anti-extension — minimal rest',exercises:[{name:'Half-Kneeling Cable Wood Chop (left knee)',sets:3,reps:'10 each side'},{name:'Bird Dog',sets:2,reps:'8 each side'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Skip standing hamstring stretch',exercises:STRETCH_EX}]},
   ]},
   'Bike':{color:BK,icon:'B',subtitle:'Zone 2 Active Recovery — Thursday',isBike:true,phases:[{label:'Wks 1-4',target:'30-40 min Zone 2 (111-130 bpm) — steady conversational pace'},{label:'Wks 5-8',target:'40-50 min Zone 2 — increase duration as legs adapt'},{label:'Wks 9-12',target:'45-55 min Zone 2 — optional final 5 min push to Zone 3'}]},
   'Swim':{color:SW,icon:'~',subtitle:'Aerobic + Shoulder-Friendly Volume',phases:[
