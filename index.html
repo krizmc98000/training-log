@@ -406,6 +406,8 @@ function catColor(cat){return{Squat:PU,Hinge:O,Push:A,Pull:'#34D399',Core:PU,Ham
 const ROPT=[{l:'30s',v:30},{l:'45s',v:45},{l:'60s',v:60},{l:'90s',v:90},{l:'2min',v:120},{l:'3min',v:180}];
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DMAP={Mon:'Gym A',Tue:'Swim',Wed:'Gym B',Thu:'Bike',Fri:'Gym C',Sat:'Run',Sun:'Rest'};
+// True for any session that has structured sections (Gym A/B/C + foot-recovery A2/B2/C2)
+const isGymSession=type=>!!(type&&PLAN[type]&&PLAN[type].sections);
 
 // ── GIF COMPONENT ─────────────────────────────────────────────────────────────
 function ExerciseGif({exName,color}){
@@ -835,7 +837,7 @@ async function callClaude(system,messages,max_tokens=1000){
 function RevPanel({session,hist,color,onFeedback}){
   const[st,setSt]=useState('idle');const[fb,setFb]=useState('');
   const sum=s=>{
-    const ig=['Gym A','Gym B','Gym C'].includes(s.type);
+    const ig=isGymSession(s.type);
     let t=`Session: ${s.type} | Week: ${s.week}\n`;
     if(s.data&&s.data.workoutNotes)t+=`Notes: ${s.data.workoutNotes}\n`;
     t+='\n';const d=s.data||{};
@@ -1048,7 +1050,7 @@ function App(){
   const hgc=(si,ssi,ei,val)=>setGdata(d=>({...d,[si]:{...(d[si]||{}),[ssi]:{...((d[si]&&d[si][ssi])||{}),[ei]:val}}}));
 
   const finish=async()=>{
-    const ig=['Gym A','Gym B','Gym C'].includes(atype);
+    const ig=isGymSession(atype);
     const plan=PLAN[atype];let data={workoutNotes:wnotes};
     if(ig){data.sections=plan.sections.map((sec,si)=>({title:sec.title,supersets:sec.supersets.map((ss,ssi)=>({label:ss.label,exercises:ss.exercises.map((ex,ei)=>({name:ex.name,...((gdata[si]&&gdata[si][ssi]&&gdata[si][ssi][ei])||{})}))}))}));}
     else{data={...cdata,workoutNotes:wnotes};}
@@ -1060,7 +1062,7 @@ function App(){
 
   const plan=atype?PLAN[atype]:null;
   const col=plan?plan.color:A;
-  const ig=atype&&['Gym A','Gym B','Gym C'].includes(atype);
+  const ig=isGymSession(atype);
   const dtw=hist.filter(s=>s.week===week).map(s=>s.type);
   const rc=done2&&PLAN[done2.type]?PLAN[done2.type].color:A;
   const navScreen=screen==='review'?'home':screen==='log'?'live':screen;
@@ -1241,7 +1243,7 @@ function App(){
               <button onClick={()=>setView(null)} style={{background:'none',border:'none',color:'#475569',fontSize:22,cursor:'pointer'}}>×</button>
             </div>
             {view.data&&view.data.workoutNotes&&<div style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,padding:'10px 12px',marginBottom:12}}><div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Workout Notes</div><div style={{color:'#CBD5E1',fontSize:13}}>{view.data.workoutNotes}</div></div>}
-            {['Gym A','Gym B','Gym C'].includes(view.type)&&view.data&&view.data.sections&&view.data.sections.map((sec,si)=>(
+            {isGymSession(view.type)&&view.data&&view.data.sections&&view.data.sections.map((sec,si)=>(
               <div key={si} style={{marginBottom:12}}>
                 <div style={{color:'#94A3B8',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,marginBottom:6,paddingBottom:4,borderBottom:'1px solid #1E2D40'}}>{sec.title}</div>
                 {(sec.supersets||[]).map((ss,ssi)=>(
@@ -1256,7 +1258,7 @@ function App(){
                 ))}
               </div>
             ))}
-            {!['Gym A','Gym B','Gym C'].includes(view.type)&&view.data&&(
+            {!isGymSession(view.type)&&view.data&&(
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                 {Object.entries(view.data).filter(([k])=>k!=='notes'&&k!=='workoutNotes'&&view.data[k]).map(([k,v])=>{const vc=PLAN[view.type]?PLAN[view.type].color:A;return <div key={k} style={{background:'#0D1B2E',borderRadius:8,padding:'8px 10px'}}><div style={{color:'#475569',fontSize:10,textTransform:'capitalize'}}>{k.replace(/([A-Z])/g,' $1')}</div><div style={{color:vc,fontSize:14,fontFamily:'monospace',fontWeight:700}}>{v}</div></div>;})}
               </div>
