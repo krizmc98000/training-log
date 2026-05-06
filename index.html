@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Training Log">
 <title>Training Log</title>
@@ -148,27 +149,79 @@ async function fetchExerciseGif(exName){
 
 async function db(method,path,body){
   const res=await fetch(SB+'/rest/v1'+path,{method,headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:body?JSON.stringify(body):undefined});
+  if(!res.ok)throw new Error('DB '+res.status);
   const t=await res.text();return t?JSON.parse(t):null;
 }
+
+// ── SAVE-RETRY QUEUE ──────────────────────────────────────────────────────────
+// Sessions that fail to POST get queued in localStorage. Retried on every page load
+// and on demand via the banner. Uses upsert so a re-POST of an already-synced session is a no-op.
+const PENDING_KEY='tl-pending-sessions';
+function getPending(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');}catch{return[];}}
+function setPending(arr){try{localStorage.setItem(PENDING_KEY,JSON.stringify(arr));}catch{}}
+function addPending(session){const p=getPending();if(!p.some(s=>s.id===session.id))p.push(session);setPending(p);}
+async function postSessionUpsert(session){
+  // on_conflict=id with merge-duplicates means re-syncing an already-saved session is harmless
+  const res=await fetch(SB+'/rest/v1/sessions?on_conflict=id',{
+    method:'POST',
+    headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify(session)
+  });
+  if(!res.ok)throw new Error('POST '+res.status);
+}
+async function syncPendingQueue(){
+  const pending=getPending();
+  if(!pending.length)return{synced:0,remaining:0};
+  const remaining=[];let synced=0;
+  for(const s of pending){
+    try{await postSessionUpsert(s);synced++;}
+    catch{remaining.push(s);}
+  }
+  setPending(remaining);
+  return{synced,remaining:remaining.length};
+}
+
 function uid(){let id=localStorage.getItem('tl-uid');if(!id){id='chris-'+Math.random().toString(36).slice(2,10);localStorage.setItem('tl-uid',id);}return id;}
 const fmt=iso=>new Date(iso).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 function calcWeek(sd){if(!sd)return 1;const diff=new Date()-new Date(sd);return Math.max(1,Math.min(12,Math.floor(diff/(1000*60*60*24*7))+1));}
-function getPrevSession(hist,type){return hist.filter(s=>s.type===type)[0]||null;}
-function getPrevExData(prev,secTitle,exName){
-  if(!prev||!prev.data||!prev.data.sections)return null;
-  for(const sec of prev.data.sections){if(sec.title===secTitle){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){const ds=(ex.sets||[]).filter(s=>s.weight||s.reps);if(ds.length)return ds;}}}}}
+// Find last logged sets for a named exercise across ALL sessions (any type). Optionally exclude a session id.
+function getPrevExSets(hist,exName,excludeId){
+  for(const session of hist){
+    if(excludeId&&session.id===excludeId)continue;
+    if(!session.data||!session.data.sections)continue;
+    for(const sec of session.data.sections){
+      for(const ss of sec.supersets||[]){
+        for(const ex of ss.exercises||[]){
+          if(ex.name===exName){
+            const ds=(ex.sets||[]).filter(s=>s.weight||s.reps);
+            if(ds.length)return ds;
+          }
+        }
+      }
+    }
+  }
   return null;
 }
-function canProgress(hist,type,secTitle,exName,repsStr){
-  const sessions=hist.filter(s=>s.type===type).slice(0,2);
-  if(sessions.length<2)return false;
+// True if this exercise hit top rep range on all sets across its 2 most recent occurrences (any session type).
+function canProgressByExercise(hist,exName,repsStr){
   const top=parseInt((repsStr||'').split('-').pop());
   if(isNaN(top))return false;
-  return sessions.every(session=>{
-    if(!session.data||!session.data.sections)return false;
-    for(const sec of session.data.sections){if(sec.title===secTitle){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){const sets=ex.sets||[];return sets.length>0&&sets.every(s=>s.done&&parseInt(s.reps)>=top);}}}}}
-    return false;
-  });
+  const occurrences=[];
+  outer:for(const session of hist){
+    if(!session.data||!session.data.sections)continue;
+    for(const sec of session.data.sections){
+      for(const ss of sec.supersets||[]){
+        for(const ex of ss.exercises||[]){
+          if(ex.name===exName){
+            const sets=(ex.sets||[]).filter(s=>s.weight||s.reps);
+            if(sets.length){occurrences.push(sets);if(occurrences.length>=2)break outer;}
+          }
+        }
+      }
+    }
+  }
+  if(occurrences.length<2)return false;
+  return occurrences.every(sets=>sets.length>0&&sets.every(s=>s.done&&parseInt(s.reps)>=top));
 }
 function getPersonalBest(hist,exName){
   let best=null,bestDate=null;
@@ -385,7 +438,7 @@ function buildLibrary(){
   const lib=[],seen=new Set();
   for(const[sessionName,plan]of Object.entries(PLAN)){
     if(!plan.sections)continue;
-    for(const sec of plan.sections){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(!seen.has(ex.name)){seen.add(ex.name);const c=COACHING[ex.name]||{};lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,category:c.category||sec.title,muscle:c.muscle||'',sessions:[],tips:c.tips||[]});}const entry=lib.find(e=>e.name===ex.name);if(entry&&!entry.sessions.includes(sessionName))entry.sessions.push(sessionName);}}}
+    for(const sec of plan.sections){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(!seen.has(ex.name)){seen.add(ex.name);const c=COACHING[ex.name]||WARMUP_COACHING[ex.name]||{};lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,category:c.category||sec.title,muscle:c.muscle||'',sessions:[],tips:c.tips||[]});}const entry=lib.find(e=>e.name===ex.name);if(entry&&!entry.sessions.includes(sessionName))entry.sessions.push(sessionName);}}}
   }
   for(const ex of SWU_EX){if(!seen.has(ex.name)){seen.add(ex.name);const c=COACHING[ex.name]||{};lib.push({name:ex.name,sets:ex.sets,reps:ex.reps,category:'Swim Warm-Up',muscle:c.muscle||'',sessions:['Swim'],tips:c.tips||[]});}}
   // Add warm-up exercises from all three sessions
@@ -400,8 +453,8 @@ function buildLibrary(){
   return lib.sort((a,b)=>a.name.localeCompare(b.name));
 }
 const LIBRARY=buildLibrary();
-const CATS=['All','Squat','Hinge','Push','Pull','Core','Hamstring','Shoulder Rehab','Stretch','Swim Warm-Up'];
-function catColor(cat){return{Squat:PU,Hinge:O,Push:A,Pull:'#34D399',Core:PU,Hamstring:G,'Shoulder Rehab':PK,Stretch:G,'Swim Warm-Up':SW}[cat]||A;}
+const CATS=['All','Squat','Hinge','Push','Pull','Core','Hamstring','Quad','Lower Body','Shoulder Rehab','Stretch','Warm-Up','Swim Warm-Up','Foot Recovery','Foot Recovery Warm-Up'];
+function catColor(cat){return{Squat:PU,Hinge:O,Push:A,Pull:'#34D399',Core:PU,Hamstring:G,Quad:PU,'Lower Body':G,'Shoulder Rehab':PK,Stretch:G,'Warm-Up':'#64748B','Swim Warm-Up':SW,'Foot Recovery':R,'Foot Recovery Warm-Up':R}[cat]||A;}
 
 const ROPT=[{l:'30s',v:30},{l:'45s',v:45},{l:'60s',v:60},{l:'90s',v:90},{l:'2min',v:120},{l:'3min',v:180}];
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -445,7 +498,7 @@ function ExerciseGif({exName,color}){
 // ── EXERCISE DETAIL SHEET ─────────────────────────────────────────────────────
 function ExDetailSheet({exName,hist,onClose}){
   const entry=LIBRARY.find(e=>e.name===exName);
-  const coaching=COACHING[exName]||{};
+  const coaching=COACHING[exName]||WARMUP_COACHING[exName]||{};
   const tips=(entry&&entry.tips&&entry.tips.length)?entry.tips:(coaching.tips||[]);
   const muscle=(entry&&entry.muscle)||coaching.muscle||'';
   const category=(entry&&entry.category)||coaching.category||'';
@@ -688,7 +741,6 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist}){
 
 function SSBlock({ss,ssData,onChange,color,restDur,secTitle,hist,sessionType}){
   const[col,setCol]=useState(false);const[timer,setTimer]=useState(false);const prev=useRef(0);
-  const prevSession=getPrevSession(hist,sessionType);
   const tot=ss.exercises.reduce((a,ex)=>a+(ex.sets||1),0);
   const dn=ss.exercises.reduce((a,ex,ei)=>a+((ssData[ei]?ssData[ei].sets||[]:[]).filter(s=>s.done).length),0);
   // Auto-collapse when all sets in superset are done
@@ -709,8 +761,9 @@ function SSBlock({ss,ssData,onChange,color,restDur,secTitle,hist,sessionType}){
       {!col&&(
         <div style={{paddingLeft:4}}>
           {ss.exercises.map((ex,ei)=>{
-            const ps=getPrevExData(prevSession,secTitle,ex.name);
-            const cp=canProgress(hist,sessionType,secTitle,ex.name,ex.reps);
+            // Cross-session exercise lookup — works for shared exercises like DB Press in both A and A2
+            const ps=getPrevExSets(hist,ex.name);
+            const cp=canProgressByExercise(hist,ex.name,ex.reps);
             return <ExCard key={ei} exDef={ex} data={ssData[ei]||{}} color={color} onChange={val=>onChange(ei,val)} prevSets={ps} progress={cp} hist={hist}/>;
           })}
           {timer&&<Timer duration={restDur} onDone={()=>setTimer(false)}/>}
@@ -758,7 +811,7 @@ function BikeLogger({data,onChange,week}){
       </div>
       <div style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px',marginBottom:10}}>
         <div style={{color:'#475569',fontSize:11,marginBottom:6}}>Bike used</div>
-        <div style={{display:'flex',gap:6}}>{['Stationary','Road bike'].map(opt=><button key={opt} onClick={()=>onChange({...data,bike:opt})} style={{flex:1,padding:'8px',borderRadius:6,border:`1px solid ${data.bike===opt?BK:'#1E3A5F'}`,background:data.bike===opt?BK+'22':'transparent',color:data.bike===opt?BK:'#475569',cursor:'pointer',fontSize:12}}>{opt}</button>)}</div>
+        <div style={{display:'flex',gap:6}}>{['Stationary','Recumbent','Road bike'].map(opt=><button key={opt} onClick={()=>onChange({...data,bike:opt})} style={{flex:1,padding:'8px',borderRadius:6,border:`1px solid ${data.bike===opt?BK:'#1E3A5F'}`,background:data.bike===opt?BK+'22':'transparent',color:data.bike===opt?BK:'#475569',cursor:'pointer',fontSize:12}}>{opt}</button>)}</div>
       </div>
       <textarea placeholder="Notes..." value={data.notes||''} onChange={e=>onChange({...data,notes:e.target.value})} style={{width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',padding:'9px 11px',fontSize:12,outline:'none',resize:'vertical',minHeight:60,boxSizing:'border-box'}}/>
     </div>
@@ -853,7 +906,7 @@ function RevPanel({session,hist,color,onFeedback}){
       const s=sum(session);
       const prev=(hist||[]).filter(h=>h.type===session.type&&h.id!==session.id).slice(0,3);
       const pt=prev.length?'\nPREVIOUS SESSIONS:\n'+prev.map(sum).join('\n'):'';
-      const system=`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79.3kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing. Week ${session.week} of 12. Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`;
+      const system=`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79.3kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing. ACTIVE FOOT RECOVERY BLOCK — suspected 5th metatarsal issue awaiting X-ray. Sessions ending in '2' (Gym A2/B2/C2) are seated/no-load foot recovery variants. Week ${session.week} of 12. Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) Foot check if A2/B2/C2 session 5) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`;
       const text=await callClaude(system,[{role:'user',content:`SESSION:\n${s}${pt}`}]);
       setFb(text);setSt('done');
       if(onFeedback)onFeedback(`**Post-Session: ${session.type} (Week ${session.week})**\n\n${text}`);
@@ -877,13 +930,14 @@ const PT_SYSTEM=`You are Claude PT — an expert personal trainer and performanc
 - Chris, 35yo male, 79.3kg, London
 - 12-week hypertrophy + cardiovascular plan (gym ×3, swim, bike, run, sauna Saturday)
 - Right shoulder surgery November 2024 — 20-45° ROM deficit, no overhead pressing. All pressing: neutral grip ≤30° incline.
+- ACTIVE FOOT RECOVERY BLOCK (started May 2026): Lateral foot soreness, suspected 5th metatarsal issue, awaiting X-ray. Currently running modified Gym A2/B2/C2 sessions (seated, no standing load). No running. No outdoor cycling. Pull-buoy swims only. If user asks about returning to A/B/C, running, or single-leg work — confirm foot status first.
 - Body composition baseline (25 Mar 2026): 79.3kg, 19.7% body fat, 63.7kg lean mass, visceral fat 6 (excellent)
 - Protein target: 142g/day (1.8g/kg). Warm meals, meat/fish based. No cold foods.
 - Supplements: Creatine 5g + UC-II Collagen 40mg + Vit C 500mg on waking. Omega-3, Multi, Zinc, D3+K2 post-workout. Magnesium before bed.
 - Progression rules: hit top rep range ALL sets across 2 consecutive sessions → +2.5kg upper, +5kg lower
 - HR zones (max 185bpm): Zone 2: 111-130 | Zone 3: 130-148 | Zone 4: 148-167
 - App: krizmc98000.github.io/training-log
-Be direct, specific, and practical. Use exact numbers. Reference Chris's history when provided. Keep answers concise unless asked to elaborate.`;
+Be direct, specific, and practical. Use exact numbers. Reference Chris's history when provided. Keep answers concise unless asked to elaborate. Always lead long answers with a 1-2 sentence TLDR.`;
 
 function ClaudePT({messages,setMessages}){
   const[input,setInput]=useState('');
@@ -1006,6 +1060,8 @@ function App(){
   const[view,setView]=useState(null);
   const[saving,setSaving]=useState(false);
   const[loaded,setLoaded]=useState(false);
+  const[pendingCount,setPendingCount]=useState(getPending().length);
+  const[syncing,setSyncing]=useState(false);
   const[ptMessages,setPtMessages]=useState(()=>{
     try{
       // Try localStorage first, fall back to sessionStorage
@@ -1014,6 +1070,21 @@ function App(){
     }catch{return[];}
   });
   const userId=uid();const asr=useRef(null);
+
+  // Manual retry handler — triggered from the banner
+  const retrySync=useCallback(async()=>{
+    setSyncing(true);
+    const r=await syncPendingQueue();
+    setPendingCount(r.remaining);
+    if(r.synced>0){
+      // Re-fetch the canonical session list so any newly-synced rows show up correctly
+      try{
+        const rows=await db('GET',`/sessions?user_id=eq.${userId}&order=session_date.desc`);
+        if(rows)setHist(rows);
+      }catch{}
+    }
+    setSyncing(false);
+  },[userId]);
 
   // Persist PT messages to both storages
   useEffect(()=>{
@@ -1030,6 +1101,12 @@ function App(){
       try{
         const sd=localStorage.getItem('tl-start');
         if(sd){setStartDate(sd);setWeek(calcWeek(sd));}
+        // First — try to sync any pending sessions from previous failed saves
+        const initialPending=getPending();
+        if(initialPending.length){
+          const r=await syncPendingQueue();
+          setPendingCount(r.remaining);
+        }
         const rows=await db('GET',`/sessions?user_id=eq.${userId}&order=session_date.desc`);
         if(rows&&rows.length)setHist(rows);
         const drafts=await db('GET',`/drafts?user_id=eq.${userId}`);
@@ -1037,7 +1114,7 @@ function App(){
           const dr=drafts[0];setAtype(dr.type);
           const d=dr.data||{};setGdata(d.gymData||{});setCdata(d.cardioData||{});setWnotes(d.workoutNotes||'');setSphase(d.swimPhase||0);setScreen('log');
         }
-      }catch(e){console.error(e);}
+      }catch(e){console.error('Load failed:',e);}
       setLoaded(true);
     })();
   },[]);
@@ -1056,14 +1133,33 @@ function App(){
     else{data={...cdata,workoutNotes:wnotes};}
     const session={id:Date.now(),user_id:userId,type:atype,session_date:sessionDate?new Date(sessionDate+'T12:00:00').toISOString():new Date().toISOString(),week,data};
     setHist(h=>[session,...h]);setSaving(true);
-    try{await db('POST','/sessions',session);}catch(e){console.error(e);}
+    // Try upsert. If it fails, queue for retry on next load or banner-tap.
+    try{
+      await postSessionUpsert(session);
+    }catch(e){
+      console.error('Save failed — queued for retry:',e);
+      addPending(session);
+      setPendingCount(getPending().length);
+    }
     await delDraft();setSaving(false);setDone2(session);setScreen('review');setAtype(null);
   };
 
   const plan=atype?PLAN[atype]:null;
   const col=plan?plan.color:A;
   const ig=isGymSession(atype);
-  const dtw=hist.filter(s=>s.week===week).map(s=>s.type);
+  // dtw = types completed this week (used for "done" badge on session cards)
+  // daysCompleted = day-of-week set (used for week strip — ticks any day with any session)
+  const sessionsThisWeek=hist.filter(s=>s.week===week);
+  const dtw=sessionsThisWeek.map(s=>s.type);
+  const daysCompleted=useMemo(()=>{
+    const set=new Set();
+    for(const s of sessionsThisWeek){
+      const d=new Date(s.session_date);
+      // JS getDay: Sun=0..Sat=6. We want Mon=0..Sun=6 to match DAYS[]
+      set.add(DAYS[(d.getDay()+6)%7]);
+    }
+    return set;
+  },[sessionsThisWeek.map(s=>s.session_date).join(',')]);
   const rc=done2&&PLAN[done2.type]?PLAN[done2.type].color:A;
   const navScreen=screen==='review'?'home':screen==='log'?'live':screen;
 
@@ -1120,6 +1216,17 @@ function App(){
           <button onClick={()=>setScreen('history')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='history'?A:'#475569',fontSize:12,fontWeight:navScreen==='history'?600:400,cursor:'pointer',borderBottom:navScreen==='history'?`2px solid ${A}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap'}}>History</button>
           <button onClick={()=>setScreen('claudept')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='claudept'?PU:'#475569',fontSize:12,fontWeight:navScreen==='claudept'?600:400,cursor:'pointer',borderBottom:navScreen==='claudept'?`2px solid ${PU}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap'}}>Claude PT</button>
         </div>
+        {/* Pending sync banner — only shown when sessions failed to save */}
+        {pendingCount>0&&(
+          <div style={{marginTop:8,padding:'8px 12px',background:O+'1A',border:`1px solid ${O}55`,borderRadius:8,display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:14}}>⚠️</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{color:O,fontSize:12,fontWeight:700}}>{pendingCount} session{pendingCount>1?'s':''} waiting to sync</div>
+              <div style={{color:'#94A3B8',fontSize:10}}>Saved locally. Will retry automatically.</div>
+            </div>
+            <button onClick={retrySync} disabled={syncing} style={{padding:'4px 10px',background:syncing?'#1E2D40':O+'33',border:`1px solid ${O}`,borderRadius:6,color:syncing?'#475569':O,fontSize:11,fontWeight:600,cursor:syncing?'default':'pointer'}}>{syncing?'Syncing...':'Retry now'}</button>
+          </div>
+        )}
       </div>
 
       {/* HOME */}
@@ -1128,7 +1235,7 @@ function App(){
           <div style={{marginBottom:16}}>
             <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Week {week} Progress</div>
             <div style={{display:'flex',gap:5}}>
-              {DAYS.map(day=>{const exp=DMAP[day],dn=dtw.includes(exp),rest=exp==='Rest';return(
+              {DAYS.map(day=>{const exp=DMAP[day],dn=daysCompleted.has(day),rest=exp==='Rest'&&!dn;return(
                 <div key={day} style={{flex:1,textAlign:'center'}}>
                   <div style={{fontSize:9,color:'#334155',marginBottom:3,fontFamily:'monospace'}}>{day}</div>
                   <div style={{height:30,borderRadius:6,background:rest?'#0D1B2E':dn?G+'33':'#0D1B2E',border:`1px solid ${rest?'#1E2D40':dn?G+'88':'#1E3A5F'}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
