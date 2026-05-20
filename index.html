@@ -92,6 +92,14 @@ const GIF_SEARCH={
   'Seated Hip CARs':'hip circles seated',
   'Seated Cat-Cow':'cat cow',
   'Seated Thoracic Rotation':'seated thoracic rotation',
+  'Quadruped Hip Extension':'donkey kick glute',
+  'Lying DB Pullover':'dumbbell pullover',
+  'Side-Lying Hip Abduction':'side lying leg raise',
+  'Lying DB Row (prone, on bench)':'prone dumbbell row bench',
+  'DB Chest Fly (flat bench)':'dumbbell fly flat',
+  'Side-Lying DB Lateral Raise':'lying lateral raise dumbbell',
+  'Lying DB Tricep Extension (Skullcrusher)':'lying tricep extension',
+  'Incline DB Curl (lying back)':'incline dumbbell curl',
 };
 
 // ── 3-LAYER GIF CACHE ────────────────────────────────────────────────────────
@@ -288,6 +296,14 @@ const COACHING={
   'Seated Hip CARs':{muscle:'Hip Joint / Capsule',category:'Foot Recovery Warm-Up',tips:['Sit on a bench or chair, both feet flat on floor.','Lift one knee toward your chest, then circle it outward in the largest controlled circle you can make.','Move slowly — quality over speed. Each circle should take 3-5 seconds.','8 reps each direction, each leg. Keep the standing leg planted.','This wakes up the hip joint capsule and the hip stabilisers without any ground impact on the foot.']},
   'Seated Cat-Cow':{muscle:'Thoracic Spine / Lumbar / Core',category:'Foot Recovery Warm-Up',tips:['Sit at the edge of a chair or bench, hands on your thighs.','Cat: round the spine, tuck the pelvis, drop the chin to chest. Exhale fully.','Cow: arch the spine, lift the chest and chin, stick the tailbone back. Inhale fully.','Move slowly with each breath. 10 reps total.','Mobilises the entire spine without any standing load on the foot.']},
   'Seated Thoracic Rotation':{muscle:'Thoracic Spine / Oblique',category:'Foot Recovery Warm-Up',tips:['Sit tall on a bench. Hands behind your head, elbows wide.','Rotate your upper body to one side — keep the hips facing forward and stable.','Hold the end range for 1-2 seconds. Feel the stretch through the mid-back.','Return to centre, then rotate the other way. 8 reps each side.','Especially valuable before pulling sessions — primes the thoracic spine.']},
+  'Quadruped Hip Extension':{muscle:'Glute Max / Hamstring',category:'Foot Recovery',tips:['Start on hands and knees — hands under shoulders, knees under hips. Spine neutral.','Keeping the working knee bent at 90 degrees, drive the heel toward the ceiling.','Squeeze the glute hard at the top. Without the squeeze, you are just swinging the leg.','Lower with control over 2 seconds. Do not let the leg drop.','Keep your core braced — do not let your lower back arch as you lift.','Both feet stay completely off the floor — working leg lifts back, the other knee stays planted.','Foot-free for the recovering foot. Excellent glute activation without any standing or weight bearing.']},
+  'Lying DB Pullover':{muscle:'Lat / Chest / Serratus',category:'Foot Recovery',tips:['Lie back on a flat bench. Hold ONE dumbbell with both hands at your chest, palms cupping the inner end.','IMPORTANT: feet up on the bench (knees bent) for foot recovery — completely off the floor.','Press the DB up over your chest, arms extended with a slight elbow bend. The bend stays fixed throughout.','Lower the DB in a controlled arc behind your head until you feel a deep stretch through the lats and chest.','Pull the DB back up over your chest. Lead with the elbows pulling forward, not the wrists.','3 seconds on the lowering phase — the stretch under load is the primary stimulus.','Hits both lat and chest stretch — especially valuable when standing rows are off limits.']},
+  'Side-Lying Hip Abduction':{muscle:'Glute Medius / Glute Minimus',category:'Foot Recovery',tips:['Lie on your side with hips stacked, bottom leg bent for stability, top leg straight.','Lift the top leg up toward the ceiling without rotating the hips — keep them stacked vertically.','Pause for 1 second at the top. Control matters more than height — stop where you can keep hips stacked.','Lower with control over 2 seconds. Do not let the leg drop.','You should feel this in the side of the hip, not in the lower back or front of the thigh.','For added load, hold a light DB on the lifting leg or wear an ankle weight.','Foot-free, great glute med activation, especially valuable for restoring hip stability after foot rest.']},
+  'Lying DB Row (prone, on bench)':{muscle:'Back / Bicep / Rear Delt',category:'Foot Recovery',tips:['Lie face down (chest down) on a flat bench raised on blocks if possible, or a high incline bench.','Both arms hang straight down with a DB in each hand.','IMPORTANT: feet hang off the end of the bench — completely off the floor.','Pull both DBs simultaneously toward your hips. Elbows track close to the body.','Squeeze shoulder blades together hard at the top. Hold for one second.','Lower with full control over 2-3 seconds. Allow a complete stretch at the bottom.','Body must stay rigid — no torso rocking. The lats and rhomboids do all the work.','Feet completely passive throughout — genuinely foot-free row variant.']},
+  'DB Chest Fly (flat bench)':{muscle:'Chest / Front Delt',category:'Foot Recovery',tips:['Lie back on a flat bench with one DB in each hand, palms facing each other.','IMPORTANT: feet up on the bench (knees bent) for the foot recovery block — removes any foot load.','Press the DBs up to start with a slight elbow bend — this bend is fixed throughout the movement.','Lower the DBs out in a wide arc until you feel a deep stretch across the chest.','Bring them back together over the chest in a hugging motion. Squeeze the pecs at the top.','3 seconds on the eccentric. The stretch under load is the primary growth stimulus.','Do not bend the elbows during the rep — that turns it into a press, not a fly.','Same chest stimulus as cable fly but completely foot-free.']},
+  'Side-Lying DB Lateral Raise':{muscle:'Medial Deltoid',category:'Foot Recovery',tips:['Lie on your side on a flat bench (or floor) with one DB in your top hand.','Keep a soft elbow bend. Lift the DB up and over toward the ceiling in a wide arc.','Stop at shoulder height (about 90 degrees from torso). Going higher recruits the trap, not the medial delt.','Lower with control over 3 seconds. The eccentric drives most of the medial delt growth.','Use very light weight (3-5kg max). The lying position removes momentum and exposes any cheating.','For your right shoulder: stay within pain-free range. If 90 degrees is uncomfortable, stop earlier.','Foot-free isolation that targets the muscle responsible for shoulder width better than standing variations.']},
+  'Lying DB Tricep Extension (Skullcrusher)':{muscle:'Tricep',category:'Foot Recovery',tips:['Lie on a flat bench. Hold a DB in each hand, arms extended straight up over the chest.','IMPORTANT: feet up on the bench for foot recovery, knees bent.','Bend at the elbows only — lower the DBs toward your forehead (or just past it).','Keep the elbows pointing toward the ceiling — they should not flare outward.','Pause for one second at the bottom (DBs near the temples), then extend the arms back up.','For your right shoulder: this is shoulder-friendly because the upper arm stays vertical.','3 seconds on the lowering phase. The stretch on the long head of the tricep is the growth stimulus.']},
+  'Incline DB Curl (lying back)':{muscle:'Bicep (Long Head)',category:'Foot Recovery',tips:['Set an incline bench to 45-60 degrees. Lie back with arms hanging fully toward the floor.','IMPORTANT: feet up on the bench seat or on a footrest, not on the floor.','The arms hanging back behind the body puts the long head of the bicep into a deep stretch.','Curl the DBs up keeping the elbows pinned in place — no shoulder movement.','Squeeze hard at the top, then lower with full control over 3 seconds.','The stretched position is what makes this curl variant superior for the long head of the bicep.','Foot-free isolation that hits the bicep in its strongest hypertrophy position.']},
 };
 
 const SREHAB=[
@@ -403,24 +419,24 @@ const PLAN={
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Skip standing hamstring stretch — substitute lying hamstring stretch',exercises:STRETCH_EX}]},
   ]},
-  'Gym B2':{color:R,icon:'B2',subtitle:'Foot Recovery — Quad + Vertical Pull + Trunk',footRecovery:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Seated Warm-Up',note:'Foot stays off the floor',exercises:WARMUP_FOOT}]},
+  'Gym B2':{color:R,icon:'B2',subtitle:'Foot Recovery — Quad + Pull + Glute (Foot-Free)',footRecovery:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Seated Warm-Up',note:'Foot stays off the floor throughout',exercises:WARMUP_FOOT}]},
     {title:'Main Session',color:R,supersets:[
-      {label:'Superset 1',note:'Quad + Vertical Pull — both seated, 90s rest',exercises:[{name:'Hack Squat / Seated Leg Press',sets:4,reps:'8-10'},{name:'Pull-Up / Lat Pulldown (neutral grip)',sets:4,reps:'8-10'}]},
-      {label:'Superset 2',note:'Glute + Push — alternate, 60-90s rest',exercises:[{name:'Glute Bridge (Barbell or DB)',sets:4,reps:'10-12'},{name:'Low-Incline DB Press (neutral grip)',sets:4,reps:'8-12'}]},
-      {label:'Superset 3',note:'Row + Hamstring — both supported, 60s rest',exercises:[{name:'Single-Arm DB Row (incline bench)',sets:3,reps:'10/side'},{name:'Seated Leg Curl (machine)',sets:3,reps:'10-12'}]},
-      {label:'Core Superset',note:'Lateral + Flexion — minimal rest',exercises:[{name:'Modified Side Plank (from knee)',sets:3,reps:'20-30s left side only'},{name:'Reverse Crunch',sets:3,reps:'12'}]},
+      {label:'Superset 1',note:'Quad + Pull — feet up on the lat pulldown seat, 90s rest',exercises:[{name:'Seated Leg Extension (machine)',sets:4,reps:'12-15'},{name:'Pull-Up / Lat Pulldown (neutral grip)',sets:4,reps:'8-10'}]},
+      {label:'Superset 2',note:'Glute + Push — feet up on the bench during press, 60-90s rest',exercises:[{name:'Quadruped Hip Extension',sets:4,reps:'12 each side'},{name:'Flat DB Press (neutral grip)',sets:4,reps:'8-12'}]},
+      {label:'Superset 3',note:'Pull + Hamstring — both lying or seated, 60s rest',exercises:[{name:'Lying DB Pullover',sets:3,reps:'10-12'},{name:'Seated Leg Curl (machine)',sets:3,reps:'10-12'}]},
+      {label:'Core Superset',note:'Hip + Flexion — minimal rest',exercises:[{name:'Side-Lying Hip Abduction',sets:3,reps:'12 each side'},{name:'Reverse Crunch',sets:3,reps:'12'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Skip standing hamstring stretch',exercises:STRETCH_EX}]},
   ]},
-  'Gym C2':{color:R,icon:'C2',subtitle:'Foot Recovery — Upper Hypertrophy Focus',footRecovery:true,sections:[
+  'Gym C2':{color:R,icon:'C2',subtitle:'Foot Recovery — Upper Hypertrophy (Foot-Free)',footRecovery:true,sections:[
     {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Seated Warm-Up',note:'Extra thoracic mobility before pulling',exercises:WARMUP_FOOT}]},
     {title:'Main Session',color:R,supersets:[
-      {label:'Superset 1',note:'Pull + Hinge Isolation — alternate, 60s rest',exercises:[{name:'Chest-Supported DB Row',sets:4,reps:'10-12'},{name:'45deg Back Extension / KB Good Morning',sets:4,reps:'12'}]},
-      {label:'Superset 2',note:'Chest Fly + Lateral Raise + Hamstring — 60s rest after all three',exercises:[{name:'Cable Chest Fly (chest height)',sets:4,reps:'12-15'},{name:'Cable Lateral Raise',sets:4,reps:'12-15'},{name:'Prone Dumbbell Leg Curl',sets:3,reps:'10-12'}]},
-      {label:'Superset 3',note:'Push + Pull — alternate, 60s rest',exercises:[{name:'Push-Up Variation',sets:4,reps:'12-15'},{name:'Seated Cable Row',sets:4,reps:'10-12'}]},
-      {label:'Core Superset',note:'Rotational + Anti-extension — minimal rest',exercises:[{name:'Half-Kneeling Cable Wood Chop (left knee)',sets:3,reps:'10 each side'},{name:'Bird Dog',sets:2,reps:'8 each side'}]},
+      {label:'Superset 1',note:'Pull + Hamstring — both prone on bench, feet hanging off, 60s rest',exercises:[{name:'Lying DB Row (prone, on bench)',sets:4,reps:'10-12 each side'},{name:'Prone Dumbbell Leg Curl',sets:4,reps:'10-12'}]},
+      {label:'Superset 2',note:'Chest + Lateral Delt — both lying, feet up on bench, 60s rest',exercises:[{name:'DB Chest Fly (flat bench)',sets:4,reps:'12-15'},{name:'Side-Lying DB Lateral Raise',sets:4,reps:'12 each side'}]},
+      {label:'Superset 3',note:'Tricep + Bicep — both lying, 60s rest',exercises:[{name:'Lying DB Tricep Extension (Skullcrusher)',sets:4,reps:'10-12'},{name:'Incline DB Curl (lying back)',sets:4,reps:'10-12'}]},
+      {label:'Core Superset',note:'Anti-rotation + Stability — minimal rest, both on hands and knees',exercises:[{name:'Bird Dog',sets:3,reps:'8 each side'},{name:'Dead Bug',sets:3,reps:'8 each side'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Minimal rest',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Skip standing hamstring stretch',exercises:STRETCH_EX}]},
@@ -694,7 +710,88 @@ function SetRow({set,idx,onChange,color}){
   );
 }
 
-function ExCard({exDef,data,onChange,color,prevSets,progress,hist}){
+// Apple Health reminder modal — fires once per session on first set completion
+function HealthReminderModal({onClose,onDisable}){
+  return(
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2000,padding:20}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#0A1628',border:'1px solid #1E3A5F',borderRadius:14,padding:'22px 22px 18px',maxWidth:360,width:'100%'}}>
+        <div style={{fontSize:36,textAlign:'center',marginBottom:8}}>⌚</div>
+        <div style={{color:'#E2E8F0',fontSize:17,fontWeight:700,textAlign:'center',marginBottom:6}}>Apple Watch workout started?</div>
+        <div style={{color:'#94A3B8',fontSize:13,textAlign:'center',marginBottom:16,lineHeight:1.5}}>You've logged your first set — quick check that Apple Health is recording this session on your Watch Ultra. Heart rate, calories, and time are easy to lose mid-session.</div>
+        <button onClick={onClose} style={{width:'100%',padding:'12px',background:A,border:'none',borderRadius:10,color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:8}}>Got it</button>
+        <button onClick={onDisable} style={{width:'100%',padding:'8px',background:'transparent',border:'none',color:'#475569',fontSize:11,cursor:'pointer'}}>Don't remind me again</button>
+      </div>
+    </div>
+  );
+}
+
+// Add Exercise picker — modal with searchable exercise list + target superset chooser
+function AddExercisePicker({ctx,customSections,onPick,onClose}){
+  const[query,setQuery]=useState('');
+  const[picked,setPicked]=useState(null);// exercise name once chosen
+  const sec=customSections&&customSections[ctx.secIdx];
+  // Build searchable list — exclude foot-recovery-warmup, warmup, swim warmup exercises
+  const list=useMemo(()=>{
+    const out=[];
+    for(const name in COACHING){
+      const c=COACHING[name];
+      if(c.category==='Warm-Up'||c.category==='Foot Recovery Warm-Up')continue;
+      out.push({name,muscle:c.muscle||'',category:c.category||''});
+    }
+    return out.sort((a,b)=>a.name.localeCompare(b.name));
+  },[]);
+  const filtered=query?list.filter(e=>e.name.toLowerCase().includes(query.toLowerCase())||e.muscle.toLowerCase().includes(query.toLowerCase())):list;
+  return(
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:2000}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#0A1628',border:'1px solid #1E3A5F',borderTopLeftRadius:18,borderTopRightRadius:18,padding:'18px 16px',maxWidth:520,width:'100%',maxHeight:'80vh',display:'flex',flexDirection:'column'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div style={{color:'#E2E8F0',fontSize:15,fontWeight:700}}>{picked?'Add to which superset?':'Add Exercise'}</div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#94A3B8',fontSize:22,cursor:'pointer',lineHeight:1,padding:0}}>×</button>
+        </div>
+        {!picked?(
+          <>
+            <input autoFocus placeholder="Search exercises by name or muscle..." value={query} onChange={e=>setQuery(e.target.value)} style={{width:'100%',padding:'10px 12px',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#E2E8F0',fontSize:13,marginBottom:10,outline:'none',boxSizing:'border-box'}}/>
+            <div style={{overflowY:'auto',flex:1}}>
+              {filtered.map(ex=>(
+                <button key={ex.name} onClick={()=>setPicked(ex.name)} style={{display:'block',width:'100%',padding:'10px 12px',background:'#070E1A',border:'1px solid #1E2D40',borderRadius:8,color:'#E2E8F0',fontSize:13,textAlign:'left',cursor:'pointer',marginBottom:6}}>
+                  <div style={{fontWeight:600,marginBottom:2}}>{ex.name}</div>
+                  <div style={{fontSize:10,color:'#475569'}}>{ex.muscle}{ex.category?` · ${ex.category}`:''}</div>
+                </button>
+              ))}
+              {filtered.length===0&&<div style={{padding:20,color:'#475569',fontSize:13,textAlign:'center'}}>No matches</div>}
+            </div>
+          </>
+        ):(
+          <>
+            <div style={{color:'#94A3B8',fontSize:12,marginBottom:10}}>Adding: <span style={{color:A,fontWeight:600}}>{picked}</span></div>
+            <div style={{overflowY:'auto',flex:1}}>
+              {sec&&sec.supersets.map((ss,ssi)=>(
+                <button key={ssi} onClick={()=>onPick(ctx.secIdx,ssi,picked)} style={{display:'block',width:'100%',padding:'10px 12px',background:'#070E1A',border:'1px solid #1E2D40',borderRadius:8,color:'#E2E8F0',fontSize:13,textAlign:'left',cursor:'pointer',marginBottom:6}}>
+                  <div style={{fontWeight:600,marginBottom:2}}>{ss.label}</div>
+                  <div style={{fontSize:10,color:'#475569'}}>{ss.exercises.map(e=>e.name).join(' · ')}</div>
+                </button>
+              ))}
+              <button onClick={()=>onPick(ctx.secIdx,'new',picked)} style={{display:'block',width:'100%',padding:'12px',background:'transparent',border:`1px dashed ${A}66`,borderRadius:8,color:A,fontSize:13,fontWeight:600,cursor:'pointer',marginTop:6}}>+ Add as new single-exercise superset</button>
+            </div>
+            <button onClick={()=>setPicked(null)} style={{marginTop:8,padding:'8px',background:'transparent',border:'none',color:'#475569',fontSize:12,cursor:'pointer'}}>← Back to search</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Drag ghost — semi-transparent indicator that follows the pointer
+function DragGhost({info}){
+  if(!info)return null;
+  return(
+    <div style={{position:'fixed',left:info.currentX+12,top:info.currentY-12,pointerEvents:'none',zIndex:1999,background:A+'CC',color:'#fff',padding:'6px 12px',borderRadius:8,fontSize:12,fontWeight:600,boxShadow:'0 4px 16px rgba(0,0,0,0.5)'}}>
+      ⋮⋮ Moving...
+    </div>
+  );
+}
+
+function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,onRemove}){
   const[showInfo,setShowInfo]=useState(false);
   const c=color||A;
   const ns=exDef.sets||1;
@@ -711,15 +808,21 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist}){
   return(
     <div style={{background:'#070E1A',border:`1px solid ${progress?G+'99':complete?c+'55':'#1E2D40'}`,borderRadius:8,padding:'10px 12px',marginBottom:8}}>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-        <div style={{flex:1,marginRight:8}}>
-          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
-            <span style={{color:'#E2E8F0',fontSize:13,fontWeight:600,flex:1}}>{exDef.name}</span>
-            {progress&&<span style={{background:G+'22',color:G,borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,flexShrink:0}}>↑ +{jump}kg</span>}
-            <button onClick={()=>setShowInfo(true)} style={{width:22,height:22,borderRadius:'50%',border:`1px solid ${c}55`,background:c+'11',color:c,cursor:'pointer',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>i</button>
-          </div>
-          <div style={{display:'flex',gap:10,alignItems:'center'}}>
-            <span style={{color:c,fontSize:11,fontFamily:'monospace'}}>Target: {exDef.reps} × {exDef.sets}</span>
-            {prevSets&&prevSets[0]&&prevSets[0].weight&&<span style={{color:'#334155',fontSize:10,fontFamily:'monospace'}}>Last: {prevSets[0].weight}kg×{prevSets[0].reps}</span>}
+        <div style={{flex:1,marginRight:8,display:'flex',gap:6}}>
+          {onDragStart&&(
+            <div onPointerDown={onDragStart} style={{width:18,minHeight:36,display:'flex',alignItems:'center',justifyContent:'center',color:'#475569',cursor:'grab',userSelect:'none',touchAction:'none',fontSize:13,lineHeight:1,marginTop:-2,marginLeft:-4}}>⋮⋮</div>
+          )}
+          <div style={{flex:1}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+              <span style={{color:'#E2E8F0',fontSize:13,fontWeight:600,flex:1}}>{exDef.name}</span>
+              {progress&&<span style={{background:G+'22',color:G,borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,flexShrink:0}}>↑ +{jump}kg</span>}
+              <button onClick={()=>setShowInfo(true)} style={{width:22,height:22,borderRadius:'50%',border:`1px solid ${c}55`,background:c+'11',color:c,cursor:'pointer',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>i</button>
+              {onRemove&&done===0&&<button onClick={()=>{if(confirm('Remove this exercise from this session?'))onRemove();}} title="Remove exercise" style={{width:22,height:22,borderRadius:'50%',border:'1px solid #DC262655',background:'#DC262611',color:'#EF4444',cursor:'pointer',fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,lineHeight:1}}>×</button>}
+            </div>
+            <div style={{display:'flex',gap:10,alignItems:'center'}}>
+              <span style={{color:c,fontSize:11,fontFamily:'monospace'}}>Target: {exDef.reps} × {exDef.sets}</span>
+              {prevSets&&prevSets[0]&&prevSets[0].weight&&<span style={{color:'#334155',fontSize:10,fontFamily:'monospace'}}>Last: {prevSets[0].weight}kg×{prevSets[0].reps}</span>}
+            </div>
           </div>
         </div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3,flexShrink:0}}>
@@ -739,19 +842,19 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist}){
   );
 }
 
-function SSBlock({ss,ssData,onChange,color,restDur,secTitle,hist,sessionType}){
+function SSBlock({ss,gdata,onChange,color,restDur,hist,secIdx,ssIdx,onDragStart,dragInfo,onRemoveEx,canEdit}){
   const[col,setCol]=useState(false);const[timer,setTimer]=useState(false);const prev=useRef(0);
   const tot=ss.exercises.reduce((a,ex)=>a+(ex.sets||1),0);
-  const dn=ss.exercises.reduce((a,ex,ei)=>a+((ssData[ei]?ssData[ei].sets||[]:[]).filter(s=>s.done).length),0);
+  const dn=ss.exercises.reduce((a,ex)=>a+(((gdata[ex._uid]&&gdata[ex._uid].sets)||[]).filter(s=>s.done).length),0);
   // Auto-collapse when all sets in superset are done
   useEffect(()=>{if(dn===tot&&tot>0){setTimer(false);setCol(true);}},[dn,tot]);
   useEffect(()=>{
     if(ss.exercises.length<=1)return;
-    const mins=ss.exercises.map((_,ei)=>(ssData[ei]?ssData[ei].sets||[]:[]).filter(s=>s.done).length);
+    const mins=ss.exercises.map(ex=>((gdata[ex._uid]&&gdata[ex._uid].sets)||[]).filter(s=>s.done).length);
     const m=Math.min(...mins);
     if(m>prev.current&&m>0&&!timer&&dn<tot)setTimer(true);
     prev.current=m;
-  },[ssData]);
+  },[gdata]);
   return(
     <div style={{marginBottom:12}}>
       <button onClick={()=>setCol(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',background:`linear-gradient(135deg,${color}1A,${color}0A)`,border:`1px solid ${color}33`,borderRadius:10,padding:'9px 13px',cursor:'pointer',marginBottom:col?0:8}}>
@@ -760,11 +863,19 @@ function SSBlock({ss,ssData,onChange,color,restDur,secTitle,hist,sessionType}){
       </button>
       {!col&&(
         <div style={{paddingLeft:4}}>
-          {ss.exercises.map((ex,ei)=>{
+          {ss.exercises.map(ex=>{
             // Cross-session exercise lookup — works for shared exercises like DB Press in both A and A2
             const ps=getPrevExSets(hist,ex.name);
             const cp=canProgressByExercise(hist,ex.name,ex.reps);
-            return <ExCard key={ei} exDef={ex} data={ssData[ei]||{}} color={color} onChange={val=>onChange(ei,val)} prevSets={ps} progress={cp} hist={hist}/>;
+            const isDragged=dragInfo&&dragInfo.uid===ex._uid;
+            const dropPos=dragInfo&&dragInfo.dropTarget&&dragInfo.dropTarget.uid===ex._uid?dragInfo.dropTarget.position:null;
+            return(
+              <div key={ex._uid} data-ex-uid={ex._uid} style={{position:'relative',opacity:isDragged?0.35:1,transition:'opacity 0.15s'}}>
+                {dropPos==='above'&&<div style={{height:3,background:A,borderRadius:2,marginBottom:4,boxShadow:`0 0 8px ${A}`}}/>}
+                <ExCard exDef={ex} data={gdata[ex._uid]||{}} color={color} onChange={val=>onChange(ex._uid,val)} prevSets={ps} progress={cp} hist={hist} onDragStart={canEdit?(e)=>onDragStart(e,ex._uid):null} onRemove={canEdit&&onRemoveEx?()=>onRemoveEx(ex._uid):null}/>
+                {dropPos==='below'&&<div style={{height:3,background:A,borderRadius:2,marginTop:4,boxShadow:`0 0 8px ${A}`}}/>}
+              </div>
+            );
           })}
           {timer&&<Timer duration={restDur} onDone={()=>setTimer(false)}/>}
         </div>
@@ -773,17 +884,22 @@ function SSBlock({ss,ssData,onChange,color,restDur,secTitle,hist,sessionType}){
   );
 }
 
-function SecBlock({sec,si,secData,onChange,restDur,hist,sessionType}){
+function SecBlock({sec,si,gdata,onChange,restDur,hist,onDragStart,dragInfo,onAddExercise,onRemoveEx}){
   const[col,setCol]=useState(false);const c=sec.color||A;
   const tot=sec.supersets.reduce((a,ss)=>a+ss.exercises.reduce((b,ex)=>b+(ex.sets||1),0),0);
-  const dn=sec.supersets.reduce((a,ss,ssi)=>a+ss.exercises.reduce((b,ex,ei)=>b+((secData[ssi]&&secData[ssi][ei]?secData[ssi][ei].sets||[]:[]).filter(s=>s.done).length),0),0);
+  const dn=sec.supersets.reduce((a,ss)=>a+ss.exercises.reduce((b,ex)=>b+(((gdata[ex._uid]&&gdata[ex._uid].sets)||[]).filter(s=>s.done).length),0),0);
+  // Allow add/edit only in Main Session sections (not warm-up, rehab, stretch)
+  const canEdit=!sec.isWarmup&&sec.title==='Main Session';
   return(
     <div style={{marginBottom:14}}>
       <button onClick={()=>setCol(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',background:`linear-gradient(135deg,${c}28,${c}10)`,border:`1px solid ${c}55`,borderRadius:12,padding:'11px 14px',cursor:'pointer',marginBottom:col?0:10}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}><div style={{width:7,height:7,borderRadius:'50%',background:c,flexShrink:0}}/><span style={{color:c,fontSize:14,fontWeight:700}}>{sec.title}</span></div>
         <div style={{display:'flex',alignItems:'center',gap:8}}><span style={{color:dn===tot&&tot>0?G:'#475569',fontSize:11,fontFamily:'monospace'}}>{dn}/{tot}</span><span style={{color:'#334155',fontSize:12}}>{col?'+':'−'}</span></div>
       </button>
-      {!col&&sec.supersets.map((ss,ssi)=><SSBlock key={ssi} ss={ss} ssData={secData[ssi]||{}} color={c} restDur={restDur} secTitle={sec.title} hist={hist} sessionType={sessionType} onChange={(ei,val)=>onChange(si,ssi,ei,val)}/>)}
+      {!col&&sec.supersets.map((ss,ssi)=><SSBlock key={ssi} ss={ss} gdata={gdata} color={c} restDur={restDur} hist={hist} secIdx={si} ssIdx={ssi} onDragStart={onDragStart} dragInfo={dragInfo} onRemoveEx={onRemoveEx} canEdit={canEdit} onChange={onChange}/>)}
+      {!col&&canEdit&&onAddExercise&&(
+        <button onClick={()=>onAddExercise(si)} style={{width:'100%',marginTop:6,padding:'10px 12px',background:'transparent',border:`1px dashed ${c}66`,borderRadius:10,color:c,fontSize:12,fontWeight:600,cursor:'pointer'}}>+ Add Exercise to this section</button>
+      )}
     </div>
   );
 }
@@ -1057,6 +1173,15 @@ function App(){
   const[sphase,setSphase]=useState(0);
   const[restDur,setRestDur]=useState(90);
   const[done2,setDone2]=useState(null);
+  // Custom-session state — holds the active session's structure with stable UIDs so reordering preserves logged data
+  const[customSections,setCustomSections]=useState(null);
+  // Apple Health watch-workout reminder
+  const[showHealthReminder,setShowHealthReminder]=useState(false);
+  const[healthReminderShown,setHealthReminderShown]=useState(false);
+  // Add Exercise picker
+  const[addPickerCtx,setAddPickerCtx]=useState(null);// {secIdx, ssIdx} or {secIdx, ssIdx:'new'} or null
+  // Drag-and-drop state — pointer-events-based, works on mouse + touch
+  const[dragInfo,setDragInfo]=useState(null);// {uid, currentX, currentY, dropTarget:{uid,position}|null}
   const[view,setView]=useState(null);
   const[saving,setSaving]=useState(false);
   const[loaded,setLoaded]=useState(false);
@@ -1112,7 +1237,17 @@ function App(){
         const drafts=await db('GET',`/drafts?user_id=eq.${userId}`);
         if(drafts&&drafts.length){
           const dr=drafts[0];setAtype(dr.type);
-          const d=dr.data||{};setGdata(d.gymData||{});setCdata(d.cardioData||{});setWnotes(d.workoutNotes||'');setSphase(d.swimPhase||0);setScreen('log');
+          const d=dr.data||{};
+          // Restore customSections if present, otherwise initialise from PLAN (old draft format)
+          if(d.customSections){
+            setCustomSections(d.customSections);
+            setGdata(d.gymData||{});// already uid-keyed if customSections present
+          }else if(isGymSession(dr.type)&&PLAN[dr.type]){
+            // Old-format draft: re-init customSections, drop the position-keyed gdata (will be lost — rare edge case)
+            setCustomSections(initCustomSections(PLAN[dr.type].sections));
+            setGdata({});
+          }
+          setCdata(d.cardioData||{});setWnotes(d.workoutNotes||'');setSphase(d.swimPhase||0);setScreen('log');
         }
       }catch(e){console.error('Load failed:',e);}
       setLoaded(true);
@@ -1121,16 +1256,175 @@ function App(){
 
   const applyStart=date=>{setStartDate(date);localStorage.setItem('tl-start',date);setWeek(calcWeek(date));setShowDP(false);};
   const saveDraft=useCallback(async(type,w,data)=>{if(!type)return;try{await db('POST','/drafts?on_conflict=user_id',{user_id:userId,type,week:w,data,updated_at:new Date().toISOString()});}catch{}},[userId]);
-  useEffect(()=>{if(atype&&screen==='log'){if(asr.current)clearTimeout(asr.current);asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase}),800);}},[gdata,cdata,wnotes,sphase]);
+  useEffect(()=>{if(atype&&screen==='log'){if(asr.current)clearTimeout(asr.current);asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase,customSections}),800);}},[gdata,cdata,wnotes,sphase,customSections]);
   const delDraft=async()=>{try{await db('DELETE',`/drafts?user_id=eq.${userId}`);}catch{}};
-  const startSess=type=>{setAtype(type);setGdata({});setCdata({});setWnotes('');setSessionDate(new Date().toISOString().slice(0,10));setScreen('log');};
-  const hgc=(si,ssi,ei,val)=>setGdata(d=>({...d,[si]:{...(d[si]||{}),[ssi]:{...((d[si]&&d[si][ssi])||{}),[ei]:val}}}));
+
+  // ── Custom session helpers ────────────────────────────────────────────────
+  // Deep-clone PLAN sections and stamp each exercise with a stable UID.
+  // The UID lets gdata follow the exercise when reordered or moved between supersets.
+  const initCustomSections=(sections)=>{
+    let counter=0;
+    return sections.map(sec=>({
+      ...sec,
+      supersets:sec.supersets.map(ss=>({
+        ...ss,
+        exercises:ss.exercises.map(ex=>({...ex,_uid:`ex-${Date.now()}-${counter++}`}))
+      }))
+    }));
+  };
+
+  const startSess=type=>{
+    setAtype(type);
+    setGdata({});
+    setCdata({});
+    setWnotes('');
+    setSessionDate(new Date().toISOString().slice(0,10));
+    // Initialise customSections for gym sessions only (cardio sessions don't use it)
+    if(isGymSession(type)&&PLAN[type]&&PLAN[type].sections){
+      setCustomSections(initCustomSections(PLAN[type].sections));
+    }else{
+      setCustomSections(null);
+    }
+    setHealthReminderShown(false);
+    setShowHealthReminder(false);
+    setScreen('log');
+  };
+
+  // gdata is now keyed by uid: {[uid]: {sets, rpe, notes}}
+  const hgc=(uid,val)=>setGdata(d=>({...d,[uid]:val}));
+
+  // Detect first set completion to fire Apple Health reminder
+  useEffect(()=>{
+    if(!atype||healthReminderShown)return;
+    if(localStorage.getItem('tl-health-reminder-disabled')==='1')return;
+    // Count total done sets across all exercises in current session
+    const totalDone=Object.values(gdata).reduce((a,ex)=>a+((ex&&ex.sets)||[]).filter(s=>s.done).length,0);
+    if(totalDone>0){
+      setHealthReminderShown(true);
+      setShowHealthReminder(true);
+    }
+  },[gdata,atype,healthReminderShown]);
+
+  // Add a new exercise to a target superset (or as a new single-exercise superset)
+  const addExerciseToSession=(secIdx,ssIdx,exName)=>{
+    if(!customSections)return;
+    const newEx={name:exName,sets:3,reps:'10-12',_uid:`ex-${Date.now()}-add`};
+    setCustomSections(secs=>secs.map((sec,si)=>{
+      if(si!==secIdx)return sec;
+      if(ssIdx==='new'){
+        // Append a fresh single-exercise superset to the end of this section
+        return{...sec,supersets:[...sec.supersets,{label:'Added Exercise',note:'Manually added during session',exercises:[newEx]}]};
+      }
+      return{...sec,supersets:sec.supersets.map((ss,ssi)=>ssi===ssIdx?{...ss,exercises:[...ss.exercises,newEx]}:ss)};
+    }));
+    setAddPickerCtx(null);
+  };
+
+  // Remove an exercise by uid (also clears its gdata entry). Empty supersets get pruned.
+  const removeExerciseByUid=(uid)=>{
+    setCustomSections(secs=>secs.map(sec=>({
+      ...sec,
+      supersets:sec.supersets.map(ss=>({...ss,exercises:ss.exercises.filter(ex=>ex._uid!==uid)})).filter(ss=>ss.exercises.length>0)
+    })));
+    setGdata(d=>{const n={...d};delete n[uid];return n;});
+  };
+
+  // Move an exercise (drag-and-drop reorder). position: 'above' | 'below' of targetUid
+  const moveExerciseToTarget=(sourceUid,targetUid,position)=>{
+    if(sourceUid===targetUid)return;
+    setCustomSections(secs=>{
+      // Locate source and target
+      let srcSi=-1,srcSsi=-1,srcEi=-1,srcEx=null;
+      let tgtSi=-1,tgtSsi=-1,tgtEi=-1;
+      for(let si=0;si<secs.length;si++){
+        if(secs[si].isWarmup)continue;// don't allow moving warmup exercises
+        for(let ssi=0;ssi<secs[si].supersets.length;ssi++){
+          for(let ei=0;ei<secs[si].supersets[ssi].exercises.length;ei++){
+            const u=secs[si].supersets[ssi].exercises[ei]._uid;
+            if(u===sourceUid){srcSi=si;srcSsi=ssi;srcEi=ei;srcEx=secs[si].supersets[ssi].exercises[ei];}
+            if(u===targetUid){tgtSi=si;tgtSsi=ssi;tgtEi=ei;}
+          }
+        }
+      }
+      if(srcSi===-1||tgtSi===-1)return secs;
+      // Build new structure: remove from source first
+      const out=secs.map((sec,si)=>({
+        ...sec,
+        supersets:sec.supersets.map((ss,ssi)=>{
+          if(si===srcSi&&ssi===srcSsi)return{...ss,exercises:ss.exercises.filter((_,ei)=>ei!==srcEi)};
+          return{...ss,exercises:[...ss.exercises]};
+        })
+      }));
+      // Adjust target index if source was before it in same superset
+      let insertIdx=tgtEi;
+      if(srcSi===tgtSi&&srcSsi===tgtSsi&&srcEi<tgtEi)insertIdx-=1;
+      if(position==='below')insertIdx+=1;
+      out[tgtSi].supersets[tgtSsi].exercises.splice(insertIdx,0,srcEx);
+      return out;
+    });
+  };
+
+  // ── Drag-and-drop handlers (pointer events — work on touch + mouse) ───────
+  const onDragStart=useCallback((e,uid)=>{
+    e.preventDefault();e.stopPropagation();
+    setDragInfo({uid,currentX:e.clientX,currentY:e.clientY,dropTarget:null});
+    try{e.target.setPointerCapture(e.pointerId);}catch{}
+  },[]);
+  const onDragMove=useCallback((e)=>{
+    setDragInfo(d=>{
+      if(!d)return d;
+      // Find drop target under pointer
+      const el=document.elementFromPoint(e.clientX,e.clientY);
+      const slot=el?el.closest('[data-ex-uid]'):null;
+      let dropTarget=null;
+      if(slot){
+        const tgtUid=slot.getAttribute('data-ex-uid');
+        if(tgtUid&&tgtUid!==d.uid){
+          const r=slot.getBoundingClientRect();
+          const position=e.clientY<r.top+r.height/2?'above':'below';
+          dropTarget={uid:tgtUid,position};
+        }
+      }
+      return{...d,currentX:e.clientX,currentY:e.clientY,dropTarget};
+    });
+  },[]);
+  const onDragEnd=useCallback((e)=>{
+    setDragInfo(d=>{
+      if(d&&d.dropTarget){
+        moveExerciseToTarget(d.uid,d.dropTarget.uid,d.dropTarget.position);
+      }
+      return null;
+    });
+  },[customSections]);// eslint-disable-line react-hooks/exhaustive-deps
+
+  // Attach global move/up listeners while dragging
+  useEffect(()=>{
+    if(!dragInfo)return;
+    window.addEventListener('pointermove',onDragMove,{passive:false});
+    window.addEventListener('pointerup',onDragEnd);
+    window.addEventListener('pointercancel',onDragEnd);
+    return()=>{
+      window.removeEventListener('pointermove',onDragMove);
+      window.removeEventListener('pointerup',onDragEnd);
+      window.removeEventListener('pointercancel',onDragEnd);
+    };
+  },[dragInfo,onDragMove,onDragEnd]);
 
   const finish=async()=>{
     const ig=isGymSession(atype);
-    const plan=PLAN[atype];let data={workoutNotes:wnotes};
-    if(ig){data.sections=plan.sections.map((sec,si)=>({title:sec.title,supersets:sec.supersets.map((ss,ssi)=>({label:ss.label,exercises:ss.exercises.map((ex,ei)=>({name:ex.name,...((gdata[si]&&gdata[si][ssi]&&gdata[si][ssi][ei])||{})}))}))}));}
-    else{data={...cdata,workoutNotes:wnotes};}
+    let data={workoutNotes:wnotes};
+    if(ig&&customSections){
+      // Read from customSections (the actual session structure) and gdata-by-uid
+      data.sections=customSections.map(sec=>({
+        title:sec.title,
+        supersets:sec.supersets.map(ss=>({
+          label:ss.label,
+          exercises:ss.exercises.map(ex=>({name:ex.name,...(gdata[ex._uid]||{})}))
+        }))
+      }));
+    }else{
+      data={...cdata,workoutNotes:wnotes};
+    }
     const session={id:Date.now(),user_id:userId,type:atype,session_date:sessionDate?new Date(sessionDate+'T12:00:00').toISOString():new Date().toISOString(),week,data};
     setHist(h=>[session,...h]);setSaving(true);
     // Try upsert. If it fails, queue for retry on next load or banner-tap.
@@ -1297,7 +1591,7 @@ function App(){
               </div>
             </div>
           )}
-          {ig&&plan.sections.map((sec,si)=><SecBlock key={si} sec={sec} si={si} secData={gdata[si]||{}} restDur={restDur} hist={hist} sessionType={atype} onChange={hgc}/>)}
+          {ig&&(customSections||PLAN[atype].sections).map((sec,si)=><SecBlock key={si} sec={sec} si={si} gdata={gdata} restDur={restDur} hist={hist} onChange={hgc} onDragStart={onDragStart} dragInfo={dragInfo} onAddExercise={(secIdx)=>setAddPickerCtx({secIdx,ssIdx:null})} onRemoveEx={removeExerciseByUid}/>)}
           {atype==='Bike'&&<BikeLogger data={cdata} onChange={setCdata} week={week}/>}
           {atype==='Swim'&&<SwimLogger data={cdata} onChange={setCdata} sphase={sphase} setSphase={setSphase}/>}
           {atype==='Run'&&<RunLogger data={cdata} onChange={setCdata} week={week}/>}
@@ -1374,6 +1668,9 @@ function App(){
           </div>
         </div>
       )}
+      {showHealthReminder&&<HealthReminderModal onClose={()=>setShowHealthReminder(false)} onDisable={()=>{localStorage.setItem('tl-health-reminder-disabled','1');setShowHealthReminder(false);}}/>}
+      {addPickerCtx&&customSections&&<AddExercisePicker ctx={addPickerCtx} customSections={customSections} onPick={addExerciseToSession} onClose={()=>setAddPickerCtx(null)}/>}
+      <DragGhost info={dragInfo}/>
     </div>
   );
 }
