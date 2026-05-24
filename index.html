@@ -100,6 +100,16 @@ const GIF_SEARCH={
   'Side-Lying DB Lateral Raise':'lying lateral raise dumbbell',
   'Lying DB Tricep Extension (Skullcrusher)':'lying tricep extension',
   'Incline DB Curl (lying back)':'incline dumbbell curl',
+  'Seated DB Lateral Raise':'seated dumbbell lateral raise',
+  'DB Hammer Curl':'dumbbell hammer curl',
+  'DB Curl':'dumbbell biceps curl',
+  'Close-Grip DB Floor Press':'dumbbell floor press',
+  'Prone Rear-Delt Raise':'rear delt raise incline',
+  'Single-Leg Calf Raise':'single leg calf raise',
+  'Standing Calf Raise':'dumbbell standing calf raise',
+  'DB Step-Up (low box)':'dumbbell step up',
+  'Hollow Hold':'hollow hold',
+  'Lying Leg Raise':'lying leg raise',
 };
 
 // ── 3-LAYER GIF CACHE ────────────────────────────────────────────────────────
@@ -304,6 +314,16 @@ const COACHING={
   'Side-Lying DB Lateral Raise':{muscle:'Medial Deltoid',category:'Foot Recovery',tips:['Lie on your side on a flat bench (or floor) with one DB in your top hand.','Keep a soft elbow bend. Lift the DB up and over toward the ceiling in a wide arc.','Stop at shoulder height (about 90 degrees from torso). Going higher recruits the trap, not the medial delt.','Lower with control over 3 seconds. The eccentric drives most of the medial delt growth.','Use very light weight (3-5kg max). The lying position removes momentum and exposes any cheating.','For your right shoulder: stay within pain-free range. If 90 degrees is uncomfortable, stop earlier.','Foot-free isolation that targets the muscle responsible for shoulder width better than standing variations.']},
   'Lying DB Tricep Extension (Skullcrusher)':{muscle:'Tricep',category:'Foot Recovery',tips:['Lie on a flat bench. Hold a DB in each hand, arms extended straight up over the chest.','IMPORTANT: feet up on the bench for foot recovery, knees bent.','Bend at the elbows only — lower the DBs toward your forehead (or just past it).','Keep the elbows pointing toward the ceiling — they should not flare outward.','Pause for one second at the bottom (DBs near the temples), then extend the arms back up.','For your right shoulder: this is shoulder-friendly because the upper arm stays vertical.','3 seconds on the lowering phase. The stretch on the long head of the tricep is the growth stimulus.']},
   'Incline DB Curl (lying back)':{muscle:'Bicep (Long Head)',category:'Foot Recovery',tips:['Set an incline bench to 45-60 degrees. Lie back with arms hanging fully toward the floor.','IMPORTANT: feet up on the bench seat or on a footrest, not on the floor.','The arms hanging back behind the body puts the long head of the bicep into a deep stretch.','Curl the DBs up keeping the elbows pinned in place — no shoulder movement.','Squeeze hard at the top, then lower with full control over 3 seconds.','The stretched position is what makes this curl variant superior for the long head of the bicep.','Foot-free isolation that hits the bicep in its strongest hypertrophy position.']},
+  'Seated DB Lateral Raise':{muscle:'Medial Deltoid',category:'Shoulders',tips:['Sit upright on a bench, a DB in each hand at your sides, slight forward lean optional.','Lead with the elbows, not the hands. Raise the DBs out to the sides in a wide arc.','Stop at shoulder height — about 90 degrees from the torso. Higher recruits the trap instead of the medial delt.','Tiny pause at the top, then lower over 3 seconds. The eccentric drives medial delt growth.','For your right shoulder: stay within a pain-free arc. If the top of the range pinches, stop lower.','Light weight, high reps. This is an isolation movement — momentum ruins it.','Sitting removes leg drive and cheating, so 6-8kg will feel plenty.']},
+  'DB Hammer Curl':{muscle:'Bicep / Brachialis / Forearm',category:'Arms',tips:['Stand or sit tall, a DB in each hand, palms facing each other (neutral grip) throughout.','Curl without rotating the wrist — the neutral grip is what shifts load onto the brachialis and forearm.','Keep the elbows pinned to your sides. No swinging, no shoulder movement.','Squeeze at the top, then lower over 2-3 seconds.','Alternate arms or curl both together — both work. Alternating lets you go slightly heavier.','The brachialis sits under the bicep — building it pushes the bicep up and adds arm thickness.']},
+  'DB Curl':{muscle:'Bicep',category:'Arms',tips:['Stand or sit tall, a DB in each hand, palms facing forward (supinated) at the bottom.','Curl up keeping the elbows fixed at your sides — they should not drift forward.','Supinate fully — turn the pinky up slightly at the top for peak bicep contraction.','Squeeze hard at the top, then lower over 2-3 seconds. Do not let the DBs drop.','Full range: arms straight at the bottom, full contraction at the top.','If you have to swing to lift it, the weight is too heavy — drop it and keep form strict.']},
+  'Close-Grip DB Floor Press':{muscle:'Tricep / Inner Chest',category:'Arms',tips:['Lie on the floor (or a bench), a DB in each hand, palms facing each other, DBs touching over your chest.','Keep the DBs close together throughout — elbows tucked at roughly 45 degrees to the body.','Lower until your upper arms touch the floor (the floor caps the range, protecting the shoulder).','Pause briefly when the triceps touch down, then press back up keeping the DBs together.','The close, neutral grip and tucked elbows make this shoulder-friendly for your right side.','Drive through the triceps, not the shoulders. Squeeze the triceps hard at lockout.']},
+  'Prone Rear-Delt Raise':{muscle:'Rear Deltoid / Upper Back',category:'Shoulders',tips:['Lie face down (chest down) on an incline bench, or bent over with chest supported. A DB in each hand hanging down.','Raise the DBs out to the sides in a wide arc, leading with the elbows, thumbs roughly up.','Stop when the arms are level with the body. Squeeze the rear delts and upper back at the top.','Lower over 3 seconds. The slow eccentric is where the rear delt growth happens.','Keep it light — 4-8kg. Rear delts respond to control and reps, not heavy load.','Chest-supported position removes lower-back strain and any momentum. Strict form only.']},
+  'Single-Leg Calf Raise':{muscle:'Gastrocnemius / Soleus',category:'Calf',tips:['REINTRODUCE FROM WEEK 3 ONLY — this loads the 5th metatarsal directly through the ball of the foot.','Stand on one foot on the edge of a step, heel hanging off, holding a DB in the same-side hand for balance and load.','Rise up onto the ball of the foot as high as possible. Pause and squeeze the calf at the top for 1 second.','Lower slowly over 3 seconds, getting a full stretch at the bottom (heel below the step).','Start very light and watch the foot closely — any lateral foot pain means stop and drop back.','Full range and the top squeeze matter more than load for calf growth.']},
+  'Standing Calf Raise':{muscle:'Gastrocnemius / Soleus',category:'Calf',tips:['REINTRODUCE FROM WEEK 3 ONLY — direct load through the ball of the foot and 5th metatarsal.','Stand on the edge of a step, balls of both feet on the edge, heels hanging off. Hold DBs at your sides.','Rise up as high as possible onto the balls of the feet. Squeeze the calves hard at the top for 1 second.','Lower slowly over 3 seconds into a deep stretch (heels below the step level).','Keep the knees straight (not locked) to bias the gastrocnemius.','Watch the foot. Any lateral tenderness during or after = stop, regress, reassess.']},
+  'DB Step-Up (low box)':{muscle:'Quad / Glute',category:'Quad',tips:['Use a low box or step (knee-height or lower while the ankle is settling). A DB in each hand at your sides.','Place the whole foot on the box. Drive through the heel of the top leg to stand up fully.','Minimise push-off from the trailing foot — the top leg should do the work.','Control the descent over 2-3 seconds. Do not just drop back down.','Lower box = less ankle demand. Raise the box height only as the ankle proves it can handle it.','Complete all reps on one leg before switching, or alternate — both fine. Keep the torso tall.']},
+  'Hollow Hold':{muscle:'Deep Core / Rectus Abdominis',category:'Core',tips:['Lie on your back. Press your lower back firmly into the floor — this contact must never break.','Lift the shoulders and legs off the floor, arms extended overhead, forming a shallow banana shape.','The lower the legs, the harder it is. Keep them only as low as you can hold without the back arching.','Breathe shallowly and keep the core braced throughout the hold.','If the lower back lifts off the floor, raise the legs higher or bend the knees to regress.','Build hold time by 5 seconds per session. A strong hollow position transfers to every other lift.']},
+  'Lying Leg Raise':{muscle:'Lower Abdominal / Hip Flexor',category:'Core',tips:['Lie on your back, hands tucked under your glutes for lower-back support, legs straight.','Keep the lower back pressed into the floor throughout — this is non-negotiable.','Raise the legs to vertical (or as far as control allows), keeping them straight or with a soft knee.','Lower slowly over 3 seconds. Stop just before the heels touch the floor — keep constant tension.','If the lower back arches off the floor on the way down, bend the knees more or reduce the range.','Slow and controlled beats fast and many. The eccentric is where the lower abs work hardest.']},
 };
 
 const SREHAB=[
@@ -371,6 +391,15 @@ const WARMUP_FOOT=[
   {name:'Seated Hip CARs',sets:1,reps:'8 each direction, each leg'},
   {name:'Seated Cat-Cow',sets:1,reps:'10 reps'},
   {name:'Seated Thoracic Rotation',sets:1,reps:'8 each side'},
+  {name:'Shoulder Rolls (Warm-Up)',sets:1,reps:'10 each direction'},
+];
+// Travel warm-up — equipment-free, standing, general full-body prep
+const WARMUP_TRAVEL=[
+  {name:'5 Min Light Cardio',sets:1,reps:'5 min (brisk walk or skip)'},
+  {name:'Hip Circles',sets:1,reps:'10 each direction'},
+  {name:'Bodyweight Squat (Warm-Up)',sets:2,reps:'10'},
+  {name:'Thoracic Rotation',sets:1,reps:'8 each side'},
+  {name:'Cat-Cow',sets:1,reps:'10 reps'},
   {name:'Shoulder Rolls (Warm-Up)',sets:1,reps:'10 each direction'},
 ];
 
@@ -448,6 +477,51 @@ const PLAN={
     {label:'Phase 3',weeks:'7-12',sets:[{name:'Warm-up — mixed stroke',target:'300m'},{name:'Pull buoy',target:'4x100m'},{name:'Main set',target:'8x75m, 20s rest'},{name:'Sprints (wks 10-12)',target:'4x25m'},{name:'Cool-down — backstroke',target:'150m'}]},
   ]},
   'Run':{color:O,icon:'>',subtitle:'Cardiovascular — Zone-Based',phases:[{label:'Easy Base',weeks:'1-4',target:'5k Zone 2 throughout (111-130 bpm)'},{label:'Steady Build',weeks:'5-8',target:'5k — 4km Zone 2, final 1km Zone 3'},{label:'Easy Run',weeks:'9-12 odd',target:'5k easy Zone 2'},{label:'Intervals',weeks:'9-12 even',target:'6x2min Zone 3-4 / 2min easy jog'}]},
+  'Travel Upper A':{color:A,icon:'UA',subtitle:'Horizontal Push/Pull + Arms — Travel',travel:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up',note:'Brisk walk or skip if no cardio kit',exercises:WARMUP_TRAVEL}]},
+    {title:'Main Session',color:A,supersets:[
+      {label:'Superset 1',note:'Press from floor or low bench, neutral grip — 60-90s rest',exercises:[{name:'Flat DB Press (neutral grip)',sets:4,reps:'8-12'},{name:'Chest-Supported DB Row',sets:4,reps:'10-12'}]},
+      {label:'Superset 2',note:'Chest + delts — 60s rest',exercises:[{name:'DB Chest Fly (flat bench)',sets:3,reps:'12-15'},{name:'Seated DB Lateral Raise',sets:3,reps:'12-20'}]},
+      {label:'Superset 3',note:'Arms — train near failure, 45-60s rest',exercises:[{name:'DB Hammer Curl',sets:3,reps:'10-15'},{name:'Lying DB Tricep Extension (Skullcrusher)',sets:3,reps:'10-15'}]},
+      {label:'Core Superset',note:'Minimal rest',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Reverse Crunch',sets:3,reps:'12-15'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Band if packed, else light DB / bodyweight. Minimal rest.',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each 30s',exercises:STRETCH_EX}]},
+  ]},
+  'Travel Lower A':{color:PU,icon:'LA',subtitle:'Squat + Posterior (bilateral) — Travel',travel:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up',note:'Extra hip + ankle mobility before loading',exercises:WARMUP_TRAVEL}]},
+    {title:'Main Session',color:PU,supersets:[
+      {label:'Squat',note:'90s rest — bilateral, ankle-safe from week 1',exercises:[{name:'Barbell Squat / Goblet Squat',sets:4,reps:'10-15'}]},
+      {label:'Hinge',note:'90s rest',exercises:[{name:'Romanian Deadlift',sets:4,reps:'10-12'}]},
+      {label:'Superset 3',note:'Glute + calf — 60s rest. Calf raises week 3 onward only.',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12-15'},{name:'Single-Leg Calf Raise',sets:3,reps:'15-20 (wk 3+)'}]},
+      {label:'Core Superset',note:'Minimal rest',exercises:[{name:'Side Plank',sets:3,reps:'30s each side'},{name:'Bird Dog',sets:3,reps:'8 each side'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Band if packed, else light DB / bodyweight. Minimal rest.',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each 30s',exercises:STRETCH_EX}]},
+  ]},
+  'Travel Upper B':{color:A,icon:'UB',subtitle:'Pull Focus + Delts/Arms — Travel',travel:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up',note:'Brisk walk or skip if no cardio kit',exercises:WARMUP_TRAVEL}]},
+    {title:'Main Session',color:A,supersets:[
+      {label:'Superset 1',note:'Row + press — 60-90s rest',exercises:[{name:'Single-Arm DB Row (incline bench)',sets:4,reps:'10-12'},{name:'Low-Incline DB Press (neutral grip)',sets:4,reps:'8-12'}]},
+      {label:'Superset 2',note:'Lat + rear delt — 60s rest',exercises:[{name:'Lying DB Pullover',sets:3,reps:'12-15'},{name:'Prone Rear-Delt Raise',sets:3,reps:'15-20'}]},
+      {label:'Superset 3',note:'Delts + biceps — 45-60s rest',exercises:[{name:'Seated DB Lateral Raise',sets:3,reps:'12-20'},{name:'DB Curl',sets:3,reps:'10-15'}]},
+      {label:'Triceps',note:'45-60s rest',exercises:[{name:'Close-Grip DB Floor Press',sets:3,reps:'12-15'}]},
+      {label:'Core Superset',note:'Minimal rest',exercises:[{name:'Hollow Hold',sets:3,reps:'20-30s'},{name:'Reverse Crunch',sets:3,reps:'15'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Band if packed, else light DB / bodyweight. Minimal rest.',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each 30s',exercises:STRETCH_EX}]},
+  ]},
+  'Travel Lower B':{color:PU,icon:'LB',subtitle:'Hinge + Single-Leg — Travel',travel:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up',note:'Extra hip + ankle mobility before loading',exercises:WARMUP_TRAVEL}]},
+    {title:'Main Session',color:PU,supersets:[
+      {label:'Hinge',note:'90s rest',exercises:[{name:'Romanian Deadlift',sets:4,reps:'10-12'}]},
+      {label:'Single-Leg',note:'Add from week 2-3 as ankle settles — else repeat goblet squat',exercises:[{name:'Bulgarian Split Squat',sets:3,reps:'8-12 each side'}]},
+      {label:'Superset 3',note:'Unilateral quad + glute — 60s rest',exercises:[{name:'DB Step-Up (low box)',sets:3,reps:'10 each side'},{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12-15'}]},
+      {label:'Calf + Core',note:'Calf raises week 3 onward. Minimal rest on core.',exercises:[{name:'Standing Calf Raise',sets:3,reps:'15-20 (wk 3+)'},{name:'Lying Leg Raise',sets:3,reps:'12-15'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Band if packed, else light DB / bodyweight. Minimal rest.',exercises:SREHAB}]},
+    {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each 30s',exercises:STRETCH_EX}]},
+  ]},
 };
 
 function buildLibrary(){
@@ -469,12 +543,14 @@ function buildLibrary(){
   return lib.sort((a,b)=>a.name.localeCompare(b.name));
 }
 const LIBRARY=buildLibrary();
-const CATS=['All','Squat','Hinge','Push','Pull','Core','Hamstring','Quad','Lower Body','Shoulder Rehab','Stretch','Warm-Up','Swim Warm-Up','Foot Recovery','Foot Recovery Warm-Up'];
-function catColor(cat){return{Squat:PU,Hinge:O,Push:A,Pull:'#34D399',Core:PU,Hamstring:G,Quad:PU,'Lower Body':G,'Shoulder Rehab':PK,Stretch:G,'Warm-Up':'#64748B','Swim Warm-Up':SW,'Foot Recovery':R,'Foot Recovery Warm-Up':R}[cat]||A;}
+const CATS=['All','Squat','Hinge','Push','Pull','Core','Hamstring','Quad','Lower Body','Shoulders','Arms','Calf','Shoulder Rehab','Stretch','Warm-Up','Swim Warm-Up','Foot Recovery','Foot Recovery Warm-Up'];
+function catColor(cat){return{Squat:PU,Hinge:O,Push:A,Pull:'#34D399',Core:PU,Hamstring:G,Quad:PU,'Lower Body':G,Shoulders:A,Arms:O,Calf:G,'Shoulder Rehab':PK,Stretch:G,'Warm-Up':'#64748B','Swim Warm-Up':SW,'Foot Recovery':R,'Foot Recovery Warm-Up':R}[cat]||A;}
 
 const ROPT=[{l:'30s',v:30},{l:'45s',v:45},{l:'60s',v:60},{l:'90s',v:90},{l:'2min',v:120},{l:'3min',v:180}];
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DMAP={Mon:'Gym A',Tue:'Swim',Wed:'Gym B',Thu:'Bike',Fri:'Gym C',Sat:'Run',Sun:'Rest'};
+// Travel split — 4 DB lifting days + swim + walk, no running/cycling
+const DMAP_TRAVEL={Mon:'Travel Upper A',Tue:'Swim',Wed:'Travel Lower A',Thu:'Walk',Fri:'Travel Upper B',Sat:'Travel Lower B',Sun:'Rest'};
 // True for any session that has structured sections (Gym A/B/C + foot-recovery A2/B2/C2)
 const isGymSession=type=>!!(type&&PLAN[type]&&PLAN[type].sections);
 
@@ -1182,6 +1258,10 @@ function App(){
   const[addPickerCtx,setAddPickerCtx]=useState(null);// {secIdx, ssIdx} or {secIdx, ssIdx:'new'} or null
   // Drag-and-drop state — pointer-events-based, works on mouse + touch
   const[dragInfo,setDragInfo]=useState(null);// {uid, currentX, currentY, dropTarget:{uid,position}|null}
+  // Travel mode — switches the home grid + week strip between the home A/B/C plan and the travel DB plan
+  const[travelMode,setTravelMode]=useState(()=>{try{return localStorage.getItem('tl-travel-mode')==='1';}catch{return false;}});
+  const switchMode=(v)=>{setTravelMode(v);try{localStorage.setItem('tl-travel-mode',v?'1':'0');}catch{}};
+  const activeDMAP=travelMode?DMAP_TRAVEL:DMAP;
   const[view,setView]=useState(null);
   const[saving,setSaving]=useState(false);
   const[loaded,setLoaded]=useState(false);
@@ -1529,19 +1609,23 @@ function App(){
           <div style={{marginBottom:16}}>
             <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Week {week} Progress</div>
             <div style={{display:'flex',gap:5}}>
-              {DAYS.map(day=>{const exp=DMAP[day],dn=daysCompleted.has(day),rest=exp==='Rest'&&!dn;return(
+              {DAYS.map(day=>{const exp=activeDMAP[day],dn=daysCompleted.has(day),rest=exp==='Rest'&&!dn;const lbl=exp==='Rest'?'–':exp==='Walk'?'W':((PLAN[exp]&&PLAN[exp].icon)||exp.replace('Gym ',''));return(
                 <div key={day} style={{flex:1,textAlign:'center'}}>
                   <div style={{fontSize:9,color:'#334155',marginBottom:3,fontFamily:'monospace'}}>{day}</div>
                   <div style={{height:30,borderRadius:6,background:rest?'#0D1B2E':dn?G+'33':'#0D1B2E',border:`1px solid ${rest?'#1E2D40':dn?G+'88':'#1E3A5F'}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <span style={{fontSize:9,color:rest?'#1E3A5F':dn?G:'#334155',fontWeight:600}}>{rest?'–':dn?'✓':exp.replace('Gym ','')}</span>
+                    <span style={{fontSize:9,color:rest?'#1E3A5F':dn?G:'#334155',fontWeight:600}}>{rest?'–':dn?'✓':lbl}</span>
                   </div>
                 </div>
               );})}
             </div>
           </div>
+          <div style={{display:'flex',gap:6,marginBottom:16,background:'#0A1628',border:'1px solid #1E2D40',borderRadius:10,padding:4}}>
+            <button onClick={()=>switchMode(false)} style={{flex:1,padding:'8px 0',background:!travelMode?A+'22':'transparent',border:`1px solid ${!travelMode?A+'88':'transparent'}`,borderRadius:8,color:!travelMode?A:'#475569',fontSize:12,fontWeight:700,cursor:'pointer'}}>🏠 Home Plan</button>
+            <button onClick={()=>switchMode(true)} style={{flex:1,padding:'8px 0',background:travelMode?PU+'22':'transparent',border:`1px solid ${travelMode?PU+'88':'transparent'}`,borderRadius:8,color:travelMode?PU:'#475569',fontSize:12,fontWeight:700,cursor:'pointer'}}>✈️ Travel Plan</button>
+          </div>
           <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:10}}>Start Session</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-            {Object.entries(PLAN).map(([name,p])=>{const dn=dtw.includes(name);return(
+            {Object.entries(PLAN).filter(([name,p])=>travelMode?(p.travel||name==='Swim'):!p.travel).map(([name,p])=>{const dn=dtw.includes(name);return(
               <button key={name} onClick={()=>startSess(name)} style={{padding:'14px 12px',background:'#0A1628',border:`1px solid ${dn?p.color+'88':p.color+'44'}`,borderRadius:12,cursor:'pointer',textAlign:'left',position:'relative',overflow:'hidden'}}>
                 {dn&&<div style={{position:'absolute',top:8,right:8,width:7,height:7,background:G,borderRadius:'50%'}}/>}
                 <div style={{fontSize:20,fontFamily:'monospace',fontWeight:900,color:p.color,marginBottom:3,lineHeight:1}}>{p.icon}</div>
