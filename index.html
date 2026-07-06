@@ -7,6 +7,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Training Log">
+<meta name="theme-color" content="#070E1A">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <title>Training Log</title>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -110,6 +114,23 @@ const GIF_SEARCH={
   'DB Step-Up (low box)':'dumbbell step up',
   'Hollow Hold':'hollow hold',
   'Lying Leg Raise':'lying leg raise',
+  'Couch Stretch':'couch stretch hip flexor',
+  '90/90 Hip Flexor Stretch':'kneeling hip flexor stretch',
+  'Figure-4 Glute Stretch':'supine figure 4 stretch',
+  'Banded Clamshells':'banded clamshell',
+  "World's Greatest Stretch":'worlds greatest stretch',
+  'DB Squat (held at sides)':'dumbbell suitcase squat',
+  'Plank':'plank',
+  'DB Floor Press (neutral grip)':'dumbbell floor press neutral grip',
+  'Decline Weighted Sit-Up':'decline weighted sit up',
+  'Kettlebell Swing':'kettlebell swing',
+  'Seated Calf Raise (KB on knee)':'seated calf raise',
+  'Band Straight-Arm Pulldown':'band straight arm pulldown',
+  'Suitcase Carry (bilateral)':'dumbbell suitcase carry',
+  'Band Pull-Apart':'band pull apart',
+  'Scapular Wall Slides':'wall slide shoulder',
+  'Band Face Pulls':'band face pull',
+  '90/90 Diaphragmatic Breathing':'diaphragmatic breathing 90 90',
 };
 
 // ── 3-LAYER GIF CACHE ────────────────────────────────────────────────────────
@@ -324,6 +345,23 @@ const COACHING={
   'DB Step-Up (low box)':{muscle:'Quad / Glute',category:'Quad',tips:['Use a low box or step (knee-height or lower while the ankle is settling). A DB in each hand at your sides.','Place the whole foot on the box. Drive through the heel of the top leg to stand up fully.','Minimise push-off from the trailing foot — the top leg should do the work.','Control the descent over 2-3 seconds. Do not just drop back down.','Lower box = less ankle demand. Raise the box height only as the ankle proves it can handle it.','Complete all reps on one leg before switching, or alternate — both fine. Keep the torso tall.']},
   'Hollow Hold':{muscle:'Deep Core / Rectus Abdominis',category:'Core',tips:['Lie on your back. Press your lower back firmly into the floor — this contact must never break.','Lift the shoulders and legs off the floor, arms extended overhead, forming a shallow banana shape.','The lower the legs, the harder it is. Keep them only as low as you can hold without the back arching.','Breathe shallowly and keep the core braced throughout the hold.','If the lower back lifts off the floor, raise the legs higher or bend the knees to regress.','Build hold time by 5 seconds per session. A strong hollow position transfers to every other lift.']},
   'Lying Leg Raise':{muscle:'Lower Abdominal / Hip Flexor',category:'Core',tips:['Lie on your back, hands tucked under your glutes for lower-back support, legs straight.','Keep the lower back pressed into the floor throughout — this is non-negotiable.','Raise the legs to vertical (or as far as control allows), keeping them straight or with a soft knee.','Lower slowly over 3 seconds. Stop just before the heels touch the floor — keep constant tension.','If the lower back arches off the floor on the way down, bend the knees more or reduce the range.','Slow and controlled beats fast and many. The eccentric is where the lower abs work hardest.']},
+  'Couch Stretch':{muscle:'Hip Flexor / Quad',category:'Stretch',tips:['Set up against a sofa or wall. Back foot up on the sofa, laces down, front foot planted forward.','Front shin should be roughly vertical — knee over ankle, not past your toes.','Squeeze the glute of the back leg hard. This is the cue that drives the actual hip flexor stretch.','Tuck the pelvis under — posterior tilt. If you just lunge forward without tilting, you arch the lower back instead of stretching the hip flexor.','Upright torso. Resist the urge to lean forward.','It SHOULD feel uncomfortable in the front of the rear hip — that is the hip flexor stretching. If it feels nothing, your pelvis is not tucked.','90s per side. Breathe through it. This is the single most important stretch for the APT pattern.']},
+  '90/90 Hip Flexor Stretch':{muscle:'Hip Flexor / Quad',category:'Stretch',tips:['Half-kneeling position: one knee down, other foot forward. Both knees at roughly 90 degrees.','Hands on the front thigh for balance and posture cues.','Tuck the pelvis under FIRST — posterior tilt — before moving forward. This is non-negotiable.','Drive the hips forward (not the torso) until you feel a stretch in the front of the rear hip.','Squeeze the glute of the kneeling leg to reinforce the stretch.','Upright torso throughout. If you lean forward, you cheat the stretch.','60s per side. If the kneeling knee complains, put a folded towel under it.']},
+  'Figure-4 Glute Stretch':{muscle:'Glute / Piriformis',category:'Stretch',tips:['Lie on your back. Cross one ankle over the opposite knee — the figure-4 shape.','Flex the foot of the crossed leg (toes pulled toward shin) to protect the knee.','Reach through and pull the bottom leg toward your chest. Both hands behind the bottom thigh.','You should feel the stretch in the glute of the crossed leg, not the lower back.','Keep the head and shoulders relaxed on the floor. Do not crunch up.','60s per side. Glute tightness reinforces the APT pattern — this directly addresses it.','For a deeper stretch, gently press the crossed knee away from your chest with your same-side hand.']},
+  'Banded Clamshells':{muscle:'Glute Medius',category:'Stretch',tips:['Side-lying, hips stacked vertically, knees bent at 90 degrees, feet together.','Light resistance band looped just above the knees.','Keep feet pressed together and the bottom leg still. Rotate the top knee upward like a clamshell opening.','Hold 1 second at the top with a hard squeeze of the side glute.','Do NOT let the pelvis roll back as you lift the knee — that recruits the lower back instead of the glute med.','Slow eccentric — 2 seconds back down.','Glute med activation is the most commonly weak link in APT and lower-back pain patterns. Do not skip.','Keep a band by the door so there is no friction to skip this.']},
+  "World's Greatest Stretch":{muscle:'Hip Flexor / T-Spine / Groin / Ankle',category:'Stretch',tips:['Step into a deep forward lunge — front knee at 90 degrees, back leg extended.','Place the SAME-SIDE hand on the floor inside the front foot (right hand inside right foot).','Reach the opposite arm up toward the ceiling, rotating the chest open. Eyes follow the lifted hand.','Hold for 1-2 seconds at the top of the rotation.','Return the hand down, then step into the lunge on the other side.','This single movement mobilises hip flexor, groin, thoracic spine, shoulder, and ankle in one chain.','5 reps each side, slow and deliberate. Quality over speed.']},
+  'DB Squat (held at sides)':{muscle:'Quad / Glute',category:'Squat',tips:['Hold a DB in each hand at your sides (suitcase grip), arms straight, palms facing your body.','Feet shoulder-width, toes turned out slightly. This is a different loading pattern from goblet squat — the weight is lower and further from the torso.','Descend under control — 3 seconds down, brief pause at the bottom, 1 second up (3-1-1 tempo).','No breath-holding. Exhale on the way up, inhale at the bottom.','Keep the torso tall throughout — the side-hold position makes it easier to stay upright than a goblet squat.','Do not let the DBs swing. They should track straight down alongside your legs the whole rep.']},
+  'Plank':{muscle:'Core / Deep Stabilisers',category:'Core',tips:['Forearms on the floor, elbows directly under your shoulders, body in a straight line from head to heel.','Brace your core hard and squeeze your glutes — both are needed to keep the hips from sagging.','Do not let the hips pike up or sag down. A straight line is the entire point of the exercise.','Neutral neck — look at a point on the floor slightly ahead of your hands.','Breathe throughout. Holding your breath adds nothing and tires you out faster.','Progress by adding hold time (5s increments) before adding any load or instability.']},
+  'DB Floor Press (neutral grip)':{muscle:'Chest / Tricep / Front Delt',category:'Push',tips:['Lie on the floor, knees bent, feet flat. A DB in each hand, palms facing each other (neutral grip).','The floor caps how far your elbows can travel — this is a deliberate, shoulder-friendly limit on range of motion.','Lower until your upper arms touch the floor, then pause briefly before pressing back up.','Press up and slightly inward — the DBs can converge at the top for extra chest contraction.','This is a genuinely different exercise from a bench press variant: the floor removes the bottom-range shoulder stretch that can provoke a healing shoulder.','Keep shoulder blades pulled back and down into the floor throughout — do not let them roll forward.']},
+  'Decline Weighted Sit-Up':{muscle:'Rectus Abdominis / Hip Flexor',category:'Core',tips:['Set a bench to a slight decline, feet hooked under the pad. Hold a light plate or DB at your chest.','Curl up one vertebra at a time — do not just hinge from the hips like a rigid board.','At the top, squeeze the abs briefly before lowering with control.','Lower slowly — 2-3 seconds — all the way back to the bench. Do not let the weight and gravity yank you down.','Keep the weight light. This is a core exercise, not a loaded strength lift — form breaks down fast if you go heavy.','No neck strain — hands support the weight at your chest, not pulling on your head or neck.']},
+  'Kettlebell Swing':{muscle:'Glute / Hamstring / Hip Hinge',category:'Hinge',tips:['Feet shoulder-width, kettlebell on the floor slightly ahead of you. Hinge down and grip it with both hands.','The power comes from a hip hinge and hip snap — this is NOT a squat and NOT an arm movement.','Hike the kettlebell back between your legs like a football snap, then drive your hips forward explosively.','The kettlebell should float up to chest height from hip drive alone — arms are just along for the ride.','IMPORTANT for your shoulder: chest height MAXIMUM. Do not let it rise overhead — that turns this into an overhead movement.','Shoulders packed down throughout, not shrugged up toward the ears.','Exhale sharply on the drive. Never hold your breath through the movement.']},
+  'Seated Calf Raise (KB on knee)':{muscle:'Soleus (Seated Bias)',category:'Calf',tips:['Sit on a bench, feet flat on the floor, a kettlebell balanced on top of each knee (or one KB across both).','Keeping the knees bent throughout shifts the emphasis onto the soleus rather than the gastrocnemius.','Rise up onto the balls of your feet as high as possible. Squeeze at the top for 1 second.','Lower slowly over 2-3 seconds into a full stretch, heels as low as your set-up allows.','Balance the kettlebell carefully — a folded towel on the knee helps stop it rolling.','Bilateral load, no ankle twisting — safe within the current foot/ankle constraints.']},
+  'Band Straight-Arm Pulldown':{muscle:'Lat',category:'Pull',tips:['Anchor a band high (door anchor or overhead point). Stand facing the anchor, arms extended straight in front of you.','Keeping the arms straight throughout, pull the band down and back until your hands reach your thighs.','The key cue: feel this entirely in the lats, not the triceps or shoulders. If your elbows bend, you have turned it into a different exercise.','Squeeze the lats hard at the bottom of the movement for 1 second.','Control the return — do not let the band snap your arms back up.','This teaches a pure lat-pull pattern with zero trap involvement — an excellent pairing with heavier rows that tend to recruit the traps.']},
+  'Suitcase Carry (bilateral)':{muscle:'Core (Anti-Lateral-Flexion) / Grip / Traps (Isometric)',category:'Core',tips:['Hold a DB in each hand at your sides, standing tall, as if carrying two suitcases.','Walk forward in a straight line, taking controlled, deliberate steps.','The core challenge is resisting any side-to-side lean — brace hard and keep the torso dead upright.','No twisting through the trunk with each step. Small, controlled strides beat long ones here.','Shoulders packed down and back — do not let the weight round you forward.','Bilateral loading (both hands) keeps this stable and symmetrical — ideal given the current ankle constraint on rotational loads.','30m per set is plenty. Quality of bracing matters more than distance.']},
+  'Band Pull-Apart':{muscle:'Rear Delt / Rhomboid / Mid Trap',category:'Warm-Up',tips:['Hold a light resistance band with both hands, arms extended straight in front of you at chest height.','Pull the band apart by driving the hands out to the sides, leading with the elbows.','Critical cue: shoulder blades pull DOWN and together, not up toward the ears. This is a warm-up for the rear delts and mid-back, not a shrug.','Squeeze the shoulder blades together at the end range for a moment before returning with control.','Keep the arms nearly straight throughout — a slight elbow bend is fine, but this is not a rowing motion.','Excellent low-load activator to do before any pressing or pulling work.']},
+  'Scapular Wall Slides':{muscle:'Serratus Anterior / Lower Trap / Rotator Cuff',category:'Warm-Up',tips:['Stand with your back against a wall, arms in a goalpost position (elbows and wrists touching the wall).','Slowly slide your arms up the wall as high as comfortable, keeping elbows and wrists in contact with the wall throughout.','Stop at the first sign of the lower back arching off the wall or the shoulder losing contact — that is your current pain-free ceiling.','Slide back down with control. The lower back and forearms should stay glued to the wall the entire time.','This is deliberately slow and low-intensity — it is priming the shoulder blade to move properly, not a strength exercise.','For your right shoulder: expect asymmetry between sides. Never force the right arm to match the left arm range.']},
+  'Band Face Pulls':{muscle:'Rear Delt / Rotator Cuff / Mid Trap',category:'Warm-Up',tips:['Anchor a band at roughly face height. Hold with both hands, arms extended toward the anchor.','Pull the band toward your face, aiming to finish with your hands either side of your nose.','Lead with the elbows, keeping them high — around shoulder height throughout the pull.','Critical cue: shoulders stay DOWN, not shrugged up, as the band comes toward your face.','Externally rotate slightly at the end of the pull — hands finish just past your ears, thumbs pointing back.','This is one of the best all-round shoulder-health movements available. Light band, high reps, perfect form.']},
+  '90/90 Diaphragmatic Breathing':{muscle:'Deep Core / Diaphragm',category:'Warm-Up',tips:['Lie on your back, hips and knees bent to 90 degrees each, calves resting on a chair or bench.','Place one hand on your belly, one on your chest. The belly hand should move more than the chest hand.','Inhale slowly through the nose, feeling the belly and lower ribs expand outward and to the sides — not the chest rising.','Exhale slowly and fully through the mouth, feeling the ribs drop and the lower back gently flatten into the floor.','This resets the diaphragm and deep core before loading the spine — particularly valuable for the APT correction pattern.','Slow and unhurried. Rushing the breath defeats the purpose entirely.']},
 };
 
 const SREHAB=[
@@ -402,6 +440,29 @@ const WARMUP_TRAVEL=[
   {name:'Cat-Cow',sets:1,reps:'10 reps'},
   {name:'Shoulder Rolls (Warm-Up)',sets:1,reps:'10 each direction'},
 ];
+// Italy home-gym warm-ups — lower-day APT priming vs upper-day mandatory shoulder prep
+const WARMUP_ITALY_LOWER=[
+  {name:'5 Min Light Cardio',sets:1,reps:'5 min'},
+  {name:'Hip Circles',sets:1,reps:'10 each direction'},
+  {name:'Bodyweight Squat (Warm-Up)',sets:1,reps:'10 squat-to-stand + 10 hip hinge'},
+  {name:'Banded Clamshells',sets:2,reps:'20 each side — do NOT skip'},
+  {name:'Glute Bridge (Warm-Up)',sets:2,reps:'15, 2s top hold'},
+  {name:'90/90 Diaphragmatic Breathing',sets:2,reps:'5 breaths'},
+];
+const WARMUP_ITALY_UPPER=[
+  {name:'5 Min Light Cardio',sets:1,reps:'5 min'},
+  {name:'Hip Circles',sets:1,reps:'10 each direction'},
+  {name:'Band Pull-Apart',sets:1,reps:'15 — shoulder blades DOWN'},
+  {name:'Band External Rotation at Side',sets:1,reps:'12 each side'},
+  {name:'Band Face Pulls',sets:1,reps:'15 — pull to nose, elbows high, shoulders down'},
+  {name:'Scapular Wall Slides',sets:1,reps:'10, pain-free ROM'},
+];
+// End of every Italy Lower session — hip flexor lengthening on warm tissue (matches Mobility Tier 1 exactly)
+const ITALY_HIPFLEX=[
+  {name:'Couch Stretch',sets:1,reps:'90s each side'},
+  {name:'90/90 Hip Flexor Stretch',sets:1,reps:'60s each side'},
+  {name:'Figure-4 Glute Stretch',sets:1,reps:'60s each side'},
+];
 
 const PLAN={
   'Gym A':{color:A,icon:'A',subtitle:'Lower + Horizontal Push/Pull + Core',sections:[
@@ -471,7 +532,7 @@ const PLAN={
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Skip standing hamstring stretch',exercises:STRETCH_EX}]},
   ]},
   'Bike':{color:BK,icon:'B',subtitle:'Zone 2 Active Recovery — Thursday',isBike:true,phases:[{label:'Wks 1-4',target:'30-40 min Zone 2 (111-130 bpm) — steady conversational pace'},{label:'Wks 5-8',target:'40-50 min Zone 2 — increase duration as legs adapt'},{label:'Wks 9-12',target:'45-55 min Zone 2 — optional final 5 min push to Zone 3'}]},
-  'Swim':{color:SW,icon:'~',subtitle:'Aerobic + Shoulder-Friendly Volume',phases:[
+  'Swim':{color:SW,icon:'~',subtitle:'Aerobic + Shoulder-Friendly Volume',common:true,phases:[
     {label:'Phase 1',weeks:'1-2',sets:[{name:'Warm-up — easy backstroke',target:'200m'},{name:'Main set — any stroke',target:'6x50m, 30s rest'},{name:'Kick set — kickboard only',target:'4x25m'},{name:'Cool-down — backstroke',target:'100m'}]},
     {label:'Phase 2',weeks:'3-6',sets:[{name:'Warm-up',target:'200m easy'},{name:'Pull buoy — arms only',target:'4x75m'},{name:'Main set',target:'6x75m, 25s rest'},{name:'Kick set',target:'4x25m'},{name:'Cool-down — backstroke',target:'100m'}]},
     {label:'Phase 3',weeks:'7-12',sets:[{name:'Warm-up — mixed stroke',target:'300m'},{name:'Pull buoy',target:'4x100m'},{name:'Main set',target:'8x75m, 20s rest'},{name:'Sprints (wks 10-12)',target:'4x25m'},{name:'Cool-down — backstroke',target:'150m'}]},
@@ -522,6 +583,78 @@ const PLAN={
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Band if packed, else light DB / bodyweight. Minimal rest.',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each 30s',exercises:STRETCH_EX}]},
   ]},
+  'Italy Lower A':{color:PU,icon:'ILA',subtitle:'Quad Emphasis + Core — Italy',italy:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up + APT Priming',note:'Never skip the clamshells — glute med is the weak link',exercises:WARMUP_ITALY_LOWER}]},
+    {title:'Main Session',color:PU,supersets:[
+      {label:'Hip Thrust',note:'APT priority — 2s top squeeze, posterior tilt, ribs down. Start ~40kg (DB across hips, towel padded).',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12-15'}]},
+      {label:'Squat',note:'16kg KB, 3-1-1 tempo, tall torso, exhale on the way up, no lumbar arch at top',exercises:[{name:'Barbell Squat / Goblet Squat',sets:4,reps:'10-12'}]},
+      {label:'Hinge',note:'2x20kg, bilateral, slow stretch — hinge not squat',exercises:[{name:'Romanian Deadlift',sets:4,reps:'10-12'}]},
+      {label:'Squat Variant',note:'2x20kg held at sides, controlled, no breath-holding',exercises:[{name:'DB Squat (held at sides)',sets:3,reps:'12'}]},
+      {label:'Calf',note:'16kg KB held, full stretch + pause at top',exercises:[{name:'Standing Calf Raise',sets:4,reps:'15-20'}]},
+      {label:'Core Superset',note:'Dead bug: press lumbar INTO floor. Core priority.',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Plank',sets:3,reps:'45-60s'}]},
+    ]},
+    {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only, never cold — matches the Daily Mobility protocol',exercises:ITALY_HIPFLEX}]},
+  ]},
+  'Italy Upper A':{color:A,icon:'IUA',subtitle:'Push Emphasis + Core — Italy',italy:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Mandatory Shoulder Prep',note:'Non-negotiable before any press. Add 1-2 light empty-rep sets of the first press before working weight.',exercises:WARMUP_ITALY_UPPER}]},
+    {title:'Main Session',color:A,supersets:[
+      {label:'Press',note:'2x20kg, ≤30° incline, controlled, pain-free ROM, blades set down/back',exercises:[{name:'Low-Incline DB Press (neutral grip)',sets:4,reps:'8-12'}]},
+      {label:'Press Variant',note:'2x20kg — floor limits shoulder depth, which is a feature not a bug here',exercises:[{name:'DB Floor Press (neutral grip)',sets:3,reps:'10-12'}]},
+      {label:'Delts — TRAP WATCH',note:'Light, traps RELAXED, ≤30° range. Shrug = cut the set short.',exercises:[{name:'Seated DB Lateral Raise',sets:3,reps:'12-15'}]},
+      {label:'Push',note:'Slow eccentric, protract at the top (serratus)',exercises:[{name:'Push-Up Variation',sets:3,reps:'AMRAP'}]},
+      {label:'Triceps',note:'Light-moderate, on bench — NOT overhead',exercises:[{name:'Lying DB Tricep Extension (Skullcrusher)',sets:3,reps:'12'}]},
+      {label:'Core Superset',note:'Sit-up: controlled, no neck yank. Side plank: hold, no rotation.',exercises:[{name:'Decline Weighted Sit-Up',sets:3,reps:'12-15'},{name:'Side Plank',sets:3,reps:'30-40s each side'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit — Non-Negotiable',note:'~10 min, end of every upper session',exercises:SREHAB}]},
+  ]},
+  'Italy Core Circuit':{color:SW,icon:'CC',subtitle:'Mat Core — pair with Swim day',italy:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Easy Prep',note:'A few minutes of easy movement before the mat work',exercises:[{name:'Cat-Cow',sets:1,reps:'10 reps'},{name:'Hip Circles',sets:1,reps:'10 each direction'}]}]},
+    {title:'Main Session',color:SW,supersets:[
+      {label:'3 Rounds',note:'Run all 4 exercises back to back, 3 full rounds, minimal rest between exercises',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'},{name:'Glute Bridge (Warm-Up)',sets:3,reps:'15, 2s top hold'},{name:'Pallof Press',sets:3,reps:'10 each side'}]},
+    ]},
+  ]},
+  'Italy Lower B':{color:PU,icon:'ILB',subtitle:'Hinge / Posterior Emphasis + Core — Italy',italy:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up + APT Priming',note:'Never skip the clamshells — glute med is the weak link',exercises:WARMUP_ITALY_LOWER}]},
+    {title:'Main Session',color:PU,supersets:[
+      {label:'Hip Thrust',note:'APT priority — 2s top hold, posterior tilt',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12'}]},
+      {label:'Conditioning Hinge',note:'16kg KB, hip snap, CHEST HEIGHT MAX, shoulders packed down — not overhead',exercises:[{name:'Kettlebell Swing',sets:5,reps:'15-20'}]},
+      {label:'Hinge',note:'2x20kg, heavier-feel via slow tempo',exercises:[{name:'Romanian Deadlift',sets:4,reps:'10'}]},
+      {label:'Squat',note:'16kg KB, 3-1-1 tempo, ribs down',exercises:[{name:'Barbell Squat / Goblet Squat',sets:3,reps:'12'}]},
+      {label:'Calf',note:'16kg KB balanced on knees, seated bias hits the soleus',exercises:[{name:'Seated Calf Raise (KB on knee)',sets:4,reps:'15'}]},
+      {label:'Glute Med + Core',note:'Clamshell: glute med, APT priority. Hollow hold: low back pinned.',exercises:[{name:'Banded Clamshells',sets:3,reps:'20 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'}]},
+    ]},
+    {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only, never cold',exercises:ITALY_HIPFLEX}]},
+  ]},
+  'Italy Upper B':{color:A,icon:'IUB',subtitle:'Pull Emphasis + Arms — Italy',italy:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Mandatory Shoulder Prep',note:'Non-negotiable before any pull',exercises:WARMUP_ITALY_UPPER}]},
+    {title:'Main Session',color:A,supersets:[
+      {label:'Row',note:'DEPRESS THE BLADE FIRST, row to hip not chest, elbow down-back',exercises:[{name:'Chest-Supported DB Row',sets:4,reps:'10-12'}]},
+      {label:'Row Variant',note:'Same cue as above — if traps fire on this one, swap for a 2nd chest-supported set instead',exercises:[{name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12'}]},
+      {label:'Lat Isolation',note:'Arms straight, pull to thighs — FEEL the lat, zero traps',exercises:[{name:'Band Straight-Arm Pulldown',sets:3,reps:'15'}]},
+      {label:'Rear Delt',note:'Light, shoulders down — band or DB, prone position works either way',exercises:[{name:'Prone Rear-Delt Raise',sets:3,reps:'15'}]},
+      {label:'Arms Superset',note:'Both controlled — curl for biceps, hammer for brachialis',exercises:[{name:'DB Curl',sets:4,reps:'10-12'},{name:'DB Hammer Curl',sets:3,reps:'12'}]},
+      {label:'Scapular Health',note:'Shoulder blades down throughout',exercises:[{name:'Band Pull-Apart',sets:3,reps:'20'}]},
+      {label:'Loaded Carry',note:'2x20kg, tall, core braced, no twist — bilateral keeps this ankle-safe',exercises:[{name:'Suitcase Carry (bilateral)',sets:3,reps:'30m'}]},
+    ]},
+    {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit — Non-Negotiable',note:'~10 min, end of every upper session',exercises:SREHAB}]},
+  ]},
+  'Mobility':{color:PK,icon:'M',subtitle:'Daily APT Reset — 20 min mobility',common:true,sections:[
+    {title:'Tier 1 — Non-Negotiable',color:R,supersets:[
+      {label:'Hip Flexor',note:'Do this after a morning walk — never on cold tissue. Squeeze the back glute and tuck the pelvis.',exercises:[{name:'Couch Stretch',sets:1,reps:'90s each side'}]},
+      {label:'Hip Flexor',note:'Tuck pelvis FIRST, then drive hips forward. Towel under the knee if needed.',exercises:[{name:'90/90 Hip Flexor Stretch',sets:1,reps:'60s each side'}]},
+      {label:'Glute',note:'Flex the foot of the crossed leg. Pull the bottom thigh toward chest.',exercises:[{name:'Figure-4 Glute Stretch',sets:1,reps:'60s each side'}]},
+    ]},
+    {title:'Tier 2 — High Value',color:O,supersets:[
+      {label:'T-Spine',note:'Counters hunched desk posture',exercises:[{name:'Thoracic Rotation',sets:1,reps:'10 each side'}]},
+      {label:'Deep Core',note:'Lower back stays pressed into the floor throughout',exercises:[{name:'Dead Bug',sets:2,reps:'8 each side'}]},
+      {label:'Glute Med',note:'Most commonly weak link in APT. Light band, hard squeeze, no pelvic roll-back.',exercises:[{name:'Banded Clamshells',sets:2,reps:'20 each side'}]},
+      {label:'Glute Activation',note:'2-second hold at the top with hard squeeze',exercises:[{name:'Glute Bridge (Warm-Up)',sets:2,reps:'15 (2s hold)'}]},
+    ]},
+    {title:'Tier 3 — Optional',color:G,supersets:[
+      {label:'Anti-Rotation',note:'Resistance band anchored at chest height',exercises:[{name:'Pallof Press',sets:2,reps:'10 each side'}]},
+      {label:'Full Chain',note:'Slow and deliberate — quality over speed',exercises:[{name:"World's Greatest Stretch",sets:1,reps:'5 each side'}]},
+    ]},
+  ]},
 };
 
 function buildLibrary(){
@@ -551,6 +684,8 @@ const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DMAP={Mon:'Gym A',Tue:'Swim',Wed:'Gym B',Thu:'Bike',Fri:'Gym C',Sat:'Run',Sun:'Rest'};
 // Travel split — 4 DB lifting days + swim + walk, no running/cycling
 const DMAP_TRAVEL={Mon:'Travel Upper A',Tue:'Swim',Wed:'Travel Lower A',Thu:'Walk',Fri:'Travel Upper B',Sat:'Travel Lower B',Sun:'Rest'};
+// Italy home-gym split — 5 days/week, kettlebells + adjustable DBs, layers on Daily Mobility
+const DMAP_ITALY={Mon:'Italy Lower A',Tue:'Italy Upper A',Wed:'Swim',Thu:'Italy Lower B',Fri:'Italy Upper B',Sat:'Rest',Sun:'Rest'};
 // True for any session that has structured sections (Gym A/B/C + foot-recovery A2/B2/C2)
 const isGymSession=type=>!!(type&&PLAN[type]&&PLAN[type].sections);
 
@@ -964,8 +1099,8 @@ function SecBlock({sec,si,gdata,onChange,restDur,hist,onDragStart,dragInfo,onAdd
   const[col,setCol]=useState(false);const c=sec.color||A;
   const tot=sec.supersets.reduce((a,ss)=>a+ss.exercises.reduce((b,ex)=>b+(ex.sets||1),0),0);
   const dn=sec.supersets.reduce((a,ss)=>a+ss.exercises.reduce((b,ex)=>b+(((gdata[ex._uid]&&gdata[ex._uid].sets)||[]).filter(s=>s.done).length),0),0);
-  // Allow add/edit only in Main Session sections (not warm-up, rehab, stretch)
-  const canEdit=!sec.isWarmup&&sec.title==='Main Session';
+  // Allow add/edit in main / tier sections — not warm-up, rehab, or stretch
+  const canEdit=!sec.isWarmup&&sec.title!=='Shoulder Rehab'&&sec.title!=='Post-Session Stretch';
   return(
     <div style={{marginBottom:14}}>
       <button onClick={()=>setCol(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',background:`linear-gradient(135deg,${c}28,${c}10)`,border:`1px solid ${c}55`,borderRadius:12,padding:'11px 14px',cursor:'pointer',marginBottom:col?0:10}}>
@@ -1098,7 +1233,7 @@ function RevPanel({session,hist,color,onFeedback}){
       const s=sum(session);
       const prev=(hist||[]).filter(h=>h.type===session.type&&h.id!==session.id).slice(0,3);
       const pt=prev.length?'\nPREVIOUS SESSIONS:\n'+prev.map(sum).join('\n'):'';
-      const system=`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79.3kg, London. 12-week hypertrophy plan. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing. ACTIVE FOOT RECOVERY BLOCK — suspected 5th metatarsal issue awaiting X-ray. Sessions ending in '2' (Gym A2/B2/C2) are seated/no-load foot recovery variants. Week ${session.week} of 12. Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight (2.5kg upper, 5kg lower). Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) Foot check if A2/B2/C2 session 5) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`;
+      const system=`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79kg, London. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing, all pressing neutral-grip ≤30° incline. ANKLE: MRI clear, but still cannot take lateral load on the right ankle — further checks pending. Bilateral standing work is fine (squats, hinges, standing calf raises); avoid single-leg loading, lateral movement, or twisting/rotational ankle loads until cleared. No running yet. Session may be Home plan (12-week, week ${session.week} of 12), Travel plan (adjustable DBs only, no gym), or Italy plan (kettlebells + adjustable DBs to 20kg, 4-week APT-correction block) — infer from the session type and equipment described, and cap progression suggestions to what's plausible on the kit actually used (e.g. don't suggest +5kg on a lift already near the DB ceiling). Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight — roughly 2.5kg for upper-body / smaller isolation lifts, 5kg for lower-body compound lifts, scaled down if near equipment ceiling. Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) Ankle check if any lower-body or standing work 5) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`;
       const text=await callClaude(system,[{role:'user',content:`SESSION:\n${s}${pt}`}]);
       setFb(text);setSt('done');
       if(onFeedback)onFeedback(`**Post-Session: ${session.type} (Week ${session.week})**\n\n${text}`);
@@ -1119,14 +1254,14 @@ function RevPanel({session,hist,color,onFeedback}){
 }
 
 const PT_SYSTEM=`You are Claude PT — an expert personal trainer and performance coach for Chris. Key context:
-- Chris, 35yo male, 79.3kg, London
-- 12-week hypertrophy + cardiovascular plan (gym ×3, swim, bike, run, sauna Saturday)
+- Chris, 35yo male, ~79kg, London
+- Trains across three possible plan modes — infer which from the session type/exercises mentioned: Home (12-week hypertrophy + cardio, full gym), Travel (adjustable DBs only, no gym access), Italy (kettlebells + adjustable DBs up to 20kg, 4-week APT-correction block). Cap any progression suggestion to what's realistic on the equipment actually in use.
 - Right shoulder surgery November 2024 — 20-45° ROM deficit, no overhead pressing. All pressing: neutral grip ≤30° incline.
-- ACTIVE FOOT RECOVERY BLOCK (started May 2026): Lateral foot soreness, suspected 5th metatarsal issue, awaiting X-ray. Currently running modified Gym A2/B2/C2 sessions (seated, no standing load). No running. No outdoor cycling. Pull-buoy swims only. If user asks about returning to A/B/C, running, or single-leg work — confirm foot status first.
+- ANKLE: MRI came back clear, but Chris still cannot take lateral load on the right ankle — further checks pending. Bilateral standing work (squats, hinges, standing calf raises) is fine. Avoid single-leg loading, lateral movement, or twisting/rotational ankle loads until cleared. No running yet. If Chris asks about single-leg work, running, or lateral drills — confirm ankle status first rather than assuming it's cleared.
 - Body composition baseline (25 Mar 2026): 79.3kg, 19.7% body fat, 63.7kg lean mass, visceral fat 6 (excellent)
-- Protein target: 142g/day (1.8g/kg). Warm meals, meat/fish based. No cold foods.
-- Supplements: Creatine 5g + UC-II Collagen 40mg + Vit C 500mg on waking. Omega-3, Multi, Zinc, D3+K2 post-workout. Magnesium before bed.
-- Progression rules: hit top rep range ALL sets across 2 consecutive sessions → +2.5kg upper, +5kg lower
+- Protein target: 142g/day (1.8g/kg). Warm meals, meat/fish based. No cold foods, no salads.
+- Supplements actually in use: Creatine 5g/day (split breakfast/lunch), Naturelo Omega-3, Naturelo Multivitamin, UC-II Collagen 40mg pre-training, Naturelo Magnesium Glycinate before bed, Naturelo Zinc (conditional, illness prevention only). D3/K2 and Vitamin C have been recommended but NOT yet started — don't refer to them as if Chris is already taking them.
+- Progression rules: hit top rep range on ALL sets across 2 consecutive sessions → increase load. Roughly +2.5kg for upper-body/isolation lifts, +5kg for lower-body compounds — scale down when near the equipment ceiling (e.g. Travel/Italy modes topping out around 20kg per DB).
 - HR zones (max 185bpm): Zone 2: 111-130 | Zone 3: 130-148 | Zone 4: 148-167
 - App: krizmc98000.github.io/training-log
 Be direct, specific, and practical. Use exact numbers. Reference Chris's history when provided. Keep answers concise unless asked to elaborate. Always lead long answers with a 1-2 sentence TLDR.`;
@@ -1258,10 +1393,19 @@ function App(){
   const[addPickerCtx,setAddPickerCtx]=useState(null);// {secIdx, ssIdx} or {secIdx, ssIdx:'new'} or null
   // Drag-and-drop state — pointer-events-based, works on mouse + touch
   const[dragInfo,setDragInfo]=useState(null);// {uid, currentX, currentY, dropTarget:{uid,position}|null}
-  // Travel mode — switches the home grid + week strip between the home A/B/C plan and the travel DB plan
-  const[travelMode,setTravelMode]=useState(()=>{try{return localStorage.getItem('tl-travel-mode')==='1';}catch{return false;}});
-  const switchMode=(v)=>{setTravelMode(v);try{localStorage.setItem('tl-travel-mode',v?'1':'0');}catch{}};
-  const activeDMAP=travelMode?DMAP_TRAVEL:DMAP;
+  // Plan mode — switches the home grid + week strip between Home / Travel / Italy plans
+  const[planMode,setPlanMode]=useState(()=>{
+    try{
+      const v=localStorage.getItem('tl-plan-mode');
+      if(v==='travel'||v==='italy'||v==='home')return v;
+      // Migrate from the old boolean travel-mode key if present
+      if(localStorage.getItem('tl-travel-mode')==='1')return 'travel';
+      return 'home';
+    }catch{return 'home';}
+  });
+  const switchMode=(m)=>{setPlanMode(m);try{localStorage.setItem('tl-plan-mode',m);}catch{}};
+  const activeDMAP=planMode==='travel'?DMAP_TRAVEL:planMode==='italy'?DMAP_ITALY:DMAP;
+  const showInMode=(p)=>{if(p.common)return true;if(planMode==='travel')return!!p.travel;if(planMode==='italy')return!!p.italy;return!p.travel&&!p.italy;};
   const[view,setView]=useState(null);
   const[saving,setSaving]=useState(false);
   const[loaded,setLoaded]=useState(false);
@@ -1312,9 +1456,21 @@ function App(){
           const r=await syncPendingQueue();
           setPendingCount(r.remaining);
         }
+        // A5: if a previous delDraft() failed while offline, the server-side draft row may
+        // still exist even though that session already finished and synced. Retry the delete
+        // before trusting whatever the /drafts fetch returns.
+        let draftDeleteStillPending=false;
+        try{
+          if(localStorage.getItem('tl-draft-delete-pending')==='1'){
+            await db('DELETE',`/drafts?user_id=eq.${userId}`);
+            localStorage.removeItem('tl-draft-delete-pending');
+          }
+        }catch{draftDeleteStillPending=true;}
         const rows=await db('GET',`/sessions?user_id=eq.${userId}&order=session_date.desc`);
         if(rows&&rows.length)setHist(rows);
-        const drafts=await db('GET',`/drafts?user_id=eq.${userId}`);
+        // Skip restoring a draft this load if we couldn't confirm the stale one was cleared —
+        // safer to make the user re-open a genuinely active session than risk a duplicate finish.
+        const drafts=draftDeleteStillPending?null:await db('GET',`/drafts?user_id=eq.${userId}`);
         if(drafts&&drafts.length){
           const dr=drafts[0];setAtype(dr.type);
           const d=dr.data||{};
@@ -1327,6 +1483,10 @@ function App(){
             setCustomSections(initCustomSections(PLAN[dr.type].sections));
             setGdata({});
           }
+          // A4: restore the original session date — old drafts saved before this fix won't have
+          // one, so fall back to today rather than leaving it blank (which finish() would silently
+          // save as today anyway, but now it's explicit and visible in the date picker).
+          setSessionDate(d.sessionDate||new Date().toISOString().slice(0,10));
           setCdata(d.cardioData||{});setWnotes(d.workoutNotes||'');setSphase(d.swimPhase||0);setScreen('log');
         }
       }catch(e){console.error('Load failed:',e);}
@@ -1336,8 +1496,8 @@ function App(){
 
   const applyStart=date=>{setStartDate(date);localStorage.setItem('tl-start',date);setWeek(calcWeek(date));setShowDP(false);};
   const saveDraft=useCallback(async(type,w,data)=>{if(!type)return;try{await db('POST','/drafts?on_conflict=user_id',{user_id:userId,type,week:w,data,updated_at:new Date().toISOString()});}catch{}},[userId]);
-  useEffect(()=>{if(atype&&screen==='log'){if(asr.current)clearTimeout(asr.current);asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase,customSections}),800);}},[gdata,cdata,wnotes,sphase,customSections]);
-  const delDraft=async()=>{try{await db('DELETE',`/drafts?user_id=eq.${userId}`);}catch{}};
+  useEffect(()=>{if(atype&&screen==='log'){if(asr.current)clearTimeout(asr.current);asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase,customSections,sessionDate}),800);}},[gdata,cdata,wnotes,sphase,customSections,sessionDate]);
+  const delDraft=async()=>{try{await db('DELETE',`/drafts?user_id=eq.${userId}`);try{localStorage.removeItem('tl-draft-delete-pending');}catch{}}catch{try{localStorage.setItem('tl-draft-delete-pending','1');}catch{}}};
 
   // ── Custom session helpers ────────────────────────────────────────────────
   // Deep-clone PLAN sections and stamp each exercise with a stable UID.
@@ -1620,12 +1780,13 @@ function App(){
             </div>
           </div>
           <div style={{display:'flex',gap:6,marginBottom:16,background:'#0A1628',border:'1px solid #1E2D40',borderRadius:10,padding:4}}>
-            <button onClick={()=>switchMode(false)} style={{flex:1,padding:'8px 0',background:!travelMode?A+'22':'transparent',border:`1px solid ${!travelMode?A+'88':'transparent'}`,borderRadius:8,color:!travelMode?A:'#475569',fontSize:12,fontWeight:700,cursor:'pointer'}}>🏠 Home Plan</button>
-            <button onClick={()=>switchMode(true)} style={{flex:1,padding:'8px 0',background:travelMode?PU+'22':'transparent',border:`1px solid ${travelMode?PU+'88':'transparent'}`,borderRadius:8,color:travelMode?PU:'#475569',fontSize:12,fontWeight:700,cursor:'pointer'}}>✈️ Travel Plan</button>
+            <button onClick={()=>switchMode('home')} style={{flex:1,padding:'8px 0',background:planMode==='home'?A+'22':'transparent',border:`1px solid ${planMode==='home'?A+'88':'transparent'}`,borderRadius:8,color:planMode==='home'?A:'#475569',fontSize:11,fontWeight:700,cursor:'pointer'}}>🏠 Home</button>
+            <button onClick={()=>switchMode('travel')} style={{flex:1,padding:'8px 0',background:planMode==='travel'?PU+'22':'transparent',border:`1px solid ${planMode==='travel'?PU+'88':'transparent'}`,borderRadius:8,color:planMode==='travel'?PU:'#475569',fontSize:11,fontWeight:700,cursor:'pointer'}}>✈️ Travel</button>
+            <button onClick={()=>switchMode('italy')} style={{flex:1,padding:'8px 0',background:planMode==='italy'?G+'22':'transparent',border:`1px solid ${planMode==='italy'?G+'88':'transparent'}`,borderRadius:8,color:planMode==='italy'?G:'#475569',fontSize:11,fontWeight:700,cursor:'pointer'}}>🇮🇹 Italy</button>
           </div>
           <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:10}}>Start Session</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-            {Object.entries(PLAN).filter(([name,p])=>travelMode?(p.travel||name==='Swim'):!p.travel).map(([name,p])=>{const dn=dtw.includes(name);return(
+            {Object.entries(PLAN).filter(([name,p])=>showInMode(p)).map(([name,p])=>{const dn=dtw.includes(name);return(
               <button key={name} onClick={()=>startSess(name)} style={{padding:'14px 12px',background:'#0A1628',border:`1px solid ${dn?p.color+'88':p.color+'44'}`,borderRadius:12,cursor:'pointer',textAlign:'left',position:'relative',overflow:'hidden'}}>
                 {dn&&<div style={{position:'absolute',top:8,right:8,width:7,height:7,background:G,borderRadius:'50%'}}/>}
                 <div style={{fontSize:20,fontFamily:'monospace',fontWeight:900,color:p.color,marginBottom:3,lineHeight:1}}>{p.icon}</div>
@@ -1656,7 +1817,7 @@ function App(){
         <div style={{padding:'14px 20px 0'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
             <div><div style={{color:col,fontSize:18,fontWeight:700}}>{atype}</div><div style={{color:'#475569',fontSize:11}}>{plan?plan.subtitle:''}</div></div>
-            <button onClick={()=>{setScreen('home');setAtype(null);}} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Cancel</button>
+            <button onClick={()=>{if(confirm('Cancel this session? Nothing logged will be saved.')){delDraft();setScreen('home');setAtype(null);setCustomSections(null);}}} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Cancel</button>
           </div>
           {/* Session date picker — defaults to today, can backdate */}
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,padding:'8px 12px',background:'#0A1628',border:'1px solid #1E3A5F',borderRadius:8}}>
@@ -1683,7 +1844,7 @@ function App(){
             <div style={{color:'#475569',fontSize:11,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>Workout Notes</div>
             <textarea placeholder="How did the session feel overall?" value={wnotes} onChange={e=>setWnotes(e.target.value)} style={{width:'100%',background:'transparent',border:'none',color:'#CBD5E1',fontSize:13,outline:'none',resize:'vertical',minHeight:70,boxSizing:'border-box',lineHeight:1.5}}/>
           </div>
-          <button onClick={finish} style={{width:'100%',marginBottom:16,padding:'14px',background:`linear-gradient(135deg,${col}44,${col}22)`,border:`1px solid ${col}88`,borderRadius:10,color:col,fontSize:14,fontWeight:700,cursor:'pointer'}}>Complete Session ✓</button>
+          <button onClick={finish} disabled={saving} style={{width:'100%',marginBottom:16,padding:'14px',background:saving?'#1E2D40':`linear-gradient(135deg,${col}44,${col}22)`,border:`1px solid ${saving?'#334155':col+'88'}`,borderRadius:10,color:saving?'#475569':col,fontSize:14,fontWeight:700,cursor:saving?'default':'pointer'}}>{saving?'Saving...':'Complete Session ✓'}</button>
         </div>
       )}
 
@@ -1760,6 +1921,15 @@ function App(){
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<script>
+// Registers the app-shell service worker for offline/flaky-connection resilience.
+// Only affects install/boot behaviour — never touches Supabase, RapidAPI, or Claude proxy calls.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => console.error('SW registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>
