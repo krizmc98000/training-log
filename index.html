@@ -220,7 +220,16 @@ async function syncPendingQueue(){
   return{synced,remaining:remaining.length};
 }
 
-function uid(){let id=localStorage.getItem('tl-uid');if(!id){id='chris-'+Math.random().toString(36).slice(2,10);localStorage.setItem('tl-uid',id);}return id;}
+// This is a single-user personal app — always use the same fixed ID rather than generating a
+// random one per install. A random ID meant deleting/re-adding the home screen icon (which wipes
+// iOS's isolated PWA storage) silently pointed the app at a brand new empty "user", making real
+// history look lost. Pinning it here means any future reinstall, browser, or device reconnects
+// to the same data automatically — no manual recovery step needed.
+function uid(){
+  const FIXED_ID='chris-yqp5rrpt';
+  try{if(localStorage.getItem('tl-uid')!==FIXED_ID)localStorage.setItem('tl-uid',FIXED_ID);}catch{}
+  return FIXED_ID;
+}
 const fmt=iso=>new Date(iso).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 function calcWeek(sd){if(!sd)return 1;const diff=new Date()-new Date(sd);return Math.max(1,Math.min(12,Math.floor(diff/(1000*60*60*24*7))+1));}
 // Find last logged sets for a named exercise across ALL sessions (any type). Optionally exclude a session id.
