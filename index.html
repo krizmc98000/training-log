@@ -541,6 +541,7 @@ const PLAN={
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Skip standing hamstring stretch',exercises:STRETCH_EX}]},
   ]},
   'Bike':{color:BK,icon:'B',subtitle:'Zone 2 Active Recovery — Thursday',isBike:true,phases:[{label:'Wks 1-4',target:'30-40 min Zone 2 (111-130 bpm) — steady conversational pace'},{label:'Wks 5-8',target:'40-50 min Zone 2 — increase duration as legs adapt'},{label:'Wks 9-12',target:'45-55 min Zone 2 — optional final 5 min push to Zone 3'}]},
+  'Walk':{color:G,icon:'W',subtitle:'Easy Zone 2 — Ankle-Safe Cardio',isWalk:true,travel:true},
   'Swim':{color:SW,icon:'~',subtitle:'Aerobic + Shoulder-Friendly Volume',common:true,phases:[
     {label:'Phase 1',weeks:'1-2',sets:[{name:'Warm-up — easy backstroke',target:'200m'},{name:'Main set — any stroke',target:'6x50m, 30s rest'},{name:'Kick set — kickboard only',target:'4x25m'},{name:'Cool-down — backstroke',target:'100m'}]},
     {label:'Phase 2',weeks:'3-6',sets:[{name:'Warm-up',target:'200m easy'},{name:'Pull buoy — arms only',target:'4x75m'},{name:'Main set',target:'6x75m, 25s rest'},{name:'Kick set',target:'4x25m'},{name:'Cool-down — backstroke',target:'100m'}]},
@@ -1011,6 +1012,21 @@ function DragGhost({info}){
   );
 }
 
+// A7 fix: classify progression jump by the exercise's actual muscle group rather than
+// pattern-matching the name. The old regex only caught press/curl/fly/row/pulldown/pull-up/
+// chop/bird — everything else (lateral raise, pullover, skullcrusher, face pull, pull-apart,
+// swing, carry) silently fell through to the 5kg lower-body default, which is wrong advice
+// on exercises typically loaded with 4-8kg dumbbells or a light band.
+const LOWER_BODY_MUSCLE_KEYWORDS=/glute|hamstring|quad|calf|soleus|gastrocnemius|adductor|abductor/i;
+function classifyProgressionJump(exName){
+  const entry=COACHING[exName]||WARMUP_COACHING[exName];
+  const muscle=entry?entry.muscle:'';
+  // Lower-body / leg-dominant muscle groups get the bigger 5kg jump; everything else
+  // (chest, back, shoulders, arms, core) gets the smaller 2.5kg jump.
+  const isLower=LOWER_BODY_MUSCLE_KEYWORDS.test(muscle);
+  return isLower?'5':'2.5';
+}
+
 function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,onRemove}){
   const[showInfo,setShowInfo]=useState(false);
   const c=color||A;
@@ -1018,8 +1034,7 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,on
   const sets=data.sets||Array.from({length:ns},()=>({weight:'',reps:'',done:false}));
   const done=sets.filter(s=>s.done).length;
   const complete=done===sets.length&&sets.length>0;
-  const isUpper=/(press|curl|fly|row|pulldown|pull-up|chop|bird)/i.test(exDef.name);
-  const jump=isUpper?'2.5':'5';
+  const jump=classifyProgressionJump(exDef.name);
   const hset=(i,val)=>{
     const s=[...sets];const p=s[i];s[i]=val;
     if(i===0&&!p.done&&val.done&&val.weight&&val.reps){for(let j=1;j<s.length;j++){if(!s[j].weight&&!s[j].reps)s[j]={...s[j],weight:val.weight,reps:val.reps};}}
@@ -1148,6 +1163,32 @@ function BikeLogger({data,onChange,week}){
       <div style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px',marginBottom:10}}>
         <div style={{color:'#475569',fontSize:11,marginBottom:6}}>Bike used</div>
         <div style={{display:'flex',gap:6}}>{['Stationary','Recumbent','Road bike'].map(opt=><button key={opt} onClick={()=>onChange({...data,bike:opt})} style={{flex:1,padding:'8px',borderRadius:6,border:`1px solid ${data.bike===opt?BK:'#1E3A5F'}`,background:data.bike===opt?BK+'22':'transparent',color:data.bike===opt?BK:'#475569',cursor:'pointer',fontSize:12}}>{opt}</button>)}</div>
+      </div>
+      <textarea placeholder="Notes..." value={data.notes||''} onChange={e=>onChange({...data,notes:e.target.value})} style={{width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',padding:'9px 11px',fontSize:12,outline:'none',resize:'vertical',minHeight:60,boxSizing:'border-box'}}/>
+    </div>
+  );
+}
+
+function WalkLogger({data,onChange}){
+  return(
+    <div>
+      <div style={{background:G+'1A',border:`1px solid ${G}44`,borderRadius:12,padding:'11px 14px',marginBottom:12}}>
+        <div style={{color:G,fontSize:13,fontWeight:700,marginBottom:4}}>Easy Zone 2 Walk</div>
+        <div style={{color:'#CBD5E1',fontSize:13}}>Long, easy pace — doubles as ankle conditioning. Ramp volume gradually; back off a tier if the foot flares.</div>
+        <div style={{color:'#475569',fontSize:11,marginTop:6}}>Zone 2: 111–130 bpm · No running, no incline sprints</div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+        {[{k:'duration',l:'Duration',u:'min',p:'40'},{k:'distance',l:'Distance',u:'km',p:'4'},{k:'steps',l:'Steps',u:'',p:'6000'},{k:'avgHR',l:'Avg HR',u:'bpm',p:'115'}].map(f=>(
+          <div key={f.k} style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px'}}>
+            <div style={{color:'#475569',fontSize:10,marginBottom:3}}>{f.l}</div>
+            <div style={{display:'flex',alignItems:'center',gap:3}}><input placeholder={f.p} value={data[f.k]||''} onChange={e=>onChange({...data,[f.k]:e.target.value})} style={{flex:1,background:'transparent',border:'none',color:G,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>{f.u&&<span style={{color:'#334155',fontSize:10}}>{f.u}</span>}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'9px 11px',marginBottom:10}}>
+        <div style={{color:'#475569',fontSize:11,marginBottom:6}}>Ankle/foot felt</div>
+        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{['Pain-free','Mild tightness','Sore','Painful — flare'].map(opt=><button key={opt} onClick={()=>onChange({...data,ankle:opt})} style={{flex:'1 1 auto',padding:'5px 6px',borderRadius:6,border:`1px solid ${data.ankle===opt?(opt.includes('flare')?R:G):'#1E3A5F'}`,background:data.ankle===opt?(opt.includes('flare')?R+'22':G+'22'):'transparent',color:data.ankle===opt?(opt.includes('flare')?R:G):'#475569',cursor:'pointer',fontSize:10}}>{opt}</button>)}</div>
+        {data.ankle&&data.ankle.includes('flare')&&<div style={{color:R,fontSize:11,marginTop:8}}>Drop back one step-count tier for 4 days before re-attempting this volume.</div>}
       </div>
       <textarea placeholder="Notes..." value={data.notes||''} onChange={e=>onChange({...data,notes:e.target.value})} style={{width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',padding:'9px 11px',fontSize:12,outline:'none',resize:'vertical',minHeight:60,boxSizing:'border-box'}}/>
     </div>
@@ -1847,6 +1888,7 @@ function App(){
           )}
           {ig&&(customSections||PLAN[atype].sections).map((sec,si)=><SecBlock key={si} sec={sec} si={si} gdata={gdata} restDur={restDur} hist={hist} onChange={hgc} onDragStart={onDragStart} dragInfo={dragInfo} onAddExercise={(secIdx)=>setAddPickerCtx({secIdx,ssIdx:null})} onRemoveEx={removeExerciseByUid}/>)}
           {atype==='Bike'&&<BikeLogger data={cdata} onChange={setCdata} week={week}/>}
+          {atype==='Walk'&&<WalkLogger data={cdata} onChange={setCdata}/>}
           {atype==='Swim'&&<SwimLogger data={cdata} onChange={setCdata} sphase={sphase} setSphase={setSphase}/>}
           {atype==='Run'&&<RunLogger data={cdata} onChange={setCdata} week={week}/>}
           <div style={{background:'#0A1628',border:'1px solid #1E3A5F',borderRadius:10,padding:'12px 14px',marginTop:4,marginBottom:14}}>
