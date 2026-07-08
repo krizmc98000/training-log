@@ -38,154 +38,66 @@ input[type=date]{color-scheme:dark}
 const {useState,useEffect,useCallback,useRef,useMemo}=React;
 const SB='https://gvzkxjynpmjnexbmhqgb.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emt4anlucG1qbmV4Ym1ocWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3Njk4ODcsImV4cCI6MjA4OTM0NTg4N30.1BzFmAWsr72dnyMoJgUPQrBFoyh-w_-tdPgnrvcoE5s';
-const RAPID_KEY='bdaa6b55dbmsh055e7929ea3a53ap190f8cjsn1cc016801936';
-const RAPID_HOST='exercisedb.p.rapidapi.com';
 const A='#38BDF8',G='#4ADE80',O='#FB923C',R='#F87171',PU='#A78BFA',PK='#F472B6',SW='#22D3EE',BK='#FBBF24';
 
-// ExerciseDB search term mapping
-const GIF_SEARCH={
-  'Romanian Deadlift':'romanian deadlift',
-  'Bent-Over DB / Kettlebell Row':'bent over row',
-  'Leg Press':'leg press',
-  'Flat DB Press (neutral grip)':'dumbbell bench press',
-  'DB Split Squat (front foot elevated)':'split squat',
-  'Prone Dumbbell Leg Curl':'prone leg curl dumbbell',
-  'Pallof Press':'cable pallof press',
-  'Dead Bug':'dead bug',
-  'Barbell Squat / Goblet Squat':'goblet squat',
-  'Pull-Up / Lat Pulldown (neutral grip)':'lat pulldown',
-  'Hip Thrust (Barbell or Machine)':'hip thrust',
-  'Low-Incline DB Press (neutral grip)':'dumbbell incline press',
-  'Single-Arm DB Row (incline bench)':'one arm dumbbell row',
-  'Side Plank':'side plank',
-  'Reverse Crunch':'reverse crunch',
-  'Bulgarian Split Squat':'bulgarian split squat',
-  'Bent-Over Barbell / DB Row':'barbell bent over row',
-  '45deg Back Extension / KB Good Morning':'back extension',
-  'Cable Lateral Raise':'cable lateral raise',
-  'Standing Calf Raise':'standing calf raise',
-  'Push-Up Variation':'push up',
-  'Cable Wood Chop':'cable wood chop',
-  'Bird Dog':'bird dog',
-  'Band External Rotation at Side':'external rotation',
-  'Side-Lying External Rotation (DB)':'lying external rotation',
-  'Prone Y Raise':'prone y raise',
-  'Prone T Raise':'rear delt fly',
-  'Serratus Anterior Wall Press':'push up plus',
-  'Sleeper Stretch':'shoulder stretch',
-  'Hip Flexor Lunge Stretch':'lunge stretch',
-  'Lying Figure-Four Glute Stretch':'figure four',
-  'Standing Hamstring Stretch':'standing hamstring stretch',
-  'Thoracic Extension over Roller':'thoracic extension',
-  'Wall Chest Opener':'chest stretch',
-  "Child's Pose with Side Reach":'child pose',
-  '90/90 Hip Stretch':'hip stretch',
-  'Shoulder Circles':'arm circles',
-  'Band External Rotations':'band external rotation',
-  'Scapular Shrugs':'scapular shrug',
-  'Seated Leg Curl (machine)':'seated leg curl',
-  'Seated Leg Extension (machine)':'leg extension',
-  'Hack Squat / Seated Leg Press':'hack squat',
-  'Chest-Supported T-Bar Row':'t bar row',
-  'Chest-Supported DB Row':'chest supported dumbbell row',
-  'Glute Bridge (Barbell or DB)':'barbell glute bridge',
-  'Half-Kneeling Pallof Press (left knee)':'kneeling pallof press',
-  'Half-Kneeling Cable Wood Chop (left knee)':'kneeling cable chop',
-  'Modified Side Plank (from knee)':'side plank knee',
-  'Seated Cable Row':'seated cable row',
-  'Seated Hip CARs':'hip circles seated',
-  'Seated Cat-Cow':'cat cow',
-  'Seated Thoracic Rotation':'seated thoracic rotation',
-  'Quadruped Hip Extension':'donkey kick glute',
-  'Lying DB Pullover':'dumbbell pullover',
-  'Side-Lying Hip Abduction':'side lying leg raise',
-  'Lying DB Row (prone, on bench)':'prone dumbbell row bench',
-  'DB Chest Fly (flat bench)':'dumbbell fly flat',
-  'Side-Lying DB Lateral Raise':'lying lateral raise dumbbell',
-  'Lying DB Tricep Extension (Skullcrusher)':'lying tricep extension',
-  'Incline DB Curl (lying back)':'incline dumbbell curl',
-  'Seated DB Lateral Raise':'seated dumbbell lateral raise',
-  'DB Hammer Curl':'dumbbell hammer curl',
-  'DB Curl':'dumbbell biceps curl',
-  'Close-Grip DB Floor Press':'dumbbell floor press',
-  'Prone Rear-Delt Raise':'rear delt raise incline',
-  'Single-Leg Calf Raise':'single leg calf raise',
-  'Standing Calf Raise':'dumbbell standing calf raise',
-  'DB Step-Up (low box)':'dumbbell step up',
-  'Hollow Hold':'hollow hold',
-  'Lying Leg Raise':'lying leg raise',
-  'Couch Stretch':'couch stretch hip flexor',
-  '90/90 Hip Flexor Stretch':'kneeling hip flexor stretch',
-  'Figure-4 Glute Stretch':'supine figure 4 stretch',
-  'Banded Clamshells':'banded clamshell',
-  "World's Greatest Stretch":'worlds greatest stretch',
-  'DB Squat (held at sides)':'dumbbell suitcase squat',
-  'Plank':'plank',
-  'DB Floor Press (neutral grip)':'dumbbell floor press neutral grip',
-  'Decline Weighted Sit-Up':'decline weighted sit up',
-  'Kettlebell Swing':'kettlebell swing',
-  'Seated Calf Raise (KB on knee)':'seated calf raise',
-  'Band Straight-Arm Pulldown':'band straight arm pulldown',
-  'Suitcase Carry (bilateral)':'dumbbell suitcase carry',
-  'Band Pull-Apart':'band pull apart',
-  'Scapular Wall Slides':'wall slide shoulder',
-  'Band Face Pulls':'band face pull',
-  '90/90 Diaphragmatic Breathing':'diaphragmatic breathing 90 90',
-  'Leg Swings':'leg swings warmup',
-  'Inchworm Walkout':'inchworm exercise',
+// Curated exercise -> free-exercise-db image id map (public domain, static CDN, no API key/rate limits).
+// Only exercises with a genuine visual equivalent are mapped; everything else (stretches, mobility,
+// bespoke moves) falls back to the coaching tips, which is cleaner than a broken/misleading image.
+const FREEDB_IMG={
+  "Romanian Deadlift":"Romanian_Deadlift",
+  "Barbell Squat / Goblet Squat":"Goblet_Squat",
+  "Barbell Squat":"Barbell_Squat",
+  "Hip Thrust (Barbell or Machine)":"Barbell_Hip_Thrust",
+  "Flat DB Press (neutral grip)":"Dumbbell_Bench_Press_with_Neutral_Grip",
+  "Low-Incline DB Press (neutral grip)":"Incline_Dumbbell_Bench_With_Palms_Facing_In",
+  "DB Floor Press (neutral grip)":"Dumbbell_Floor_Press",
+  "Close-Grip DB Floor Press":"Dumbbell_Floor_Press",
+  "DB Chest Fly (flat bench)":"Dumbbell_Flyes",
+  "Seated DB Lateral Raise":"Side_Lateral_Raise",
+  "DB Curl":"Dumbbell_Bicep_Curl",
+  "DB Hammer Curl":"Hammer_Curls",
+  "Incline DB Curl (lying back)":"Incline_Dumbbell_Curl",
+  "Lying DB Tricep Extension (Skullcrusher)":"Lying_Dumbbell_Tricep_Extension",
+  "Lying DB Pullover":"Straight-Arm_Dumbbell_Pullover",
+  "Seated Leg Curl (machine)":"Seated_Leg_Curl",
+  "Seated Leg Extension (machine)":"Leg_Extensions",
+  "Prone Dumbbell Leg Curl":"Lying_Leg_Curls",
+  "Hack Squat / Seated Leg Press":"Leg_Press",
+  "Standing Calf Raise":"Standing_Calf_Raises",
+  "Single-Leg Calf Raise":"Calf_Raise_On_A_Dumbbell",
+  "Seated Calf Raise (KB on knee)":"Seated_Calf_Raise",
+  "DB Squat (held at sides)":"Dumbbell_Squat",
+  "DB Step-Up (low box)":"Dumbbell_Step_Ups",
+  "Bulgarian Split Squat":"Dumbbell_Rear_Lunge",
+  "Glute Bridge (Barbell or DB)":"Barbell_Glute_Bridge",
+  "Plank":"Plank",
+  "Dead Bug":"Dead_Bug",
+  "Reverse Crunch":"Reverse_Crunch",
+  "Lying Leg Raise":"Flat_Bench_Lying_Leg_Raise",
+  "Decline Weighted Sit-Up":"Decline_Crunch",
+  "Chest-Supported DB Row":"One-Arm_Dumbbell_Row",
+  "Single-Arm DB Row (incline bench)":"One-Arm_Dumbbell_Row",
+  "Bent-Over Barbell / DB Row":"Bent_Over_Barbell_Row",
+  "Chest-Supported T-Bar Row":"Lying_T-Bar_Row",
+  "Pull-Up / Lat Pulldown (neutral grip)":"Wide-Grip_Lat_Pulldown",
+  "Push-Up Variation":"Pushups",
+  "Kettlebell Swing":"One-Arm_Kettlebell_Swings",
+  "Face Pull":"Face_Pull",
+  "Band Face Pulls":"Face_Pull",
+  "Chin-Up":"Chin-Up"
 };
 
-// ── 3-LAYER GIF CACHE ────────────────────────────────────────────────────────
-// Layer 1: in-memory (instant, resets on page reload)
-// Layer 2: Supabase exercise_gifs table (persists forever, shared across devices)
-// Layer 3: ExerciseDB API (called at most ONCE per exercise, ever)
-const memCache={};
-
-async function fetchExerciseGif(exName){
-  // Layer 1 — memory
-  if(memCache[exName]!==undefined)return memCache[exName];
-
-  // Layer 2 — Supabase persistent cache
-  try{
-    const res=await fetch(
-      SB+'/rest/v1/exercise_gifs?exercise_name=eq.'+encodeURIComponent(exName)+'&select=gif_url&limit=1',
-      {headers:{'apikey':SK,'Authorization':'Bearer '+SK}}
-    );
-    if(res.ok){
-      const rows=await res.json();
-      if(rows&&rows.length>0){
-        const url=rows[0].gif_url||null;
-        memCache[exName]=url;
-        return url;
-      }
-    }
-  }catch{}
-
-  // Layer 3 — ExerciseDB API (first time only)
-  const term=GIF_SEARCH[exName]||exName.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
-  let gifUrl=null;
-  try{
-    const apiRes=await fetch(
-      'https://exercisedb.p.rapidapi.com/exercises/name/'+encodeURIComponent(term)+'?limit=1&offset=0',
-      {headers:{'x-rapidapi-key':RAPID_KEY,'x-rapidapi-host':RAPID_HOST}}
-    );
-    if(apiRes.ok){
-      const data=await apiRes.json();
-      gifUrl=(data&&data[0]&&data[0].gifUrl)?data[0].gifUrl:null;
-    }
-  }catch{}
-
-  // Persist to Supabase only on success — don't cache nulls so rate-limited exercises retry next time
-  if(gifUrl){
-    fetch(SB+'/rest/v1/exercise_gifs',{
-      method:'POST',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify({exercise_name:exName,gif_url:gifUrl,fetched_at:new Date().toISOString()})
-    }).catch(()=>{});
-  }
-
-  memCache[exName]=gifUrl;
-  return gifUrl;
+// ── EXERCISE IMAGE (free-exercise-db, public domain static CDN) ────────────────
+// No API key, no rate limits — images are plain files on GitHub's CDN. We map each
+// exercise to a verified image id and build the URL directly. Unmapped exercises
+// (stretches, mobility, bespoke moves) return null and the UI shows coaching tips instead.
+const FREEDB_BASE='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
+function getExerciseImages(exName){
+  const id=FREEDB_IMG[exName];
+  if(!id)return null;
+  // Each exercise has two stills: /0.jpg (start) and /1.jpg (end) — we use both for a
+  // simple start/finish reference that auto-alternates in the UI.
+  return [FREEDB_BASE+id+'/0.jpg',FREEDB_BASE+id+'/1.jpg'];
 }
 
 async function db(method,path,body){
@@ -398,6 +310,8 @@ const COACHING={
   'Prone Dumbbell Leg Curl':{muscle:'Hamstring',category:'Hamstring',tips:['Lie face down on a flat bench. Hold a dumbbell vertically between your feet — grip it firmly with both feet crossed at the ankle.','The dumbbell should feel secure before you start. Take a moment to settle it — rushing this causes it to drop.','Curl both legs up toward your glutes in a controlled arc. Aim for full hamstring contraction at the top.','The 3-second eccentric lowering is critical. This controlled stretch under load is the primary hypertrophy driver for the hamstring.','Keep your hips pressed firmly into the bench throughout. Do not let them lift off as you curl.','No swinging or momentum. If the dumbbell is too heavy to control cleanly, drop the weight — form matters more than load here.','This is a direct replacement for the lying leg curl machine. The movement pattern is identical — only the load delivery differs.']},
   'Pallof Press':{muscle:'Core / Oblique',category:'Core',tips:['Cable at chest height. Stand sideways to the machine, feet shoulder-width, slight knee bend.','This is an anti-rotation exercise — resist the cable pulling you sideways, do not create movement.','Press the handle directly out and hold for 2 seconds. Feel the obliques working to prevent rotation.','Return slowly to the chest. Do not let the cable yank you back — control the return.','Further from the cable = more rotational force. Progress distance before adding weight.','Hips square, feet rooted. No leaning or shifting. The benefit comes entirely from the stillness.']},
   'Dead Bug':{muscle:'Deep Core / TVA',category:'Core',tips:['Lie on your back, lower back pressed firmly into the floor. This contact must be maintained throughout.','Arms toward the ceiling, knees bent at 90 degrees, shins parallel to the floor.','Breathe out fully before moving — this activates the deep transverse abdominis.','Slowly lower the opposite arm and leg simultaneously. Only go as far as you can keep the lower back flat.','Return to start. Breathe in, breathe out again before the next rep.','If your lower back arches away from the floor, you have gone too far.']},
+  'Kettlebell Drag-Through':{muscle:'Deep Core / Anti-Rotation / Shoulders',category:'Core',tips:['Set up in a high plank on hands and toes (or drop to knees to regress), hands under shoulders, kettlebell just outside one wrist.','Brace the core hard and squeeze the glutes — the whole point is keeping the hips and shoulders SQUARE to the floor.','Reach the opposite hand across and under your torso, grab the kettlebell, and drag it across to the other side.','Place it down outside the other wrist, then re-plant that hand. Repeat, dragging it back the other way.','The core challenge is ANTI-ROTATION: resist the urge to let your hips or shoulders twist as the weight moves.','Move slowly and deliberately. If your hips are rocking side to side, the weight is too heavy — drop it.','Keep the neck neutral and breathe steadily throughout. Count each drag as one rep.']},
+  'Kettlebell Around-the-World':{muscle:'Core / Grip / Shoulders',category:'Core',tips:['Stand tall, feet shoulder-width, a kettlebell held in front of you with one hand. Brace the core and keep the torso upright.','Pass the kettlebell around your body at waist/hip level — behind your back to the other hand, then around the front, in a continuous circle.','The hand-off happens smoothly behind you and in front of you. Keep the bell close to your body throughout.','Resist leaning or twisting — the core works to keep you stable while the weight orbits around you.','Do a set number of circles in one direction, then reverse.','Keep the shoulders down and relaxed, not shrugged up. Steady rhythm, no jerking.','Great grip and rotational-stability builder. Start light and controlled.']},
   'Barbell Squat / Goblet Squat':{muscle:'Quad / Glute / Core',category:'Squat',tips:['Start with goblet squat (dumbbell at chest) to establish the pattern before loading a barbell.','Feet shoulder-width or slightly wider, toes turned out 15 to 30 degrees.','Brace your core completely before descending — create a rigid trunk throughout the rep.','Squat to at least parallel — thighs horizontal or below. Depth is where the stimulus is greatest.','Knees track in line with toes throughout. Do not allow them to cave inward.','For barbell: bar on upper traps (high bar) or rear delts (low bar). Elbows under the bar.']},
   'Pull-Up / Lat Pulldown (neutral grip)':{muscle:'Lat / Bicep / Mid Back',category:'Pull',tips:['Neutral grip (palms facing each other) is safest for your right shoulder — use a close parallel attachment.','For pulldown: sit tall, slight lean back (15 degrees). Pull to the upper chest, not behind the neck.','Pull your elbows down and back, not your hands down. This is the cue that fires the lats.','Start each rep from a full hang — do not shorten the range of motion.','Squeeze shoulder blades together and down at the bottom. Hold for one second.','Right arm: respect your current ROM. Do not force ranges that create impingement.']},
   'Hip Thrust (Barbell or Machine)':{muscle:'Glute / Hamstring',category:'Hinge',tips:['Upper back across the bench — shoulder blades, not the neck.','Feet flat, hip-width apart. Drive through your heels at the top.','Squeeze glutes as hard as possible at full extension. Chin tucked, neutral neck.','At the top: shins vertical, hips fully extended, glutes fully contracted.','Lower slowly — 2 to 3 seconds — until hips are just off the floor. Do not touch down between reps.','Posteriorly tilt the pelvis at the top (tailbone curling slightly under) for full glute contraction.']},
@@ -714,7 +628,7 @@ const PLAN={
       {label:'Superset 1',note:'Squat + Hip Thrust — alternate, rest after both. Hip thrust ~40kg, 2s top squeeze.',exercises:[{name:'Barbell Squat / Goblet Squat',sets:4,reps:'10-12'},{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12-15'}]},
       {label:'Superset 2',note:'Hinge + Squat Variant — alternate, rest after both. RDL 2x20kg slow stretch; DB squat held at sides.',exercises:[{name:'Romanian Deadlift',sets:3,reps:'10-12'},{name:'DB Squat (held at sides)',sets:3,reps:'12'}]},
       {label:'Superset 3',note:'Calf + Core — alternate, minimal rest. Calf: 16kg KB, full stretch + pause.',exercises:[{name:'Standing Calf Raise',sets:4,reps:'15-20'},{name:'Plank',sets:3,reps:'45-60s'}]},
-      {label:'Core Finisher',note:'Dead bug — press lumbar INTO floor, core priority',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'}]},
+      {label:'Core Finisher',note:'Anti-rotation focus — brace hard, keep hips/shoulders square. Dead bug: press lumbar INTO floor.',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Kettlebell Drag-Through',sets:3,reps:'10 total drags'},{name:'Kettlebell Around-the-World',sets:3,reps:'8 each direction'}]},
     ]},
     {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only, never cold — matches the Daily Mobility protocol',exercises:ITALY_HIPFLEX}]},
   ]},
@@ -807,33 +721,28 @@ const isGymSession=type=>!!(type&&PLAN[type]&&PLAN[type].sections);
 
 // ── GIF COMPONENT ─────────────────────────────────────────────────────────────
 function ExerciseGif({exName,color}){
-  const[gifUrl,setGifUrl]=useState(null);
-  const[loading,setLoading]=useState(true);
+  const images=getExerciseImages(exName);
+  const[frame,setFrame]=useState(0);
   const[failed,setFailed]=useState(false);
+  // Alternate between the start (0.jpg) and end (1.jpg) stills every 1.2s to imply the movement
   useEffect(()=>{
-    let cancelled=false;
-    setLoading(true);setFailed(false);setGifUrl(null);
-    fetchExerciseGif(exName).then(url=>{
-      if(cancelled)return;
-      if(url){setGifUrl(url);setLoading(false);}
-      else{setFailed(true);setLoading(false);}
-    });
-    return()=>{cancelled=true;};
+    if(!images||images.length<2)return;
+    const id=setInterval(()=>setFrame(f=>f===0?1:0),1200);
+    return()=>clearInterval(id);
   },[exName]);
-  if(loading)return <div className="shimmer" style={{width:'100%',height:180,borderRadius:12,marginBottom:14}}/>;
-  if(failed||!gifUrl)return(
+  if(!images||failed)return(
     <div style={{background:'#0D1B2E',border:`1px solid ${color}22`,borderRadius:10,padding:'12px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
-      <span style={{fontSize:20}}>🎬</span>
+      <span style={{fontSize:20}}>💪</span>
       <div>
-        <div style={{color:'#334155',fontSize:12}}>GIF unavailable</div>
-        <div style={{color:'#1E3A5F',fontSize:10,marginTop:2}}>Check coaching notes below</div>
+        <div style={{color:'#475569',fontSize:12}}>No reference image for this one</div>
+        <div style={{color:'#334155',fontSize:10,marginTop:2}}>See the coaching cues below</div>
       </div>
     </div>
   );
   return(
-    <div style={{borderRadius:12,overflow:'hidden',marginBottom:14,background:'#0D1B2E',border:`1px solid ${color}33`,position:'relative'}}>
-      <img src={gifUrl} alt={exName} style={{width:'100%',display:'block',maxHeight:260,objectFit:'contain',background:'#0D1B2E'}} onError={()=>setFailed(true)}/>
-      <div style={{position:'absolute',bottom:6,right:8,color:'#1E3A5F',fontSize:9}}>via ExerciseDB</div>
+    <div style={{borderRadius:12,overflow:'hidden',marginBottom:14,background:'#fff',border:`1px solid ${color}33`,position:'relative'}}>
+      <img src={images[frame]} alt={exName} style={{width:'100%',display:'block',maxHeight:280,objectFit:'contain',background:'#fff'}} onError={()=>setFailed(true)}/>
+      <div style={{position:'absolute',bottom:6,right:8,color:'#94A3B8',fontSize:9,background:'rgba(255,255,255,0.7)',padding:'1px 5px',borderRadius:4}}>{frame===0?'start':'finish'} · free-exercise-db</div>
     </div>
   );
 }
@@ -1042,7 +951,7 @@ function Timer({duration,onDone}){
   );
 }
 
-function SetRow({set,idx,onChange,color}){
+function SetRow({set,idx,onChange,color,onRemove}){
   const c=color||A;
   const stepWeight=(delta)=>{const cur=parseFloat(set.weight)||0;const next=Math.max(0,Math.round((cur+delta)*4)/4);onChange({...set,weight:next===0?'':String(next)});};
   const stepReps=(delta)=>{const cur=parseInt(set.reps)||0;const next=Math.max(0,cur+delta);onChange({...set,reps:next===0?'':String(next)});};
@@ -1051,12 +960,13 @@ function SetRow({set,idx,onChange,color}){
     <div style={{display:'flex',gap:3,alignItems:'center',marginBottom:5}}>
       <span style={{color:'#475569',fontSize:11,fontFamily:'monospace',width:14,textAlign:'right',flexShrink:0}}>{idx+1}</span>
       <button onClick={()=>stepWeight(-2.5)} style={stepBtn} aria-label="minus 2.5kg">−</button>
-      <input type="number" inputMode="decimal" placeholder="kg" value={set.weight||''} onChange={e=>onChange({...set,weight:e.target.value})} style={{width:44,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:c,padding:'5px 2px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
+      <input type="number" inputMode="decimal" placeholder="kg" value={set.weight||''} onChange={e=>onChange({...set,weight:e.target.value})} style={{width:42,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:c,padding:'5px 2px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
       <button onClick={()=>stepWeight(2.5)} style={stepBtn} aria-label="plus 2.5kg">+</button>
       <button onClick={()=>stepReps(-1)} style={stepBtn} aria-label="minus 1 rep">−</button>
-      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps||''} onChange={e=>onChange({...set,reps:e.target.value})} style={{width:44,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:'#E2E8F0',padding:'5px 2px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
+      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps||''} onChange={e=>onChange({...set,reps:e.target.value})} style={{width:42,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:'#E2E8F0',padding:'5px 2px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
       <button onClick={()=>stepReps(1)} style={stepBtn} aria-label="plus 1 rep">+</button>
       <button onClick={()=>onChange({...set,done:!set.done})} style={{width:30,height:30,borderRadius:6,border:`1px solid ${set.done?G:'#1E3A5F'}`,background:set.done?G+'22':'transparent',color:set.done?G:'#334155',cursor:'pointer',fontSize:13,flexShrink:0,marginLeft:2}}>{set.done?'✓':'○'}</button>
+      {onRemove&&<button onClick={onRemove} aria-label="remove set" style={{width:22,height:30,borderRadius:5,border:'none',background:'transparent',color:'#475569',cursor:'pointer',fontSize:16,flexShrink:0,lineHeight:1,padding:0}}>×</button>}
     </div>
   );
 }
@@ -1157,7 +1067,7 @@ function classifyProgressionJump(exName){
   return isLower?'5':'2.5';
 }
 
-function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,onRemove}){
+function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,onRemove,onStartRest}){
   const[showInfo,setShowInfo]=useState(false);
   const c=color||A;
   const ns=exDef.sets||1;
@@ -1170,6 +1080,15 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,on
     if(i===0&&!p.done&&val.done&&val.weight&&val.reps){for(let j=1;j<s.length;j++){if(!s[j].weight&&!s[j].reps)s[j]={...s[j],weight:val.weight,reps:val.reps};}}
     onChange({...data,sets:s});
   };
+  const addSet=()=>{
+    // Prefill from the last set's weight/reps for convenience
+    const lastFilled=[...sets].reverse().find(s=>s.weight||s.reps)||{};
+    onChange({...data,sets:[...sets,{weight:lastFilled.weight||'',reps:lastFilled.reps||'',done:false}]});
+  };
+  const removeSet=(i)=>{
+    if(sets.length<=1)return;// keep at least one row
+    onChange({...data,sets:sets.filter((_,j)=>j!==i)});
+  };
   return(
     <div style={{background:'#070E1A',border:`1px solid ${progress?G+'99':complete?c+'55':'#1E2D40'}`,borderRadius:8,padding:'10px 12px',marginBottom:8}}>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
@@ -1181,6 +1100,7 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,on
             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
               <span style={{color:'#E2E8F0',fontSize:13,fontWeight:600,flex:1}}>{exDef.name}</span>
               {progress&&<span style={{background:G+'22',color:G,borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,flexShrink:0}}>↑ +{jump}kg</span>}
+              {onStartRest&&<button onClick={onStartRest} title="Start rest timer" style={{width:22,height:22,borderRadius:'50%',border:`1px solid ${c}55`,background:c+'11',color:c,cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,lineHeight:1}}>⏱</button>}
               <button onClick={()=>setShowInfo(true)} style={{width:22,height:22,borderRadius:'50%',border:`1px solid ${c}55`,background:c+'11',color:c,cursor:'pointer',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>i</button>
               {onRemove&&done===0&&<button onClick={()=>{if(confirm('Remove this exercise from this session?'))onRemove();}} title="Remove exercise" style={{width:22,height:22,borderRadius:'50%',border:'1px solid #DC262655',background:'#DC262611',color:'#EF4444',cursor:'pointer',fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,lineHeight:1}}>×</button>}
             </div>
@@ -1196,7 +1116,8 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,on
         </div>
       </div>
       {progress&&<div style={{background:G+'11',border:`1px solid ${G}33`,borderRadius:6,padding:'5px 8px',marginBottom:8,fontSize:11,color:G}}>Hit top rep range 2 sessions running — increase by {jump}kg this session</div>}
-      <div style={{marginBottom:6}}>{sets.map((s,i)=><SetRow key={i} set={s} idx={i} color={c} onChange={val=>hset(i,val)}/>)}</div>
+      <div style={{marginBottom:6}}>{sets.map((s,i)=><SetRow key={i} set={s} idx={i} color={c} onChange={val=>hset(i,val)} onRemove={sets.length>1?()=>removeSet(i):null}/>)}</div>
+      <button onClick={addSet} style={{width:'100%',padding:'5px',marginBottom:6,background:'transparent',border:`1px dashed ${c}44`,borderRadius:6,color:c,fontSize:11,fontWeight:600,cursor:'pointer'}}>+ Add set</button>
       <div style={{display:'flex',gap:5,alignItems:'center',flexWrap:'wrap'}}>
         <span style={{color:'#475569',fontSize:11}}>RPE</span>
         {[5,6,7,8,9].map(rv=><button key={rv} onClick={()=>onChange({...data,rpe:rv})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${data.rpe===rv?c:'#1E3A5F'}`,background:data.rpe===rv?c+'33':'transparent',color:data.rpe===rv?c:'#334155',cursor:'pointer',fontSize:11,fontFamily:'monospace',fontWeight:700}}>{rv}</button>)}
@@ -1209,6 +1130,8 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,on
 
 function SSBlock({ss,gdata,onChange,color,restDur,hist,secIdx,ssIdx,onDragStart,dragInfo,onRemoveEx,canEdit}){
   const[col,setCol]=useState(false);const[timer,setTimer]=useState(false);const prev=useRef(0);
+  const[timerNonce,setTimerNonce]=useState(0);
+  const startRest=()=>{setTimerNonce(n=>n+1);setTimer(true);};
   const tot=ss.exercises.reduce((a,ex)=>a+(ex.sets||1),0);
   const dn=ss.exercises.reduce((a,ex)=>a+(((gdata[ex._uid]&&gdata[ex._uid].sets)||[]).filter(s=>s.done).length),0);
   // Auto-collapse when all sets in superset are done
@@ -1237,12 +1160,12 @@ function SSBlock({ss,gdata,onChange,color,restDur,hist,secIdx,ssIdx,onDragStart,
             return(
               <div key={ex._uid} data-ex-uid={ex._uid} style={{position:'relative',opacity:isDragged?0.35:1,transition:'opacity 0.15s'}}>
                 {dropPos==='above'&&<div style={{height:3,background:A,borderRadius:2,marginBottom:4,boxShadow:`0 0 8px ${A}`}}/>}
-                <ExCard exDef={ex} data={gdata[ex._uid]||{}} color={color} onChange={val=>onChange(ex._uid,val)} prevSets={ps} progress={cp} hist={hist} onDragStart={canEdit?(e)=>onDragStart(e,ex._uid):null} onRemove={canEdit&&onRemoveEx?()=>onRemoveEx(ex._uid):null}/>
+                <ExCard exDef={ex} data={gdata[ex._uid]||{}} color={color} onChange={val=>onChange(ex._uid,val)} prevSets={ps} progress={cp} hist={hist} onStartRest={startRest} onDragStart={canEdit?(e)=>onDragStart(e,ex._uid):null} onRemove={canEdit&&onRemoveEx?()=>onRemoveEx(ex._uid):null}/>
                 {dropPos==='below'&&<div style={{height:3,background:A,borderRadius:2,marginTop:4,boxShadow:`0 0 8px ${A}`}}/>}
               </div>
             );
           })}
-          {timer&&<Timer duration={restDur} onDone={()=>setTimer(false)}/>}
+          {timer&&<Timer key={timerNonce} duration={restDur} onDone={()=>setTimer(false)}/>}
         </div>
       )}
     </div>
