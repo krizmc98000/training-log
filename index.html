@@ -131,6 +131,8 @@ const GIF_SEARCH={
   'Scapular Wall Slides':'wall slide shoulder',
   'Band Face Pulls':'band face pull',
   '90/90 Diaphragmatic Breathing':'diaphragmatic breathing 90 90',
+  'Leg Swings':'leg swings warmup',
+  'Inchworm Walkout':'inchworm exercise',
 };
 
 // ── 3-LAYER GIF CACHE ────────────────────────────────────────────────────────
@@ -280,6 +282,92 @@ function getLastLogged(hist,exName){
   for(const session of hist){if(!session.data||!session.data.sections)continue;for(const sec of session.data.sections){for(const ss of sec.supersets||[]){for(const ex of ss.exercises||[]){if(ex.name===exName){const ds=(ex.sets||[]).filter(s=>s.weight&&s.reps&&s.done);if(ds.length)return{date:session.session_date,sets:ds,sessionType:session.type,week:session.week};}}}}}
   return null;
 }
+// Build a chronological time-series for one exercise: per session, the top-set weight, the
+// estimated 1RM (Epley: w*(1+reps/30)), and total volume (sum of weight*reps over done sets).
+function getExerciseSeries(hist,exName){
+  const points=[];
+  // hist is newest-first; reverse to plot oldest→newest
+  for(const session of [...hist].reverse()){
+    if(!session.data||!session.data.sections)continue;
+    let topWeight=0,topReps=0,volume=0,found=false,best1rm=0;
+    for(const sec of session.data.sections){
+      for(const ss of sec.supersets||[]){
+        for(const ex of ss.exercises||[]){
+          if(ex.name!==exName)continue;
+          for(const s of ex.sets||[]){
+            const w=parseFloat(s.weight),r=parseInt(s.reps);
+            if(w&&r&&s.done){
+              found=true;volume+=w*r;
+              const oneRm=w*(1+r/30);
+              if(oneRm>best1rm){best1rm=oneRm;}
+              if(w>topWeight||(w===topWeight&&r>topReps)){topWeight=w;topReps=r;}
+            }
+          }
+        }
+      }
+    }
+    if(found)points.push({date:session.session_date,topWeight,topReps,volume,est1rm:Math.round(best1rm*10)/10});
+  }
+  return points;
+}
+// Aggregate total sets per muscle group across the last N days (default 7).
+// Uses the COACHING muscle field, taking the first token before any "/" as the primary group.
+function getVolumeByMuscle(hist,days){
+  const cutoff=Date.now()-(days||7)*86400000;
+  const tally={};
+  for(const session of hist){
+    if(new Date(session.session_date).getTime()<cutoff)continue;
+    if(!session.data||!session.data.sections)continue;
+    for(const sec of session.data.sections){
+      if(sec.title==='Warm-Up'||sec.title==='Post-Session Stretch'||sec.title==='Hip Flexor Lengthening')continue;
+      for(const ss of sec.supersets||[]){
+        for(const ex of ss.exercises||[]){
+          const doneSets=(ex.sets||[]).filter(s=>s.done&&s.weight&&s.reps).length;
+          if(!doneSets)continue;
+          const entry=COACHING[ex.name]||WARMUP_COACHING[ex.name];
+          const muscleRaw=entry?entry.muscle:'Other';
+          const primary=(muscleRaw||'Other').split('/')[0].trim();
+          tally[primary]=(tally[primary]||0)+doneSets;
+        }
+      }
+    }
+  }
+  return Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+}
+// Minimal dependency-free SVG line chart for a single numeric series
+function MiniChart({points,accessor,color,label,unit}){
+  if(!points||points.length<2)return null;
+  const vals=points.map(accessor);
+  const min=Math.min(...vals),max=Math.max(...vals);
+  const range=max-min||1;
+  const W=280,H=90,padX=6,padY=10;
+  const stepX=(W-padX*2)/(points.length-1);
+  const coords=points.map((p,i)=>{
+    const x=padX+i*stepX;
+    const y=padY+(H-padY*2)*(1-(accessor(p)-min)/range);
+    return[x,y];
+  });
+  const path=coords.map((c,i)=>`${i===0?'M':'L'}${c[0].toFixed(1)},${c[1].toFixed(1)}`).join(' ');
+  const first=vals[0],lastV=vals[vals.length-1];
+  const delta=lastV-first;
+  const deltaPct=first?Math.round((delta/first)*100):0;
+  return(
+    <div style={{background:'#0D1B2E',borderRadius:8,padding:'10px 12px',marginBottom:10}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
+        <span style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1}}>{label}</span>
+        <span style={{color:delta>=0?G:R,fontSize:11,fontFamily:'monospace',fontWeight:700}}>{delta>=0?'+':''}{Math.round(delta*10)/10}{unit} ({delta>=0?'+':''}{deltaPct}%)</span>
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{display:'block'}}>
+        <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        {coords.map((c,i)=><circle key={i} cx={c[0]} cy={c[1]} r="2.5" fill={color}/>)}
+      </svg>
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:4}}>
+        <span style={{color:'#334155',fontSize:9,fontFamily:'monospace'}}>{fmt(points[0].date)}</span>
+        <span style={{color:'#334155',fontSize:9,fontFamily:'monospace'}}>{fmt(points[points.length-1].date)}</span>
+      </div>
+    </div>
+  );
+}
 
 // ── COACHING DATA ─────────────────────────────────────────────────────────────
 const COACHING={
@@ -371,6 +459,8 @@ const COACHING={
   'Scapular Wall Slides':{muscle:'Serratus Anterior / Lower Trap / Rotator Cuff',category:'Warm-Up',tips:['Stand with your back against a wall, arms in a goalpost position (elbows and wrists touching the wall).','Slowly slide your arms up the wall as high as comfortable, keeping elbows and wrists in contact with the wall throughout.','Stop at the first sign of the lower back arching off the wall or the shoulder losing contact — that is your current pain-free ceiling.','Slide back down with control. The lower back and forearms should stay glued to the wall the entire time.','This is deliberately slow and low-intensity — it is priming the shoulder blade to move properly, not a strength exercise.','For your right shoulder: expect asymmetry between sides. Never force the right arm to match the left arm range.']},
   'Band Face Pulls':{muscle:'Rear Delt / Rotator Cuff / Mid Trap',category:'Warm-Up',tips:['Anchor a band at roughly face height. Hold with both hands, arms extended toward the anchor.','Pull the band toward your face, aiming to finish with your hands either side of your nose.','Lead with the elbows, keeping them high — around shoulder height throughout the pull.','Critical cue: shoulders stay DOWN, not shrugged up, as the band comes toward your face.','Externally rotate slightly at the end of the pull — hands finish just past your ears, thumbs pointing back.','This is one of the best all-round shoulder-health movements available. Light band, high reps, perfect form.']},
   '90/90 Diaphragmatic Breathing':{muscle:'Deep Core / Diaphragm',category:'Warm-Up',tips:['Lie on your back, hips and knees bent to 90 degrees each, calves resting on a chair or bench.','Place one hand on your belly, one on your chest. The belly hand should move more than the chest hand.','Inhale slowly through the nose, feeling the belly and lower ribs expand outward and to the sides — not the chest rising.','Exhale slowly and fully through the mouth, feeling the ribs drop and the lower back gently flatten into the floor.','This resets the diaphragm and deep core before loading the spine — particularly valuable for the APT correction pattern.','Slow and unhurried. Rushing the breath defeats the purpose entirely.']},
+  'Leg Swings':{muscle:'Hip Mobility (Dynamic)',category:'Warm-Up',tips:['Hold a wall or rack for balance. Swing one leg forward and back in a controlled arc, letting the range build over reps.','Keep the torso upright and the core braced — the movement is at the hip, not the lower back.','Do a set front-to-back, then turn side-on and swing the same leg across your body and out (lateral swings).','Start with small swings and progressively increase the range — never force a cold hip into end range.','This primes the hip flexors, hamstrings, and adductors dynamically before squatting or hinging.','10 each direction per leg. Smooth and rhythmic, not ballistic.']},
+  'Inchworm Walkout':{muscle:'Hamstring / Core / Shoulder (Dynamic)',category:'Warm-Up',tips:['Stand tall, hinge at the hips and place your hands on the floor (bend the knees as needed).','Walk your hands forward until you reach a plank position, keeping the core braced the whole way out.','Hold the plank for a beat, then walk the hands back toward the feet and stand up.','This dynamically warms the hamstrings, opens the shoulders, and switches on the deep core in one movement.','Keep the hips from sagging in the plank position — brace as if bracing for the working sets to come.','5 slow reps. Move deliberately through each phase rather than rushing.']},
 };
 
 const SREHAB=[
@@ -452,7 +542,10 @@ const WARMUP_TRAVEL=[
 // Italy home-gym warm-ups — lower-day APT priming vs upper-day mandatory shoulder prep
 const WARMUP_ITALY_LOWER=[
   {name:'5 Min Light Cardio',sets:1,reps:'5 min'},
+  {name:'Leg Swings',sets:1,reps:'10 each direction, each leg'},
   {name:'Hip Circles',sets:1,reps:'10 each direction'},
+  {name:"World's Greatest Stretch",sets:1,reps:'5 each side'},
+  {name:'Cat-Cow',sets:1,reps:'10 reps'},
   {name:'Bodyweight Squat (Warm-Up)',sets:1,reps:'10 squat-to-stand + 10 hip hinge'},
   {name:'Banded Clamshells',sets:2,reps:'20 each side — do NOT skip'},
   {name:'Glute Bridge (Warm-Up)',sets:2,reps:'15, 2s top hold'},
@@ -460,7 +553,10 @@ const WARMUP_ITALY_LOWER=[
 ];
 const WARMUP_ITALY_UPPER=[
   {name:'5 Min Light Cardio',sets:1,reps:'5 min'},
-  {name:'Hip Circles',sets:1,reps:'10 each direction'},
+  {name:"World's Greatest Stretch",sets:1,reps:'5 each side'},
+  {name:'Inchworm Walkout',sets:1,reps:'5 reps'},
+  {name:'Thoracic Rotation',sets:1,reps:'8 each side'},
+  {name:'Cat-Cow',sets:1,reps:'10 reps'},
   {name:'Band Pull-Apart',sets:1,reps:'15 — shoulder blades DOWN'},
   {name:'Band External Rotation at Side',sets:1,reps:'12 each side'},
   {name:'Band Face Pulls',sets:1,reps:'15 — pull to nose, elbows high, shoulders down'},
@@ -594,26 +690,22 @@ const PLAN={
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each 30s',exercises:STRETCH_EX}]},
   ]},
   'Italy Lower A':{color:PU,icon:'ILA',subtitle:'Quad Emphasis + Core — Italy',italy:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up + APT Priming',note:'Never skip the clamshells — glute med is the weak link',exercises:WARMUP_ITALY_LOWER}]},
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up + APT Priming',note:'~10 min. Active mobility then glute activation — never skip the clamshells.',exercises:WARMUP_ITALY_LOWER}]},
     {title:'Main Session',color:PU,supersets:[
-      {label:'Hip Thrust',note:'APT priority — 2s top squeeze, posterior tilt, ribs down. Start ~40kg (DB across hips, towel padded).',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12-15'}]},
-      {label:'Squat',note:'16kg KB, 3-1-1 tempo, tall torso, exhale on the way up, no lumbar arch at top',exercises:[{name:'Barbell Squat / Goblet Squat',sets:4,reps:'10-12'}]},
-      {label:'Hinge',note:'2x20kg, bilateral, slow stretch — hinge not squat',exercises:[{name:'Romanian Deadlift',sets:4,reps:'10-12'}]},
-      {label:'Squat Variant',note:'2x20kg held at sides, controlled, no breath-holding',exercises:[{name:'DB Squat (held at sides)',sets:3,reps:'12'}]},
-      {label:'Calf',note:'16kg KB held, full stretch + pause at top',exercises:[{name:'Standing Calf Raise',sets:4,reps:'15-20'}]},
-      {label:'Core Superset',note:'Dead bug: press lumbar INTO floor. Core priority.',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Plank',sets:3,reps:'45-60s'}]},
+      {label:'Superset 1',note:'Squat + Hip Thrust — alternate, rest after both. Hip thrust ~40kg, 2s top squeeze.',exercises:[{name:'Barbell Squat / Goblet Squat',sets:4,reps:'10-12'},{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12-15'}]},
+      {label:'Superset 2',note:'Hinge + Squat Variant — alternate, rest after both. RDL 2x20kg slow stretch; DB squat held at sides.',exercises:[{name:'Romanian Deadlift',sets:3,reps:'10-12'},{name:'DB Squat (held at sides)',sets:3,reps:'12'}]},
+      {label:'Superset 3',note:'Calf + Core — alternate, minimal rest. Calf: 16kg KB, full stretch + pause.',exercises:[{name:'Standing Calf Raise',sets:4,reps:'15-20'},{name:'Plank',sets:3,reps:'45-60s'}]},
+      {label:'Core Finisher',note:'Dead bug — press lumbar INTO floor, core priority',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'}]},
     ]},
     {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only, never cold — matches the Daily Mobility protocol',exercises:ITALY_HIPFLEX}]},
   ]},
   'Italy Upper A':{color:A,icon:'IUA',subtitle:'Push Emphasis + Core — Italy',italy:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Mandatory Shoulder Prep',note:'Non-negotiable before any press. Add 1-2 light empty-rep sets of the first press before working weight.',exercises:WARMUP_ITALY_UPPER}]},
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Active Mobility + Shoulder Prep',note:'~10 min. Active mobility then shoulder prep. Add 1-2 light empty-rep sets of the first press before working weight.',exercises:WARMUP_ITALY_UPPER}]},
     {title:'Main Session',color:A,supersets:[
-      {label:'Press',note:'2x20kg, ≤30° incline, controlled, pain-free ROM, blades set down/back',exercises:[{name:'Low-Incline DB Press (neutral grip)',sets:4,reps:'8-12'}]},
-      {label:'Press Variant',note:'2x20kg — floor limits shoulder depth, which is a feature not a bug here',exercises:[{name:'DB Floor Press (neutral grip)',sets:3,reps:'10-12'}]},
-      {label:'Delts — TRAP WATCH',note:'Light, traps RELAXED, ≤30° range. Shrug = cut the set short.',exercises:[{name:'Seated DB Lateral Raise',sets:3,reps:'12-15'}]},
-      {label:'Push',note:'Slow eccentric, protract at the top (serratus)',exercises:[{name:'Push-Up Variation',sets:3,reps:'AMRAP'}]},
-      {label:'Triceps',note:'Light-moderate, on bench — NOT overhead',exercises:[{name:'Lying DB Tricep Extension (Skullcrusher)',sets:3,reps:'12'}]},
-      {label:'Core Superset',note:'Sit-up: controlled, no neck yank. Side plank: hold, no rotation.',exercises:[{name:'Decline Weighted Sit-Up',sets:3,reps:'12-15'},{name:'Side Plank',sets:3,reps:'30-40s each side'}]},
+      {label:'Superset 1',note:'Press + Delts — alternate, rest after both. Press 2x20kg ≤30° incline, neutral grip. Delts: traps RELAXED.',exercises:[{name:'Low-Incline DB Press (neutral grip)',sets:4,reps:'8-12'},{name:'Seated DB Lateral Raise',sets:3,reps:'12-15'}]},
+      {label:'Superset 2',note:'Press Variant + Push — alternate, rest after both. Floor press caps shoulder depth (a feature).',exercises:[{name:'DB Floor Press (neutral grip)',sets:3,reps:'10-12'},{name:'Push-Up Variation',sets:3,reps:'AMRAP'}]},
+      {label:'Superset 3',note:'Triceps + Core — alternate, minimal rest. Skullcrusher on bench, NOT overhead.',exercises:[{name:'Lying DB Tricep Extension (Skullcrusher)',sets:3,reps:'12'},{name:'Decline Weighted Sit-Up',sets:3,reps:'12-15'}]},
+      {label:'Core Finisher',note:'Side plank — hold, no rotation, ankle-safe',exercises:[{name:'Side Plank',sets:3,reps:'30-40s each side'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit — Non-Negotiable',note:'~10 min, end of every upper session',exercises:SREHAB}]},
   ]},
@@ -624,27 +716,22 @@ const PLAN={
     ]},
   ]},
   'Italy Lower B':{color:PU,icon:'ILB',subtitle:'Hinge / Posterior Emphasis + Core — Italy',italy:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up + APT Priming',note:'Never skip the clamshells — glute med is the weak link',exercises:WARMUP_ITALY_LOWER}]},
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up + APT Priming',note:'~10 min. Active mobility then glute activation — never skip the clamshells.',exercises:WARMUP_ITALY_LOWER}]},
     {title:'Main Session',color:PU,supersets:[
-      {label:'Hip Thrust',note:'APT priority — 2s top hold, posterior tilt',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12'}]},
-      {label:'Conditioning Hinge',note:'16kg KB, hip snap, CHEST HEIGHT MAX, shoulders packed down — not overhead',exercises:[{name:'Kettlebell Swing',sets:5,reps:'15-20'}]},
-      {label:'Hinge',note:'2x20kg, heavier-feel via slow tempo',exercises:[{name:'Romanian Deadlift',sets:4,reps:'10'}]},
-      {label:'Squat',note:'16kg KB, 3-1-1 tempo, ribs down',exercises:[{name:'Barbell Squat / Goblet Squat',sets:3,reps:'12'}]},
-      {label:'Calf',note:'16kg KB balanced on knees, seated bias hits the soleus',exercises:[{name:'Seated Calf Raise (KB on knee)',sets:4,reps:'15'}]},
-      {label:'Glute Med + Core',note:'Clamshell: glute med, APT priority. Hollow hold: low back pinned.',exercises:[{name:'Banded Clamshells',sets:3,reps:'20 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'}]},
+      {label:'Superset 1',note:'Hinge + Squat — alternate, rest after both. RDL 2x20kg slow tempo; squat 16kg KB 3-1-1.',exercises:[{name:'Romanian Deadlift',sets:4,reps:'10'},{name:'Barbell Squat / Goblet Squat',sets:3,reps:'12'}]},
+      {label:'Superset 2',note:'Hip Thrust + Calf — alternate, rest after both. Seated calf (KB on knees) biases soleus.',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12'},{name:'Seated Calf Raise (KB on knee)',sets:4,reps:'15'}]},
+      {label:'Conditioning',note:'16kg KB, hip snap, CHEST HEIGHT MAX, shoulders packed — not overhead',exercises:[{name:'Kettlebell Swing',sets:5,reps:'15-20'}]},
+      {label:'Glute Med + Core',note:'Clamshell + hollow hold — alternate, minimal rest. Clamshell: APT priority.',exercises:[{name:'Banded Clamshells',sets:3,reps:'20 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'}]},
     ]},
     {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only, never cold',exercises:ITALY_HIPFLEX}]},
   ]},
   'Italy Upper B':{color:A,icon:'IUB',subtitle:'Pull Emphasis + Arms — Italy',italy:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Mandatory Shoulder Prep',note:'Non-negotiable before any pull',exercises:WARMUP_ITALY_UPPER}]},
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Active Mobility + Shoulder Prep',note:'~10 min. Active mobility then shoulder prep before any pull.',exercises:WARMUP_ITALY_UPPER}]},
     {title:'Main Session',color:A,supersets:[
-      {label:'Row',note:'DEPRESS THE BLADE FIRST, row to hip not chest, elbow down-back',exercises:[{name:'Chest-Supported DB Row',sets:4,reps:'10-12'}]},
-      {label:'Row Variant',note:'Same cue as above — if traps fire on this one, swap for a 2nd chest-supported set instead',exercises:[{name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12'}]},
-      {label:'Lat Isolation',note:'Arms straight, pull to thighs — FEEL the lat, zero traps',exercises:[{name:'Band Straight-Arm Pulldown',sets:3,reps:'15'}]},
-      {label:'Rear Delt',note:'Light, shoulders down — band or DB, prone position works either way',exercises:[{name:'Prone Rear-Delt Raise',sets:3,reps:'15'}]},
-      {label:'Arms Superset',note:'Both controlled — curl for biceps, hammer for brachialis',exercises:[{name:'DB Curl',sets:4,reps:'10-12'},{name:'DB Hammer Curl',sets:3,reps:'12'}]},
-      {label:'Scapular Health',note:'Shoulder blades down throughout',exercises:[{name:'Band Pull-Apart',sets:3,reps:'20'}]},
-      {label:'Loaded Carry',note:'2x20kg, tall, core braced, no twist — bilateral keeps this ankle-safe',exercises:[{name:'Suitcase Carry (bilateral)',sets:3,reps:'30m'}]},
+      {label:'Superset 1',note:'Row + Lat Isolation — alternate, rest after both. Row: DEPRESS BLADE FIRST, to hip not chest. Lat: arms straight, FEEL the lat.',exercises:[{name:'Chest-Supported DB Row',sets:4,reps:'10-12'},{name:'Band Straight-Arm Pulldown',sets:3,reps:'15'}]},
+      {label:'Superset 2',note:'Row Variant + Rear Delt — alternate, rest after both. If traps fire on the row, drop to a 2nd chest-supported set.',exercises:[{name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12'},{name:'Prone Rear-Delt Raise',sets:3,reps:'15'}]},
+      {label:'Superset 3',note:'Biceps + Brachialis — alternate, minimal rest. Both controlled.',exercises:[{name:'DB Curl',sets:4,reps:'10-12'},{name:'DB Hammer Curl',sets:3,reps:'12'}]},
+      {label:'Scapular + Carry',note:'Pull-apart + suitcase carry — alternate. Blades down on pull-apart; carry 2x20kg tall, no twist.',exercises:[{name:'Band Pull-Apart',sets:3,reps:'20'},{name:'Suitcase Carry (bilateral)',sets:3,reps:'30m'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit — Non-Negotiable',note:'~10 min, end of every upper session',exercises:SREHAB}]},
   ]},
@@ -779,6 +866,18 @@ function ExDetailSheet({exName,hist,onClose}){
             ))}
           </div>
         )}
+        {(()=>{
+          const series=getExerciseSeries(hist,exName);
+          if(series.length<2)return series.length===1?<div style={{color:'#334155',fontSize:11,marginBottom:12,textAlign:'center'}}>Log this exercise once more to see progress charts</div>:null;
+          return(
+            <div style={{marginBottom:12}}>
+              <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Progress ({series.length} sessions)</div>
+              <MiniChart points={series} accessor={p=>p.topWeight} color={c} label="Top Set Weight" unit="kg"/>
+              <MiniChart points={series} accessor={p=>p.est1rm} color={A} label="Est. 1RM" unit="kg"/>
+              <MiniChart points={series} accessor={p=>p.volume} color={G} label="Total Volume" unit="kg"/>
+            </div>
+          );
+        })()}
         {tips.length>0&&(
           <div>
             <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Coaching Notes</div>
@@ -902,6 +1001,11 @@ function Timer({duration,onDone}){
     else{endAt.current=Date.now()+(pauseLeft.current||0);}
     setActive(a=>!a);
   };
+  // Add 30s — works whether running (push endAt forward) or paused (extend the frozen remainder)
+  const addThirty=()=>{
+    if(active){endAt.current+=30000;setRem(Math.max(0,Math.ceil((endAt.current-Date.now())/1000)));}
+    else{pauseLeft.current=(pauseLeft.current||0)+30000;setRem(Math.max(0,Math.ceil(pauseLeft.current/1000)));}
+  };
   const r=26,circ=2*Math.PI*r,c=rem>duration*0.5?G:rem>duration*0.25?O:R;
   return(
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',padding:'14px 0',background:'#0A1628',borderRadius:12,border:`1px solid ${c}44`,margin:'10px 0'}}>
@@ -912,6 +1016,7 @@ function Timer({duration,onDone}){
       </div>
       <div style={{display:'flex',gap:8,marginTop:10}}>
         <button onClick={togglePause} style={{background:'none',border:`1px solid ${c}44`,borderRadius:6,color:c,padding:'4px 12px',cursor:'pointer',fontSize:12}}>{active?'Pause':'Resume'}</button>
+        <button onClick={addThirty} style={{background:'none',border:`1px solid ${A}44`,borderRadius:6,color:A,padding:'4px 12px',cursor:'pointer',fontSize:12}}>+30s</button>
         <button onClick={onDone} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 12px',cursor:'pointer',fontSize:12}}>Skip</button>
       </div>
     </div>
@@ -919,14 +1024,20 @@ function Timer({duration,onDone}){
 }
 
 function SetRow({set,idx,onChange,color}){
+  const c=color||A;
+  const stepWeight=(delta)=>{const cur=parseFloat(set.weight)||0;const next=Math.max(0,Math.round((cur+delta)*4)/4);onChange({...set,weight:next===0?'':String(next)});};
+  const stepReps=(delta)=>{const cur=parseInt(set.reps)||0;const next=Math.max(0,cur+delta);onChange({...set,reps:next===0?'':String(next)});};
+  const stepBtn={width:22,height:30,borderRadius:5,border:'1px solid #1E3A5F',background:'#0A1628',color:'#64748B',cursor:'pointer',fontSize:14,fontWeight:700,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',padding:0,lineHeight:1};
   return(
-    <div style={{display:'flex',gap:6,alignItems:'center',marginBottom:5}}>
-      <span style={{color:'#475569',fontSize:11,fontFamily:'monospace',width:16,textAlign:'right',flexShrink:0}}>{idx+1}</span>
-      <input type="number" placeholder="kg" value={set.weight||''} onChange={e=>onChange({...set,weight:e.target.value})} style={{width:52,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:color||A,padding:'5px 4px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
-      <span style={{color:'#334155',fontSize:11}}>kg</span>
-      <input type="number" placeholder="reps" value={set.reps||''} onChange={e=>onChange({...set,reps:e.target.value})} style={{width:52,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:'#E2E8F0',padding:'5px 4px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
-      <span style={{color:'#334155',fontSize:11}}>reps</span>
-      <button onClick={()=>onChange({...set,done:!set.done})} style={{width:28,height:28,borderRadius:6,border:`1px solid ${set.done?G:'#1E3A5F'}`,background:set.done?G+'22':'transparent',color:set.done?G:'#334155',cursor:'pointer',fontSize:13,flexShrink:0}}>{set.done?'✓':'○'}</button>
+    <div style={{display:'flex',gap:3,alignItems:'center',marginBottom:5}}>
+      <span style={{color:'#475569',fontSize:11,fontFamily:'monospace',width:14,textAlign:'right',flexShrink:0}}>{idx+1}</span>
+      <button onClick={()=>stepWeight(-2.5)} style={stepBtn} aria-label="minus 2.5kg">−</button>
+      <input type="number" inputMode="decimal" placeholder="kg" value={set.weight||''} onChange={e=>onChange({...set,weight:e.target.value})} style={{width:44,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:c,padding:'5px 2px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
+      <button onClick={()=>stepWeight(2.5)} style={stepBtn} aria-label="plus 2.5kg">+</button>
+      <button onClick={()=>stepReps(-1)} style={stepBtn} aria-label="minus 1 rep">−</button>
+      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps||''} onChange={e=>onChange({...set,reps:e.target.value})} style={{width:44,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:'#E2E8F0',padding:'5px 2px',fontSize:14,fontFamily:'monospace',textAlign:'center',outline:'none'}}/>
+      <button onClick={()=>stepReps(1)} style={stepBtn} aria-label="plus 1 rep">+</button>
+      <button onClick={()=>onChange({...set,done:!set.done})} style={{width:30,height:30,borderRadius:6,border:`1px solid ${set.done?G:'#1E3A5F'}`,background:set.done?G+'22':'transparent',color:set.done?G:'#334155',cursor:'pointer',fontSize:13,flexShrink:0,marginLeft:2}}>{set.done?'✓':'○'}</button>
     </div>
   );
 }
@@ -1419,6 +1530,117 @@ function ClaudePT({messages,setMessages}){
   );
 }
 
+// Format minutes as "1h 05m" or "42m"
+function fmtDur(mins){
+  if(!mins||mins<1)return null;
+  const h=Math.floor(mins/60),m=mins%60;
+  return h>0?`${h}h ${String(m).padStart(2,'0')}m`:`${m}m`;
+}
+// Live elapsed-time ticker shown in the log header during an active session
+function LiveElapsed({startMs,color}){
+  const[now,setNow]=useState(Date.now());
+  useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(id);},[]);
+  if(!startMs)return null;
+  const totalSec=Math.max(0,Math.floor((now-startMs)/1000));
+  const h=Math.floor(totalSec/3600),m=Math.floor((totalSec%3600)/60),s=totalSec%60;
+  const txt=h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`;
+  return <span style={{color:color||A,fontSize:12,fontFamily:'monospace',fontWeight:700}}>⏱ {txt}</span>;
+}
+
+// ── SETTINGS OVERLAY ──────────────────────────────────────────────────────────
+function SettingsScreen({onClose,restDur,setRestDur,healthReminderOff,setHealthReminderOff,bwLog,addBwEntry,hist,exportCsv}){
+  const[bw,setBw]=useState('');
+  const[bf,setBf]=useState('');
+  const volume=getVolumeByMuscle(hist,7);
+  const maxVol=volume.length?volume[0][1]:1;
+  const bwSeries=[...bwLog].reverse().map(e=>({date:e.date,weight:e.weight}));
+  return(
+    <div style={{position:'fixed',inset:0,background:'#070E1A',zIndex:400,overflowY:'auto',maxWidth:520,margin:'0 auto'}}>
+      <div style={{padding:'20px 20px 60px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+          <div style={{fontSize:20,fontWeight:700}}>Settings</div>
+          <button onClick={onClose} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#94A3B8',padding:'5px 12px',cursor:'pointer',fontSize:13}}>Done</button>
+        </div>
+
+        {/* Bodyweight log */}
+        <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Bodyweight</div>
+        <div style={{background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'12px 14px',marginBottom:8}}>
+          <div style={{color:'#64748B',fontSize:11,marginBottom:8}}>Log fasted, morning, pre-exercise for a consistent trend.</div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <div style={{flex:1,display:'flex',alignItems:'center',gap:4,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'8px 10px'}}>
+              <input type="number" inputMode="decimal" placeholder="kg" value={bw} onChange={e=>setBw(e.target.value)} style={{flex:1,background:'transparent',border:'none',color:A,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>
+              <span style={{color:'#334155',fontSize:11}}>kg</span>
+            </div>
+            <div style={{flex:1,display:'flex',alignItems:'center',gap:4,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,padding:'8px 10px'}}>
+              <input type="number" inputMode="decimal" placeholder="BF" value={bf} onChange={e=>setBf(e.target.value)} style={{flex:1,background:'transparent',border:'none',color:G,fontSize:15,fontFamily:'monospace',fontWeight:700,outline:'none',width:'100%'}}/>
+              <span style={{color:'#334155',fontSize:11}}>% BF</span>
+            </div>
+            <button onClick={()=>{addBwEntry(bw,bf);setBw('');setBf('');}} disabled={!bw} style={{padding:'9px 14px',background:bw?A+'22':'#0D1B2E',border:`1px solid ${bw?A:'#1E3A5F'}`,borderRadius:8,color:bw?A:'#334155',fontSize:13,fontWeight:700,cursor:bw?'pointer':'default'}}>Log</button>
+          </div>
+        </div>
+        {bwSeries.length>=2&&<MiniChart points={bwSeries} accessor={p=>p.weight} color={A} label="Bodyweight Trend" unit="kg"/>}
+        {bwLog.length>0&&(
+          <div style={{background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'10px 14px',marginBottom:20}}>
+            {bwLog.slice(0,5).map((e,i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:12,fontFamily:'monospace',color:'#94A3B8',padding:'3px 0'}}>
+                <span style={{color:'#475569'}}>{fmt(e.date)}</span>
+                <span><span style={{color:A}}>{e.weight}kg</span>{e.bf?<span style={{color:G}}> · {e.bf}% BF</span>:''}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {bwLog.length===0&&<div style={{height:12}}/>}
+
+        {/* Weekly volume by muscle */}
+        <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Volume — Last 7 Days (working sets)</div>
+        <div style={{background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'12px 14px',marginBottom:20}}>
+          {volume.length===0&&<div style={{color:'#334155',fontSize:12,textAlign:'center',padding:'8px 0'}}>No logged sets in the last 7 days</div>}
+          {volume.map(([muscle,sets])=>(
+            <div key={muscle} style={{marginBottom:8}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                <span style={{color:'#CBD5E1',fontSize:12}}>{muscle}</span>
+                <span style={{color:'#64748B',fontSize:11,fontFamily:'monospace'}}>{sets} sets</span>
+              </div>
+              <div style={{height:6,background:'#070E1A',borderRadius:3,overflow:'hidden'}}>
+                <div style={{height:'100%',width:`${(sets/maxVol)*100}%`,background:A,borderRadius:3}}/>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Rest timer default */}
+        <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Default Rest Timer</div>
+        <div style={{background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'12px 14px',marginBottom:20}}>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {ROPT.map(o=><button key={o.v} onClick={()=>setRestDur(o.v)} style={{padding:'6px 12px',borderRadius:6,border:`1px solid ${restDur===o.v?A:'#1E3A5F'}`,background:restDur===o.v?A+'22':'transparent',color:restDur===o.v?A:'#475569',cursor:'pointer',fontSize:12,fontWeight:restDur===o.v?700:400}}>{o.l}</button>)}
+          </div>
+        </div>
+
+        {/* Toggles */}
+        <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Reminders</div>
+        <div style={{background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'12px 14px',marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div style={{flex:1,marginRight:12}}>
+            <div style={{color:'#CBD5E1',fontSize:13,fontWeight:600}}>Apple Watch workout reminder</div>
+            <div style={{color:'#64748B',fontSize:11,marginTop:2}}>Prompts to start Watch tracking on your first set</div>
+          </div>
+          <button onClick={()=>{const next=!healthReminderOff;setHealthReminderOff(next);try{localStorage.setItem('tl-health-reminder-disabled',next?'1':'0');}catch{}}} style={{width:48,height:28,borderRadius:14,border:'none',background:healthReminderOff?'#1E2D40':G,cursor:'pointer',position:'relative',flexShrink:0,transition:'background 0.2s'}}>
+            <div style={{width:22,height:22,borderRadius:'50%',background:'#fff',position:'absolute',top:3,left:healthReminderOff?3:23,transition:'left 0.2s'}}/>
+          </button>
+        </div>
+
+        {/* Data */}
+        <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Data</div>
+        <div style={{background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'12px 14px',marginBottom:20}}>
+          <button onClick={exportCsv} style={{width:'100%',padding:'11px',background:A+'18',border:`1px solid ${A}55`,borderRadius:8,color:A,fontSize:13,fontWeight:600,cursor:'pointer',marginBottom:6}}>Export all sessions as CSV</button>
+          <div style={{color:'#334155',fontSize:11,textAlign:'center'}}>{hist.length} sessions stored</div>
+        </div>
+
+        <div style={{color:'#334155',fontSize:10,textAlign:'center',fontFamily:'monospace'}}>Training Log · single-user · chris-yqp5rrpt</div>
+      </div>
+    </div>
+  );
+}
+
 // ── APP ───────────────────────────────────────────────────────────────────────
 function App(){
   const[screen,setScreen]=useState('home');
@@ -1432,8 +1654,17 @@ function App(){
   const[wnotes,setWnotes]=useState('');
   const[sessionDate,setSessionDate]=useState('');
   const[sphase,setSphase]=useState(0);
-  const[restDur,setRestDur]=useState(90);
+  const[restDur,setRestDur]=useState(()=>{try{const v=parseInt(localStorage.getItem('tl-rest-default'));return v>0?v:90;}catch{return 90;}});
   const[done2,setDone2]=useState(null);
+  // Session start timestamp — persisted in the draft so elapsed time survives a resume
+  const[sessionStart,setSessionStart]=useState(null);
+  // Settings screen + bodyweight log
+  const[showSettings,setShowSettings]=useState(false);
+  const[bwLog,setBwLog]=useState(()=>{try{return JSON.parse(localStorage.getItem('tl-bw-log')||'[]');}catch{return[];}});
+  const[healthReminderOff,setHealthReminderOff]=useState(()=>{try{return localStorage.getItem('tl-health-reminder-disabled')==='1';}catch{return false;}});
+  // B2: connection-error banner — set true when a load/read fails so a Supabase pause never looks like data loss
+  const[dbError,setDbError]=useState(false);
+  const[histFilter,setHistFilter]=useState('All');
   // Custom-session state — holds the active session's structure with stable UIDs so reordering preserves logged data
   const[customSections,setCustomSections]=useState(null);
   // Apple Health watch-workout reminder
@@ -1518,6 +1749,16 @@ function App(){
         }catch{draftDeleteStillPending=true;}
         const rows=await db('GET',`/sessions?user_id=eq.${userId}&order=session_date.desc`);
         if(rows&&rows.length)setHist(rows);
+        setDbError(false);// reached the DB successfully
+        // Recover the plan start date from the oldest session if localStorage was wiped
+        // (iOS clears PWA storage on icon delete/reinstall — this stopped the week resetting to 1).
+        if(!sd&&rows&&rows.length){
+          const oldest=rows[rows.length-1].session_date;
+          const recovered=new Date(oldest).toISOString().slice(0,10);
+          localStorage.setItem('tl-start',recovered);
+          setStartDate(recovered);
+          setWeek(calcWeek(recovered));
+        }
         // Skip restoring a draft this load if we couldn't confirm the stale one was cleared —
         // safer to make the user re-open a genuinely active session than risk a duplicate finish.
         const drafts=draftDeleteStillPending?null:await db('GET',`/drafts?user_id=eq.${userId}`);
@@ -1537,16 +1778,64 @@ function App(){
           // one, so fall back to today rather than leaving it blank (which finish() would silently
           // save as today anyway, but now it's explicit and visible in the date picker).
           setSessionDate(d.sessionDate||new Date().toISOString().slice(0,10));
+          setSessionStart(d.sessionStart||Date.now());
           setCdata(d.cardioData||{});setWnotes(d.workoutNotes||'');setSphase(d.swimPhase||0);setScreen('log');
         }
-      }catch(e){console.error('Load failed:',e);}
+      }catch(e){console.error('Load failed:',e);setDbError(true);}
       setLoaded(true);
     })();
   },[]);
 
   const applyStart=date=>{setStartDate(date);localStorage.setItem('tl-start',date);setWeek(calcWeek(date));setShowDP(false);};
+  // Persist the rest-timer default whenever it changes
+  useEffect(()=>{try{localStorage.setItem('tl-rest-default',String(restDur));}catch{}},[restDur]);
+  // Persist bodyweight log
+  useEffect(()=>{try{localStorage.setItem('tl-bw-log',JSON.stringify(bwLog));}catch{}},[bwLog]);
+
+  // B2: manual DB reconnect — re-fetches sessions and clears the error banner on success
+  const retryDbConnection=useCallback(async()=>{
+    try{
+      const rows=await db('GET',`/sessions?user_id=eq.${userId}&order=session_date.desc`);
+      if(rows)setHist(rows);
+      setDbError(false);
+    }catch(e){setDbError(true);}
+  },[userId]);
+
+  // Add a bodyweight entry (fasted-morning reminder lives in the Settings UI)
+  const addBwEntry=(weight,bf)=>{
+    const w=parseFloat(weight);if(!w)return;
+    const entry={date:new Date().toISOString().slice(0,10),weight:w,bf:parseFloat(bf)||null};
+    setBwLog(log=>[entry,...log.filter(e=>e.date!==entry.date)].sort((a,b)=>b.date.localeCompare(a.date)));
+  };
+
+  // Wave 4: export all sessions as CSV (client-side, no server dependency)
+  const exportCsv=()=>{
+    const rows=[['date','type','week','duration_min','section','superset','exercise','set','weight_kg','reps','done','rpe']];
+    for(const s of [...hist].reverse()){
+      const dur=(s.data&&s.data.durationMin)||'';
+      if(s.data&&s.data.sections){
+        for(const sec of s.data.sections){
+          for(const ss of sec.supersets||[]){
+            for(const ex of ss.exercises||[]){
+              const sets=ex.sets||[];
+              if(sets.length===0){rows.push([s.session_date.slice(0,10),s.type,s.week,dur,sec.title,ss.label,ex.name,'','','','',ex.rpe||'']);}
+              sets.forEach((st,i)=>rows.push([s.session_date.slice(0,10),s.type,s.week,dur,sec.title,ss.label,ex.name,i+1,st.weight||'',st.reps||'',st.done?'yes':'no',ex.rpe||'']));
+            }
+          }
+        }
+      }else{
+        // cardio session — flatten the key metrics
+        rows.push([s.session_date.slice(0,10),s.type,s.week,dur,'cardio','','',( ''),s.data&&s.data.distance||'',s.data&&s.data.duration||'','','']);
+      }
+    }
+    const csv=rows.map(r=>r.map(cell=>{const v=String(cell);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`training-log-${new Date().toISOString().slice(0,10)}.csv`;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
   const saveDraft=useCallback(async(type,w,data)=>{if(!type)return;try{await db('POST','/drafts?on_conflict=user_id',{user_id:userId,type,week:w,data,updated_at:new Date().toISOString()});}catch{}},[userId]);
-  useEffect(()=>{if(atype&&screen==='log'){if(asr.current)clearTimeout(asr.current);asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase,customSections,sessionDate}),800);}},[gdata,cdata,wnotes,sphase,customSections,sessionDate]);
+  useEffect(()=>{if(atype&&screen==='log'){if(asr.current)clearTimeout(asr.current);asr.current=setTimeout(()=>saveDraft(atype,week,{gymData:gdata,cardioData:cdata,workoutNotes:wnotes,swimPhase:sphase,customSections,sessionDate,sessionStart}),800);}},[gdata,cdata,wnotes,sphase,customSections,sessionDate,sessionStart]);
   const delDraft=async()=>{try{await db('DELETE',`/drafts?user_id=eq.${userId}`);try{localStorage.removeItem('tl-draft-delete-pending');}catch{}}catch{try{localStorage.setItem('tl-draft-delete-pending','1');}catch{}}};
 
   // ── Custom session helpers ────────────────────────────────────────────────
@@ -1569,6 +1858,7 @@ function App(){
     setCdata({});
     setWnotes('');
     setSessionDate(new Date().toISOString().slice(0,10));
+    setSessionStart(Date.now());
     // Initialise customSections for gym sessions only (cardio sessions don't use it)
     if(isGymSession(type)&&PLAN[type]&&PLAN[type].sections){
       setCustomSections(initCustomSections(PLAN[type].sections));
@@ -1586,14 +1876,17 @@ function App(){
   // Detect first set completion to fire Apple Health reminder
   useEffect(()=>{
     if(!atype||healthReminderShown)return;
-    if(localStorage.getItem('tl-health-reminder-disabled')==='1')return;
+    if(healthReminderOff)return;
+    // Don't prompt for Mobility (no Watch workout makes sense) or for backdated sessions
+    if(atype==='Mobility')return;
+    if(sessionDate&&sessionDate!==new Date().toISOString().slice(0,10))return;
     // Count total done sets across all exercises in current session
     const totalDone=Object.values(gdata).reduce((a,ex)=>a+((ex&&ex.sets)||[]).filter(s=>s.done).length,0);
     if(totalDone>0){
       setHealthReminderShown(true);
       setShowHealthReminder(true);
     }
-  },[gdata,atype,healthReminderShown]);
+  },[gdata,atype,healthReminderShown,healthReminderOff,sessionDate]);
 
   // Add a new exercise to a target superset (or as a new single-exercise superset)
   const addExerciseToSession=(secIdx,ssIdx,exName)=>{
@@ -1715,6 +2008,12 @@ function App(){
     }else{
       data={...cdata,workoutNotes:wnotes};
     }
+    // Wave 3: record elapsed duration in minutes. Only if a start time exists and the elapsed
+    // time is plausible (< 6h) — guards against a stale start from a backdated/very old draft.
+    if(sessionStart){
+      const mins=Math.round((Date.now()-sessionStart)/60000);
+      if(mins>0&&mins<360)data.durationMin=mins;
+    }
     const session={id:Date.now(),user_id:userId,type:atype,session_date:sessionDate?new Date(sessionDate+'T12:00:00').toISOString():new Date().toISOString(),week,data};
     setHist(h=>[session,...h]);setSaving(true);
     // Try upsert. If it fails, queue for retry on next load or banner-tap.
@@ -1760,9 +2059,8 @@ function App(){
       {/* HEADER */}
       <div style={{padding:'20px 20px 0',background:'linear-gradient(180deg,#0A1628 0%,transparent 100%)',position:'sticky',top:0,zIndex:50,backdropFilter:'blur(8px)'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-          <div>
-            <div style={{color:A,fontSize:10,fontFamily:'monospace',letterSpacing:2,textTransform:'uppercase',marginBottom:2}}>12-Week Plan</div>
-            <div style={{fontSize:21,fontWeight:700,letterSpacing:-0.5}}>Training Log</div>
+          <div onClick={()=>setShowSettings(true)} style={{cursor:'pointer'}}>
+            <div style={{fontSize:21,fontWeight:700,letterSpacing:-0.5}}>Training Log <span style={{color:'#334155',fontSize:13,fontWeight:400}}>⚙</span></div>
           </div>
           <div style={{textAlign:'right'}}>
             <div style={{color:'#475569',fontSize:10,marginBottom:3}}>WEEK</div>
@@ -1800,6 +2098,17 @@ function App(){
           <button onClick={()=>setScreen('history')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='history'?A:'#475569',fontSize:12,fontWeight:navScreen==='history'?600:400,cursor:'pointer',borderBottom:navScreen==='history'?`2px solid ${A}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap'}}>History</button>
           <button onClick={()=>setScreen('claudept')} style={{flex:1,padding:'8px 0',background:'none',border:'none',color:navScreen==='claudept'?PU:'#475569',fontSize:12,fontWeight:navScreen==='claudept'?600:400,cursor:'pointer',borderBottom:navScreen==='claudept'?`2px solid ${PU}`:'2px solid transparent',textAlign:'center',whiteSpace:'nowrap'}}>Claude PT</button>
         </div>
+        {/* B2: database unreachable banner — reassures that data is safe, offers manual retry */}
+        {dbError&&(
+          <div style={{marginTop:8,padding:'8px 12px',background:R+'1A',border:`1px solid ${R}55`,borderRadius:8,display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:14}}>🔌</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{color:R,fontSize:12,fontWeight:700}}>Can't reach the database</div>
+              <div style={{color:'#94A3B8',fontSize:10}}>Your data is safe. This is usually a paused free-tier database — it wakes in a minute or two.</div>
+            </div>
+            <button onClick={retryDbConnection} style={{padding:'4px 10px',background:R+'22',border:`1px solid ${R}`,borderRadius:6,color:R,fontSize:11,fontWeight:600,cursor:'pointer'}}>Retry</button>
+          </div>
+        )}
         {/* Pending sync banner — only shown when sessions failed to save */}
         {pendingCount>0&&(
           <div style={{marginTop:8,padding:'8px 12px',background:O+'1A',border:`1px solid ${O}55`,borderRadius:8,display:'flex',alignItems:'center',gap:8}}>
@@ -1867,7 +2176,10 @@ function App(){
         <div style={{padding:'14px 20px 0'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
             <div><div style={{color:col,fontSize:18,fontWeight:700}}>{atype}</div><div style={{color:'#475569',fontSize:11}}>{plan?plan.subtitle:''}</div></div>
-            <button onClick={()=>{if(confirm('Cancel this session? Nothing logged will be saved.')){delDraft();setScreen('home');setAtype(null);setCustomSections(null);}}} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Cancel</button>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <LiveElapsed startMs={sessionStart} color={col}/>
+              <button onClick={()=>{if(confirm('Cancel this session? Nothing logged will be saved.')){delDraft();setScreen('home');setAtype(null);setCustomSections(null);}}} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Cancel</button>
+            </div>
           </div>
           {/* Session date picker — defaults to today, can backdate */}
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,padding:'8px 12px',background:'#0A1628',border:'1px solid #1E3A5F',borderRadius:8}}>
@@ -1903,7 +2215,7 @@ function App(){
       {screen==='review'&&done2&&(
         <div style={{padding:'14px 20px 0'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-            <div><div style={{color:rc,fontSize:18,fontWeight:700}}>{done2.type} — Done ✓</div><div style={{color:'#475569',fontSize:11}}>{fmt(done2.session_date)} · Week {done2.week}</div></div>
+            <div><div style={{color:rc,fontSize:18,fontWeight:700}}>{done2.type} — Done ✓</div><div style={{color:'#475569',fontSize:11}}>{fmt(done2.session_date)} · Week {done2.week}{done2.data&&fmtDur(done2.data.durationMin)?` · ${fmtDur(done2.data.durationMin)}`:''}</div></div>
             <button onClick={()=>setScreen('home')} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'4px 10px',cursor:'pointer',fontSize:12}}>Home</button>
           </div>
           {done2.data&&done2.data.workoutNotes&&<div style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,padding:'10px 12px',marginBottom:12}}><div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Your Notes</div><div style={{color:'#CBD5E1',fontSize:13}}>{done2.data.workoutNotes}</div></div>}
@@ -1916,13 +2228,40 @@ function App(){
         <div style={{padding:'16px 20px 0'}}>
           <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:10}}>All Sessions ({hist.length})</div>
           {hist.length===0&&<div style={{textAlign:'center',padding:'60px 0',color:'#1E3A5F'}}><div style={{fontSize:28,marginBottom:8}}>○</div><div style={{fontSize:13}}>No sessions yet</div></div>}
-          {hist.map(s=>{const p=PLAN[s.type];return(
-            <div key={s.id} onClick={()=>setView(s)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,marginBottom:7,cursor:'pointer'}}>
-              <div style={{width:34,height:34,borderRadius:7,background:p?p.color+'22':'#1E2D40',border:`1px solid ${p?p.color+'44':'#1E2D40'}`,display:'flex',alignItems:'center',justifyContent:'center',color:p?p.color:A,fontSize:15,fontFamily:'monospace',fontWeight:900,flexShrink:0}}>{p?p.icon:'?'}</div>
-              <div style={{flex:1}}><div style={{color:'#CBD5E1',fontSize:13,fontWeight:600}}>{s.type}</div><div style={{color:'#334155',fontSize:11}}>{fmt(s.session_date)} · Wk {s.week}</div></div>
-              <div style={{color:'#1E3A5F'}}>›</div>
-            </div>
-          );})}
+          {hist.length>0&&(()=>{
+            // Type filter chips — built from the session types actually present in history
+            const types=Array.from(new Set(hist.map(s=>s.type)));
+            const filtered=histFilter==='All'?hist:hist.filter(s=>s.type===histFilter);
+            // Group filtered sessions by "Month Year" (hist is already sorted desc by date)
+            const groups=[];const seen={};
+            for(const s of filtered){
+              const d=new Date(s.session_date);
+              const key=d.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+              if(!seen[key]){seen[key]={key,items:[]};groups.push(seen[key]);}
+              seen[key].items.push(s);
+            }
+            return(
+              <>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:14}}>
+                  {['All',...types].map(t=>{const p=PLAN[t];const on=histFilter===t;const cc=t==='All'?A:(p?p.color:A);return(
+                    <button key={t} onClick={()=>setHistFilter(t)} style={{padding:'5px 10px',borderRadius:14,border:`1px solid ${on?cc:'#1E2D40'}`,background:on?cc+'22':'transparent',color:on?cc:'#475569',cursor:'pointer',fontSize:11,fontWeight:on?700:400}}>{t}</button>
+                  );})}
+                </div>
+                {groups.map(g=>(
+                  <div key={g.key} style={{marginBottom:16}}>
+                    <div style={{color:'#334155',fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>{g.key} · {g.items.length}</div>
+                    {g.items.map(s=>{const p=PLAN[s.type];const dur=s.data&&fmtDur(s.data.durationMin);return(
+                      <div key={s.id} onClick={()=>setView(s)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,marginBottom:7,cursor:'pointer'}}>
+                        <div style={{width:34,height:34,borderRadius:7,background:p?p.color+'22':'#1E2D40',border:`1px solid ${p?p.color+'44':'#1E2D40'}`,display:'flex',alignItems:'center',justifyContent:'center',color:p?p.color:A,fontSize:15,fontFamily:'monospace',fontWeight:900,flexShrink:0}}>{p?p.icon:'?'}</div>
+                        <div style={{flex:1}}><div style={{color:'#CBD5E1',fontSize:13,fontWeight:600}}>{s.type}</div><div style={{color:'#334155',fontSize:11}}>{fmt(s.session_date)} · Wk {s.week}{dur?` · ${dur}`:''}</div></div>
+                        <div style={{color:'#1E3A5F'}}>›</div>
+                      </div>
+                    );})}
+                  </div>
+                ))}
+              </>
+            );
+          })()}
         </div>
       )}
 
@@ -1936,7 +2275,7 @@ function App(){
         <div style={{position:'fixed',inset:0,background:'#000000bb',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setView(null)}>
           <div style={{background:'#0A1628',border:`1px solid ${PLAN[view.type]?PLAN[view.type].color:'#334155'}44`,borderRadius:14,padding:20,maxWidth:460,width:'100%',maxHeight:'88vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-              <div><div style={{color:PLAN[view.type]?PLAN[view.type].color:A,fontSize:17,fontWeight:700}}>{view.type}</div><div style={{color:'#475569',fontSize:12}}>{fmt(view.session_date)} — Week {view.week}</div></div>
+              <div><div style={{color:PLAN[view.type]?PLAN[view.type].color:A,fontSize:17,fontWeight:700}}>{view.type}</div><div style={{color:'#475569',fontSize:12}}>{fmt(view.session_date)} — Week {view.week}{view.data&&fmtDur(view.data.durationMin)?` · ${fmtDur(view.data.durationMin)}`:''}</div></div>
               <button onClick={()=>setView(null)} style={{background:'none',border:'none',color:'#475569',fontSize:22,cursor:'pointer'}}>×</button>
             </div>
             {view.data&&view.data.workoutNotes&&<div style={{background:'#0D1B2E',border:'1px solid #1E3A5F',borderRadius:8,padding:'10px 12px',marginBottom:12}}><div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Workout Notes</div><div style={{color:'#CBD5E1',fontSize:13}}>{view.data.workoutNotes}</div></div>}
@@ -1964,8 +2303,9 @@ function App(){
           </div>
         </div>
       )}
-      {showHealthReminder&&<HealthReminderModal onClose={()=>setShowHealthReminder(false)} onDisable={()=>{localStorage.setItem('tl-health-reminder-disabled','1');setShowHealthReminder(false);}}/>}
+      {showHealthReminder&&<HealthReminderModal onClose={()=>setShowHealthReminder(false)} onDisable={()=>{localStorage.setItem('tl-health-reminder-disabled','1');setHealthReminderOff(true);setShowHealthReminder(false);}}/>}
       {addPickerCtx&&customSections&&<AddExercisePicker ctx={addPickerCtx} customSections={customSections} onPick={addExerciseToSession} onClose={()=>setAddPickerCtx(null)}/>}
+      {showSettings&&<SettingsScreen onClose={()=>setShowSettings(false)} restDur={restDur} setRestDur={setRestDur} healthReminderOff={healthReminderOff} setHealthReminderOff={setHealthReminderOff} bwLog={bwLog} addBwEntry={addBwEntry} hist={hist} exportCsv={exportCsv}/>}
       <DragGhost info={dragInfo}/>
     </div>
   );
