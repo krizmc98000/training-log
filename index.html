@@ -222,6 +222,25 @@ async function syncPendingQueue(){
   return{synced,remaining:remaining.length};
 }
 
+// ── CLAUDE PT CHAT BACKUP ─────────────────────────────────────────────────────
+// The chat used to live only in localStorage, which iOS wipes on PWA reinstall (the same
+// event that cleared the user id and week). We now back the whole conversation up to Supabase
+// as a single row keyed by user_id — reinstall-proof, like the session history.
+async function saveChatBackup(userId,messages){
+  // Store only the trailing 200 messages to keep the row small
+  const trimmed=messages.slice(-200);
+  const res=await fetch(SB+'/rest/v1/pt_chat?on_conflict=user_id',{
+    method:'POST',
+    headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify({user_id:userId,messages:trimmed,updated_at:new Date().toISOString()})
+  });
+  if(!res.ok)throw new Error('chat backup '+res.status);
+}
+async function loadChatBackup(userId){
+  const rows=await db('GET',`/pt_chat?user_id=eq.${userId}&select=messages`);
+  return rows&&rows.length?(rows[0].messages||[]):null;
+}
+
 // This is a single-user personal app — always use the same fixed ID rather than generating a
 // random one per install. A random ID meant deleting/re-adding the home screen icon (which wipes
 // iOS's isolated PWA storage) silently pointed the app at a brand new empty "user", making real
@@ -1443,7 +1462,9 @@ function ClaudePT({messages,setMessages}){
     const next=[...messages,userMsg];
     setMessages(next);setInput('');setLoading(true);
     try{
-      const apiMsgs=next.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content}));
+      // B5: only send the last 12 conversational turns to the API — keeps cost and latency
+      // flat as the chat grows. The full history still displays and is backed up separately.
+      const apiMsgs=next.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content})).slice(-12);
       const text=await callClaude(PT_SYSTEM,apiMsgs,1200);
       setMessages(m=>[...m,{role:'assistant',content:text,ts:Date.now()}]);
     }catch(e){
@@ -1716,13 +1737,22 @@ function App(){
     setSyncing(false);
   },[userId]);
 
-  // Persist PT messages to both storages
+  // Persist PT messages to both local storages (fast cache)
   useEffect(()=>{
     try{
       const data=JSON.stringify(ptMessages.slice(-100));
       localStorage.setItem('tl-pt-msgs',data);
       sessionStorage.setItem('tl-pt-msgs',data);
     }catch{}
+  },[ptMessages]);
+  // Debounced Supabase backup — reinstall-proof. Guarded so it doesn't fire before the
+  // initial DB load has merged in any cloud history (which would overwrite it with a stale/empty set).
+  const ptBackupTimer=useRef(null);
+  const ptReadyForBackup=useRef(false);
+  useEffect(()=>{
+    if(!ptReadyForBackup.current)return;
+    if(ptBackupTimer.current)clearTimeout(ptBackupTimer.current);
+    ptBackupTimer.current=setTimeout(()=>{saveChatBackup(userId,ptMessages).catch(()=>{});},1500);
   },[ptMessages]);
   const addPtFeedback=useCallback(text=>{setPtMessages(m=>[...m,{role:'system-note',content:text,ts:Date.now()}]);},[]);
 
@@ -1759,6 +1789,16 @@ function App(){
           setStartDate(recovered);
           setWeek(calcWeek(recovered));
         }
+        // Restore PT chat from the cloud backup. If localStorage was wiped (reinstall) the cloud
+        // copy repopulates it; otherwise we keep whichever source has more messages so we never
+        // lose the newer of the two. Only after this do we allow backups to fire.
+        try{
+          const cloudChat=await loadChatBackup(userId);
+          if(cloudChat&&cloudChat.length){
+            setPtMessages(local=>cloudChat.length>=local.length?cloudChat:local);
+          }
+        }catch{}
+        ptReadyForBackup.current=true;
         // Skip restoring a draft this load if we couldn't confirm the stale one was cleared —
         // safer to make the user re-open a genuinely active session than risk a duplicate finish.
         const drafts=draftDeleteStillPending?null:await db('GET',`/drafts?user_id=eq.${userId}`);
