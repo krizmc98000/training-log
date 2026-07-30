@@ -312,6 +312,9 @@ const COACHING={
   'Dead Bug':{muscle:'Deep Core / TVA',category:'Core',tips:['Lie on your back, lower back pressed firmly into the floor. This contact must be maintained throughout.','Arms toward the ceiling, knees bent at 90 degrees, shins parallel to the floor.','Breathe out fully before moving — this activates the deep transverse abdominis.','Slowly lower the opposite arm and leg simultaneously. Only go as far as you can keep the lower back flat.','Return to start. Breathe in, breathe out again before the next rep.','If your lower back arches away from the floor, you have gone too far.']},
   'Kettlebell Drag-Through':{muscle:'Deep Core / Anti-Rotation / Shoulders',category:'Core',tips:['Set up in a high plank on hands and toes (or drop to knees to regress), hands under shoulders, kettlebell just outside one wrist.','Brace the core hard and squeeze the glutes — the whole point is keeping the hips and shoulders SQUARE to the floor.','Reach the opposite hand across and under your torso, grab the kettlebell, and drag it across to the other side.','Place it down outside the other wrist, then re-plant that hand. Repeat, dragging it back the other way.','The core challenge is ANTI-ROTATION: resist the urge to let your hips or shoulders twist as the weight moves.','Move slowly and deliberately. If your hips are rocking side to side, the weight is too heavy — drop it.','Keep the neck neutral and breathe steadily throughout. Count each drag as one rep.']},
   'Kettlebell Around-the-World':{muscle:'Core / Grip / Shoulders',category:'Core',tips:['Stand tall, feet shoulder-width, a kettlebell held in front of you with one hand. Brace the core and keep the torso upright.','Pass the kettlebell around your body at waist/hip level — behind your back to the other hand, then around the front, in a continuous circle.','The hand-off happens smoothly behind you and in front of you. Keep the bell close to your body throughout.','Resist leaning or twisting — the core works to keep you stable while the weight orbits around you.','Do a set number of circles in one direction, then reverse.','Keep the shoulders down and relaxed, not shrugged up. Steady rhythm, no jerking.','Great grip and rotational-stability builder. Start light and controlled.']},
+  'Single-Leg Glute Bridge (foot elevated)':{muscle:'Glute Max / Hamstring',category:'Foot Recovery',tips:['ANKLE-SAFE: the injured foot stays ELEVATED and unweighted throughout — no load goes through it.','Lie on your back. Place the WORKING leg heel up on the bench (or a raised surface). The injured leg is lifted and held off the floor.','Drive through the heel of the working leg on the bench to lift the hips, squeezing that glute hard at the top.','2-second hold at the top, then lower with control. All the drive comes from the elevated working heel — never the injured foot.','Keep the hips level — do not let the non-working side drop.','This trains glute and hamstring with zero weight-bearing through the injured foot/Achilles.','Add a dumbbell across the hips once bodyweight is easy. Do all reps one side, then switch the working leg.']},
+  'Side-Lying Hip Adduction':{muscle:'Adductor (Inner Thigh)',category:'Foot Recovery',tips:['ANKLE-SAFE: fully unloaded, lying on your side — no foot contact with the ground.','Lie on your side. Bend the TOP leg and plant its foot on the floor in front of the bottom thigh for support.','Keep the BOTTOM leg straight and lift it up toward the ceiling, leading with the inner thigh/heel.','Pause 1 second at the top, then lower slowly over 2-3 seconds. Do not let it drop.','You should feel this in the inner thigh of the bottom leg.','Small range is normal — quality of contraction beats height.','Add a light ankle weight on the bottom leg once bodyweight is easy.']},
+  'Nordic Curl Eccentric':{muscle:'Hamstring (Eccentric)',category:'Foot Recovery',tips:['ANKLE-SAFE: knees down, feet anchored behind you — no weight through the foot or ankle.','Kneel on a pad. Anchor your heels/ankles under a bench, a loaded barbell, or have them held down. Body upright, hips extended.','Lower your torso toward the floor as SLOWLY as possible, resisting the whole way with your hamstrings. This is the eccentric — the entire point.','Only lower as far as you can control. The moment you lose control, catch yourself with your hands and push back up.','Do not use the hip as a hinge — keep a straight line from knees to shoulders throughout the descent.','Start with a very small controllable range and 3-5 reps. This is extremely demanding — hamstring soreness is expected.','The foot stays completely passive; all the work is in the hamstring lengthening under load.']},
   'Barbell Squat / Goblet Squat':{muscle:'Quad / Glute / Core',category:'Squat',tips:['Start with goblet squat (dumbbell at chest) to establish the pattern before loading a barbell.','Feet shoulder-width or slightly wider, toes turned out 15 to 30 degrees.','Brace your core completely before descending — create a rigid trunk throughout the rep.','Squat to at least parallel — thighs horizontal or below. Depth is where the stimulus is greatest.','Knees track in line with toes throughout. Do not allow them to cave inward.','For barbell: bar on upper traps (high bar) or rear delts (low bar). Elbows under the bar.']},
   'Pull-Up / Lat Pulldown (neutral grip)':{muscle:'Lat / Bicep / Mid Back',category:'Pull',tips:['Neutral grip (palms facing each other) is safest for your right shoulder — use a close parallel attachment.','For pulldown: sit tall, slight lean back (15 degrees). Pull to the upper chest, not behind the neck.','Pull your elbows down and back, not your hands down. This is the cue that fires the lats.','Start each rep from a full hang — do not shorten the range of motion.','Squeeze shoulder blades together and down at the bottom. Hold for one second.','Right arm: respect your current ROM. Do not force ranges that create impingement.']},
   'Hip Thrust (Barbell or Machine)':{muscle:'Glute / Hamstring',category:'Hinge',tips:['Upper back across the bench — shoulder blades, not the neck.','Feet flat, hip-width apart. Drive through your heels at the top.','Squeeze glutes as hard as possible at full extension. Chin tucked, neutral neck.','At the top: shins vertical, hips fully extended, glutes fully contracted.','Lower slowly — 2 to 3 seconds — until hips are just off the floor. Do not touch down between reps.','Posteriorly tilt the pelvis at the top (tailbone curling slightly under) for full glute contraction.']},
@@ -501,6 +504,18 @@ const ITALY_HIPFLEX=[
   {name:'90/90 Hip Flexor Stretch',sets:1,reps:'60s each side'},
   {name:'Figure-4 Glute Stretch',sets:1,reps:'60s each side'},
 ];
+// FOOT-SAFE warm-up (Achilles/calcaneus injury) — no standing load, no impact, no forefoot push.
+// Seated/floor mobility + upper-body prep only. Used across all Italy sessions during recovery.
+const WARMUP_ITALY_FOOTSAFE=[
+  {name:'90/90 Diaphragmatic Breathing',sets:1,reps:'5 breaths'},
+  {name:'Cat-Cow',sets:1,reps:'10 reps'},
+  {name:'Seated Thoracic Rotation',sets:1,reps:'8 each side'},
+  {name:'Seated Hip CARs',sets:1,reps:'8 each direction, each leg'},
+  {name:'Banded Clamshells',sets:2,reps:'20 each side — do NOT skip'},
+  {name:'Side-Lying Hip Abduction',sets:1,reps:'12 each side'},
+  {name:'Band Pull-Apart',sets:1,reps:'15 — shoulder blades DOWN'},
+  {name:'Band Face Pulls',sets:1,reps:'15 — pull to nose, shoulders down'},
+];
 
 const PLAN={
   'Gym A':{color:A,icon:'A',subtitle:'Lower + Horizontal Push/Pull + Core',sections:[
@@ -622,49 +637,49 @@ const PLAN={
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit',note:'Band if packed, else light DB / bodyweight. Minimal rest.',exercises:SREHAB}]},
     {title:'Post-Session Stretch',color:G,supersets:[{label:'Stretch Sequence',note:'Hold each 30s',exercises:STRETCH_EX}]},
   ]},
-  'Italy Lower A':{color:PU,icon:'ILA',subtitle:'Quad Emphasis + Core — Italy',italy:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up + APT Priming',note:'~10 min. Active mobility then glute activation — never skip the clamshells.',exercises:WARMUP_ITALY_LOWER}]},
+  'Italy Lower A':{color:PU,icon:'ILA',subtitle:'Unloaded Legs + Core — Foot Recovery',italy:true,footRecovery:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Foot-Safe Warm-Up',note:'⚠️ Achilles/calcaneus recovery — seated & floor only, NO standing load on the right foot.',exercises:WARMUP_ITALY_FOOTSAFE}]},
     {title:'Main Session',color:PU,supersets:[
-      {label:'Superset 1',note:'Squat + Hip Thrust — alternate, rest after both. Hip thrust ~40kg, 2s top squeeze.',exercises:[{name:'Barbell Squat / Goblet Squat',sets:4,reps:'10-12'},{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12-15'}]},
-      {label:'Superset 2',note:'Hinge + Squat Variant — alternate, rest after both. RDL 2x20kg slow stretch; DB squat held at sides.',exercises:[{name:'Romanian Deadlift',sets:3,reps:'10-12'},{name:'DB Squat (held at sides)',sets:3,reps:'12'}]},
-      {label:'Superset 3',note:'Calf + Core — alternate, minimal rest. Calf: 16kg KB, full stretch + pause.',exercises:[{name:'Standing Calf Raise',sets:4,reps:'15-20'},{name:'Plank',sets:3,reps:'45-60s'}]},
-      {label:'Core Finisher',note:'Anti-rotation focus — brace hard, keep hips/shoulders square. Dead bug: press lumbar INTO floor.',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Kettlebell Drag-Through',sets:3,reps:'10 total drags'},{name:'Kettlebell Around-the-World',sets:3,reps:'8 each direction'}]},
+      {label:'Superset 1',note:'Quad + Hamstring — both seated/lying, ZERO foot load. Band or DB resistance.',exercises:[{name:'Seated Leg Extension (machine)',sets:4,reps:'12-15'},{name:'Prone Dumbbell Leg Curl',sets:4,reps:'12-15'}]},
+      {label:'Superset 2',note:'Glute + Hamstring eccentric — injured foot stays OFF the floor throughout.',exercises:[{name:'Single-Leg Glute Bridge (foot elevated)',sets:4,reps:'12 each side'},{name:'Nordic Curl Eccentric',sets:3,reps:'5 slow'}]},
+      {label:'Superset 3',note:'Glute med + adductor — side-lying, fully unloaded, no ground contact through the foot.',exercises:[{name:'Side-Lying Hip Abduction',sets:3,reps:'15 each side'},{name:'Side-Lying Hip Adduction',sets:3,reps:'12 each side'}]},
+      {label:'Core Finisher',note:'All floor-based, no foot loading. Dead bug: press lumbar INTO floor.',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'}]},
     ]},
-    {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only, never cold — matches the Daily Mobility protocol',exercises:ITALY_HIPFLEX}]},
+    {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only. Skip the couch stretch if it loads the right forefoot — sub a seated variant.',exercises:ITALY_HIPFLEX}]},
   ]},
   'Italy Upper A':{color:A,icon:'IUA',subtitle:'Push Emphasis + Core — Italy',italy:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Active Mobility + Shoulder Prep',note:'~10 min. Active mobility then shoulder prep. Add 1-2 light empty-rep sets of the first press before working weight.',exercises:WARMUP_ITALY_UPPER}]},
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Foot-Safe Warm-Up + Shoulder Prep',note:'⚠️ Seated/floor warm-up (no standing foot load). Add 1-2 light empty-rep sets of the first press before working weight.',exercises:WARMUP_ITALY_FOOTSAFE}]},
     {title:'Main Session',color:A,supersets:[
       {label:'Superset 1',note:'Press + Delts — alternate, rest after both. Press 2x20kg ≤30° incline, neutral grip. Delts: traps RELAXED.',exercises:[{name:'Low-Incline DB Press (neutral grip)',sets:4,reps:'8-12'},{name:'Seated DB Lateral Raise',sets:3,reps:'12-15'}]},
-      {label:'Superset 2',note:'Press Variant + Push — alternate, rest after both. Floor press caps shoulder depth (a feature).',exercises:[{name:'DB Floor Press (neutral grip)',sets:3,reps:'10-12'},{name:'Push-Up Variation',sets:3,reps:'AMRAP'}]},
+      {label:'Superset 2',note:'Press Variant + Fly — both lying/seated, no foot load. Floor press caps shoulder depth (a feature).',exercises:[{name:'DB Floor Press (neutral grip)',sets:4,reps:'10-12'},{name:'DB Chest Fly (flat bench)',sets:3,reps:'12-15'}]},
       {label:'Superset 3',note:'Triceps + Core — alternate, minimal rest. Skullcrusher on bench, NOT overhead.',exercises:[{name:'Lying DB Tricep Extension (Skullcrusher)',sets:3,reps:'12'},{name:'Decline Weighted Sit-Up',sets:3,reps:'12-15'}]},
-      {label:'Core Finisher',note:'Side plank — hold, no rotation, ankle-safe',exercises:[{name:'Side Plank',sets:3,reps:'30-40s each side'}]},
+      {label:'Core Finisher',note:'Side plank from the FOREARM and knees — no foot loading, no rotation.',exercises:[{name:'Side Plank',sets:3,reps:'30-40s each side'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit — Non-Negotiable',note:'~10 min, end of every upper session',exercises:SREHAB}]},
   ]},
   'Italy Core Circuit':{color:SW,icon:'CC',subtitle:'Mat Core — pair with Swim day',italy:true,sections:[
     {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Easy Prep',note:'A few minutes of easy movement before the mat work',exercises:[{name:'Cat-Cow',sets:1,reps:'10 reps'},{name:'Hip Circles',sets:1,reps:'10 each direction'}]}]},
     {title:'Main Session',color:SW,supersets:[
-      {label:'3 Rounds',note:'Run all 4 exercises back to back, 3 full rounds, minimal rest between exercises',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'},{name:'Glute Bridge (Warm-Up)',sets:3,reps:'15, 2s top hold'},{name:'Pallof Press',sets:3,reps:'10 each side'}]},
+      {label:'3 Rounds',note:'Run all 4 exercises back to back, 3 full rounds, minimal rest. All floor-based — no foot loading.',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'},{name:'Single-Leg Glute Bridge (foot elevated)',sets:3,reps:'12 each side'},{name:'Pallof Press',sets:3,reps:'10 each side'}]},
     ]},
   ]},
-  'Italy Lower B':{color:PU,icon:'ILB',subtitle:'Hinge / Posterior Emphasis + Core — Italy',italy:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Warm-Up + APT Priming',note:'~10 min. Active mobility then glute activation — never skip the clamshells.',exercises:WARMUP_ITALY_LOWER}]},
+  'Italy Lower B':{color:PU,icon:'ILB',subtitle:'Unloaded Posterior + Core — Foot Recovery',italy:true,footRecovery:true,sections:[
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Foot-Safe Warm-Up',note:'⚠️ Achilles/calcaneus recovery — seated & floor only, NO standing load on the right foot.',exercises:WARMUP_ITALY_FOOTSAFE}]},
     {title:'Main Session',color:PU,supersets:[
-      {label:'Superset 1',note:'Hinge + Squat — alternate, rest after both. RDL 2x20kg slow tempo; squat 16kg KB 3-1-1.',exercises:[{name:'Romanian Deadlift',sets:4,reps:'10'},{name:'Barbell Squat / Goblet Squat',sets:3,reps:'12'}]},
-      {label:'Superset 2',note:'Hip Thrust + Calf — alternate, rest after both. Seated calf (KB on knees) biases soleus.',exercises:[{name:'Hip Thrust (Barbell or Machine)',sets:4,reps:'12'},{name:'Seated Calf Raise (KB on knee)',sets:4,reps:'15'}]},
-      {label:'Conditioning',note:'16kg KB, hip snap, CHEST HEIGHT MAX, shoulders packed — not overhead',exercises:[{name:'Kettlebell Swing',sets:5,reps:'15-20'}]},
-      {label:'Glute Med + Core',note:'Clamshell + hollow hold — alternate, minimal rest. Clamshell: APT priority.',exercises:[{name:'Banded Clamshells',sets:3,reps:'20 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'}]},
+      {label:'Superset 1',note:'Hamstring eccentric + curl — both unloaded through the foot. Nordic is the priority posterior movement now.',exercises:[{name:'Nordic Curl Eccentric',sets:4,reps:'5 slow'},{name:'Seated Leg Curl (machine)',sets:4,reps:'12-15'}]},
+      {label:'Superset 2',note:'Glute + quad — foot-elevated bridge keeps the injured foot off the floor; leg extension is seated.',exercises:[{name:'Single-Leg Glute Bridge (foot elevated)',sets:4,reps:'12 each side'},{name:'Seated Leg Extension (machine)',sets:3,reps:'15'}]},
+      {label:'Superset 3',note:'Glute med + adductor — side-lying, fully unloaded.',exercises:[{name:'Side-Lying Hip Abduction',sets:3,reps:'15 each side'},{name:'Banded Clamshells',sets:3,reps:'20 each side'}]},
+      {label:'Core Finisher',note:'Floor-based, no foot load. Anti-rotation focus.',exercises:[{name:'Hollow Hold',sets:3,reps:'20-30s'},{name:'Pallof Press',sets:3,reps:'10 each side'}]},
     ]},
-    {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only, never cold',exercises:ITALY_HIPFLEX}]},
+    {title:'Hip Flexor Lengthening',color:G,supersets:[{label:'Warm-Tissue Stretch',note:'On warm tissue only. Skip couch stretch if it loads the right forefoot.',exercises:ITALY_HIPFLEX}]},
   ]},
   'Italy Upper B':{color:A,icon:'IUB',subtitle:'Pull Emphasis + Arms — Italy',italy:true,sections:[
-    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Active Mobility + Shoulder Prep',note:'~10 min. Active mobility then shoulder prep before any pull.',exercises:WARMUP_ITALY_UPPER}]},
+    {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Foot-Safe Warm-Up + Shoulder Prep',note:'⚠️ Seated/floor warm-up (no standing foot load) before any pull.',exercises:WARMUP_ITALY_FOOTSAFE}]},
     {title:'Main Session',color:A,supersets:[
       {label:'Superset 1',note:'Row + Lat Isolation — alternate, rest after both. Row: DEPRESS BLADE FIRST, to hip not chest. Lat: arms straight, FEEL the lat.',exercises:[{name:'Chest-Supported DB Row',sets:4,reps:'10-12'},{name:'Band Straight-Arm Pulldown',sets:3,reps:'15'}]},
-      {label:'Superset 2',note:'Row Variant + Rear Delt — alternate, rest after both. If traps fire on the row, drop to a 2nd chest-supported set.',exercises:[{name:'Bent-Over Barbell / DB Row',sets:3,reps:'10-12'},{name:'Prone Rear-Delt Raise',sets:3,reps:'15'}]},
-      {label:'Superset 3',note:'Biceps + Brachialis — alternate, minimal rest. Both controlled.',exercises:[{name:'DB Curl',sets:4,reps:'10-12'},{name:'DB Hammer Curl',sets:3,reps:'12'}]},
-      {label:'Scapular + Carry',note:'Pull-apart + suitcase carry — alternate. Blades down on pull-apart; carry 2x20kg tall, no twist.',exercises:[{name:'Band Pull-Apart',sets:3,reps:'20'},{name:'Suitcase Carry (bilateral)',sets:3,reps:'30m'}]},
+      {label:'Superset 2',note:'Row Variant + Rear Delt — both seated/supported. If traps fire on the row, drop to a 2nd chest-supported set.',exercises:[{name:'Chest-Supported DB Row',sets:3,reps:'10-12'},{name:'Prone Rear-Delt Raise',sets:3,reps:'15'}]},
+      {label:'Superset 3',note:'Biceps + Brachialis — alternate, minimal rest. Both controlled, seated.',exercises:[{name:'DB Curl',sets:4,reps:'10-12'},{name:'DB Hammer Curl',sets:3,reps:'12'}]},
+      {label:'Scapular Finisher',note:'Band work, seated or standing on the good side — blades DOWN, no foot load.',exercises:[{name:'Band Pull-Apart',sets:3,reps:'20'},{name:'Band Face Pulls',sets:3,reps:'15'}]},
     ]},
     {title:'Shoulder Rehab',color:PK,supersets:[{label:'Rehab Circuit — Non-Negotiable',note:'~10 min, end of every upper session',exercises:SREHAB}]},
   ]},
@@ -1099,8 +1114,8 @@ function ExCard({exDef,data,onChange,color,prevSets,progress,hist,onDragStart,on
           <div style={{flex:1}}>
             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
               <span style={{color:'#E2E8F0',fontSize:13,fontWeight:600,flex:1}}>{exDef.name}</span>
-              {progress&&<span style={{background:G+'22',color:G,borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,flexShrink:0}}>↑ +{jump}kg</span>}
               {onStartRest&&<button onClick={onStartRest} title="Start rest timer" style={{width:22,height:22,borderRadius:'50%',border:`1px solid ${c}55`,background:c+'11',color:c,cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,lineHeight:1}}>⏱</button>}
+              {progress&&<span style={{background:G+'22',color:G,borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,flexShrink:0}}>↑ +{jump}kg</span>}
               <button onClick={()=>setShowInfo(true)} style={{width:22,height:22,borderRadius:'50%',border:`1px solid ${c}55`,background:c+'11',color:c,cursor:'pointer',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>i</button>
               {onRemove&&done===0&&<button onClick={()=>{if(confirm('Remove this exercise from this session?'))onRemove();}} title="Remove exercise" style={{width:22,height:22,borderRadius:'50%',border:'1px solid #DC262655',background:'#DC262611',color:'#EF4444',cursor:'pointer',fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,lineHeight:1}}>×</button>}
             </div>
@@ -1336,7 +1351,7 @@ function RevPanel({session,hist,color,onFeedback}){
       const s=sum(session);
       const prev=(hist||[]).filter(h=>h.type===session.type&&h.id!==session.id).slice(0,3);
       const pt=prev.length?'\nPREVIOUS SESSIONS:\n'+prev.map(sum).join('\n'):'';
-      const system=`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79kg, London. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing, all pressing neutral-grip ≤30° incline. ANKLE: MRI clear, but still cannot take lateral load on the right ankle — further checks pending. Bilateral standing work is fine (squats, hinges, standing calf raises); avoid single-leg loading, lateral movement, or twisting/rotational ankle loads until cleared. No running yet. Session may be Home plan (12-week, week ${session.week} of 12), Travel plan (adjustable DBs only, no gym), or Italy plan (kettlebells + adjustable DBs to 20kg, 4-week APT-correction block) — infer from the session type and equipment described, and cap progression suggestions to what's plausible on the kit actually used (e.g. don't suggest +5kg on a lift already near the DB ceiling). Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight — roughly 2.5kg for upper-body / smaller isolation lifts, 5kg for lower-body compound lifts, scaled down if near equipment ceiling. Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) Ankle check if any lower-body or standing work 5) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`;
+      const system=`You are an expert personal trainer reviewing workout data for Chris, 35yo, 79kg, London. Right shoulder surgery Nov 2024 — 20-45deg ROM deficit, no overhead pressing, all pressing neutral-grip ≤30° incline. ANKLE/FOOT (updated 16 July 2026): MRI shows calcaneus bone marrow oedema (heel bruise), multiple joint effusions, AND — the priority finding — Achilles tendinosis with a ~3cm partial longitudinal tear near the insertion. Ligaments intact, no peroneal issue, plantar fascia normal. CURRENT RESTRICTIONS until specialist review: NO running, NO loaded calf raises, NO plyometrics/jumping, NO kettlebell swings, NO squats/lunges/step-ups/deadlifts/leg press or anything with the foot planted under load, NO full-kick swimming (pull-buoy/upper only), walking short/functional only. SAFE lower-body: seated leg extension, seated/lying leg curl, seated hip abduction/adduction, single-leg glute bridge with the INJURED foot elevated/unweighted, side-lying leg raises, Nordic curl eccentrics, band/cable leg work with no foot loading. Upper body and core unrestricted within shoulder limits. If Chris logs any standing/loaded leg work or calf raises, FLAG it as conflicting with current restrictions. Session may be Home plan (12-week, week ${session.week} of 12), Travel plan (adjustable DBs only, no gym), or Italy plan (kettlebells + adjustable DBs to 20kg, 4-week APT-correction block) — infer from the session type and equipment described, and cap progression suggestions to what's plausible on the kit actually used (e.g. don't suggest +5kg on a lift already near the DB ceiling). Progression: hit top rep range on all sets across 2 consecutive sessions then increase weight — roughly 2.5kg for upper-body / smaller isolation lifts, 5kg for lower-body compound lifts, scaled down if near equipment ceiling. Target RPE 6-8. Provide: 1) Brief overall assessment 2) Exercise highlights — flag weights to progress, RPE concerns 3) Shoulder check if gym session 4) Ankle check if any lower-body or standing work 5) One specific action for next session. Use exact weights. Under 350 words. Use **bold** headers.`;
       const text=await callClaude(system,[{role:'user',content:`SESSION:\n${s}${pt}`}]);
       setFb(text);setSt('done');
       if(onFeedback)onFeedback(`**Post-Session: ${session.type} (Week ${session.week})**\n\n${text}`);
@@ -1360,7 +1375,7 @@ const PT_SYSTEM=`You are Claude PT — an expert personal trainer and performanc
 - Chris, 35yo male, ~79kg, London
 - Trains across three possible plan modes — infer which from the session type/exercises mentioned: Home (12-week hypertrophy + cardio, full gym), Travel (adjustable DBs only, no gym access), Italy (kettlebells + adjustable DBs up to 20kg, 4-week APT-correction block). Cap any progression suggestion to what's realistic on the equipment actually in use.
 - Right shoulder surgery November 2024 — 20-45° ROM deficit, no overhead pressing. All pressing: neutral grip ≤30° incline.
-- ANKLE: MRI came back clear, but Chris still cannot take lateral load on the right ankle — further checks pending. Bilateral standing work (squats, hinges, standing calf raises) is fine. Avoid single-leg loading, lateral movement, or twisting/rotational ankle loads until cleared. No running yet. If Chris asks about single-leg work, running, or lateral drills — confirm ankle status first rather than assuming it's cleared.
+- ANKLE/FOOT (updated 16 July 2026): MRI shows calcaneus bone marrow oedema (heel bruise), multiple post-traumatic joint effusions, and the PRIORITY finding — Achilles tendinosis with a ~3cm partial longitudinal tear near the insertion (degenerative/overuse). Ligaments all intact, no peroneal tenosynovitis, plantar fascia normal. Incidental incomplete talocalcaneal coalition. Awaiting specialist review. CURRENT RESTRICTIONS: NO running, NO loaded calf raises, NO plyometrics/jumping, NO kettlebell swings, NO squats/lunges/step-ups/deadlifts/leg press or anything with the foot planted under load, NO full-kick swimming (pull-buoy/upper-body only), walking short/functional only (no long walks, hills, uneven ground), ice heel/Achilles after walking. SAFE lower-body work: seated leg extension, seated/lying leg curl, seated hip abduction/adduction, single-leg glute bridge/thrust with the INJURED foot ELEVATED (not weight-bearing), side-lying leg raises, Nordic curl eccentrics, lying/seated band/cable leg extensions & curls. Upper body and core unrestricted within shoulder limits. If Chris asks about or logs any standing/loaded leg work, calf raises, running, swings, or jumping — flag it as conflicting with current restrictions and confirm before endorsing.
 - Body composition baseline (25 Mar 2026): 79.3kg, 19.7% body fat, 63.7kg lean mass, visceral fat 6 (excellent)
 - Protein target: 142g/day (1.8g/kg). Warm meals, meat/fish based. No cold foods, no salads.
 - Supplements actually in use: Creatine 5g/day (split breakfast/lunch), Naturelo Omega-3, Naturelo Multivitamin, UC-II Collagen 40mg pre-training, Naturelo Magnesium Glycinate before bed, Naturelo Zinc (conditional, illness prevention only). D3/K2 and Vitamin C have been recommended but NOT yet started — don't refer to them as if Chris is already taking them.
@@ -1815,7 +1830,23 @@ function App(){
     }));
   };
 
+  // True if there's a live session with actual logged data worth protecting
+  const hasLiveProgress=()=>{
+    if(!atype)return false;
+    // Any completed set in gym data, or any cardio field filled in
+    const gymProgress=Object.values(gdata).some(ex=>((ex&&ex.sets)||[]).some(s=>s.weight||s.reps||s.done));
+    const cardioProgress=cdata&&Object.values(cdata).some(v=>v!==''&&v!=null&&(typeof v!=='object'));
+    return gymProgress||cardioProgress;
+  };
+
   const startSess=type=>{
+    // If this exact session is already live, just go back to it — never re-initialise (which would wipe logged sets)
+    if(atype===type){setScreen('log');return;}
+    // If a DIFFERENT session is live with real progress, protect it — confirm before discarding
+    if(hasLiveProgress()){
+      const ok=confirm(`You have a live ${atype} session with logged sets. Starting ${type} will discard it. Continue?`);
+      if(!ok){setScreen('log');return;}// bounce them back into their live session
+    }
     setAtype(type);
     setGdata({});
     setCdata({});
@@ -2108,12 +2139,13 @@ function App(){
           </div>
           <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:10}}>Start Session</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-            {Object.entries(PLAN).filter(([name,p])=>showInMode(p)).map(([name,p])=>{const dn=dtw.includes(name);return(
-              <button key={name} onClick={()=>startSess(name)} style={{padding:'14px 12px',background:'#0A1628',border:`1px solid ${dn?p.color+'88':p.color+'44'}`,borderRadius:12,cursor:'pointer',textAlign:'left',position:'relative',overflow:'hidden'}}>
-                {dn&&<div style={{position:'absolute',top:8,right:8,width:7,height:7,background:G,borderRadius:'50%'}}/>}
-                <div style={{fontSize:20,fontFamily:'monospace',fontWeight:900,color:p.color,marginBottom:3,lineHeight:1}}>{p.icon}</div>
+            {Object.entries(PLAN).filter(([name,p])=>showInMode(p)).map(([name,p])=>{const dn=dtw.includes(name);const isLive=atype===name;return(
+              <button key={name} onClick={()=>startSess(name)} style={{padding:'14px 12px',background:isLive?O+'18':'#0A1628',border:`1px solid ${isLive?O:(dn?p.color+'88':p.color+'44')}`,borderRadius:12,cursor:'pointer',textAlign:'left',position:'relative',overflow:'hidden'}}>
+                {isLive&&<div style={{position:'absolute',top:7,right:8,background:O,color:'#0A1628',fontSize:8,fontWeight:800,padding:'2px 6px',borderRadius:4,letterSpacing:0.5}}>● LIVE</div>}
+                {dn&&!isLive&&<div style={{position:'absolute',top:8,right:8,width:7,height:7,background:G,borderRadius:'50%'}}/>}
+                <div style={{fontSize:20,fontFamily:'monospace',fontWeight:900,color:isLive?O:p.color,marginBottom:3,lineHeight:1}}>{p.icon}</div>
                 <div style={{color:'#E2E8F0',fontSize:13,fontWeight:600}}>{name}</div>
-                <div style={{color:'#334155',fontSize:10,marginTop:2}}>{p.subtitle.split(' ').slice(0,3).join(' ')}...</div>
+                <div style={{color:isLive?O:'#334155',fontSize:10,marginTop:2}}>{isLive?'Tap to resume →':p.subtitle.split(' ').slice(0,3).join(' ')+'...'}</div>
               </button>
             );})}
           </div>
