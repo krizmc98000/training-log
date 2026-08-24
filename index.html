@@ -164,7 +164,7 @@ function uid(){
   return FIXED_ID;
 }
 const fmt=iso=>new Date(iso).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-function calcWeek(sd){if(!sd)return 1;const diff=new Date()-new Date(sd);return Math.max(1,Math.min(12,Math.floor(diff/(1000*60*60*24*7))+1));}
+function calcWeek(sd){if(!sd)return 1;const diff=new Date()-new Date(sd);return Math.max(1,Math.floor(diff/(1000*60*60*24*7))+1);}
 // Find last logged sets for a named exercise across ALL sessions (any type). Optionally exclude a session id.
 function getPrevExSets(hist,exName,excludeId){
   for(const session of hist){
@@ -797,12 +797,25 @@ function catColor(cat){return{Squat:PU,Hinge:O,Push:A,Pull:'#34D399',Core:PU,Ham
 
 const ROPT=[{l:'30s',v:30},{l:'45s',v:45},{l:'60s',v:60},{l:'90s',v:90},{l:'2min',v:120},{l:'3min',v:180}];
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const DMAP={Mon:'Gym A',Tue:'Swim',Wed:'Gym B',Thu:'Bike',Fri:'Gym C',Sat:'Run',Sun:'Rest'};
-// Travel split — 4 DB lifting days + swim + walk, no running/cycling
-const DMAP_TRAVEL={Mon:'Travel Upper A',Tue:'Swim',Wed:'Travel Lower A',Thu:'Walk',Fri:'Travel Upper B',Sat:'Travel Lower B',Sun:'Rest'};
-// Italy home-gym split — 5 days/week, kettlebells + adjustable DBs, layers on Daily Mobility
-const DMAP_ITALY={Mon:'Italy Lower A',Tue:'Italy Upper A',Wed:'Swim',Thu:'Italy Lower B',Fri:'Italy Upper B',Sat:'Rest',Sun:'Rest'};
-const DMAP_LONDON={Mon:'London Upper A',Tue:'London Legs A',Wed:'London Pool',Thu:'London Upper B',Fri:'London Legs B',Sat:'Mobility',Sun:'Rest'};
+// Ordered session sequence per plan mode — identical to the old DMAP_* objects' Mon..Sun order.
+// The calendar weekday each one lands on is decided separately by a per-mode "anchor day",
+// so a block can start on any weekday without re-writing which session is which.
+const DAY_SEQ={
+  home:['Gym A','Swim','Gym B','Bike','Gym C','Run','Rest'],
+  travel:['Travel Upper A','Swim','Travel Lower A','Walk','Travel Upper B','Travel Lower B','Rest'],
+  italy:['Italy Lower A','Italy Upper A','Swim','Italy Lower B','Italy Upper B','Rest','Rest'],
+  london:['London Upper A','London Legs A','London Pool','London Upper B','London Legs B','Mobility','Rest'],
+};
+// Which plan-mode a logged session type belongs to, for per-mode start-date recovery.
+// Shared sessions (Swim, Mobility, Walk — PLAN[type].common===true) are ambiguous and skipped.
+function modeOfType(type){
+  const p=PLAN[type];
+  if(!p||p.common)return null;
+  if(p.london)return'london';
+  if(p.travel)return'travel';
+  if(p.italy)return'italy';
+  return'home';
+}
 // True for any session that has structured sections (Gym A/B/C + foot-recovery A2/B2/C2)
 const isGymSession=type=>!!(type&&PLAN[type]&&PLAN[type].sections);
 
@@ -1696,7 +1709,17 @@ function App(){
   const[screen,setScreen]=useState('home');
   const[atype,setAtype]=useState(null);
   const[week,setWeek]=useState(1);
-  const[startDate,setStartDate]=useState('');
+  // Per-mode plan start dates (Home/London/Travel/Italy each run on their own clock now).
+  // Migrates the old single 'tl-start' key into the 'home' slot the first time this runs.
+  const[startDates,setStartDates]=useState(()=>{
+    try{
+      const raw=localStorage.getItem('tl-start-map');
+      if(raw)return JSON.parse(raw);
+      const legacy=localStorage.getItem('tl-start');
+      return legacy?{home:legacy}:{};
+    }catch{return{};}
+  });
+  const persistStartDates=(next)=>{setStartDates(next);try{localStorage.setItem('tl-start-map',JSON.stringify(next));}catch{}};
   const[showDP,setShowDP]=useState(false);
   const[hist,setHist]=useState([]);
   const[gdata,setGdata]=useState({});
@@ -1724,18 +1747,43 @@ function App(){
   const[addPickerCtx,setAddPickerCtx]=useState(null);// {secIdx, ssIdx} or {secIdx, ssIdx:'new'} or null
   // Drag-and-drop state — pointer-events-based, works on mouse + touch
   const[dragInfo,setDragInfo]=useState(null);// {uid, currentX, currentY, dropTarget:{uid,position}|null}
-  // Plan mode — switches the home grid + week strip between Home / Travel / Italy plans
+  // Plan mode — switches the home grid + week strip between Home / London / Travel / Italy plans
   const[planMode,setPlanMode]=useState(()=>{
     try{
       const v=localStorage.getItem('tl-plan-mode');
-      if(v==='travel'||v==='italy'||v==='home')return v;
+      if(v==='travel'||v==='italy'||v==='london'||v==='home')return v;
       // Migrate from the old boolean travel-mode key if present
       if(localStorage.getItem('tl-travel-mode')==='1')return 'travel';
       return 'home';
     }catch{return 'home';}
   });
-  const switchMode=(m)=>{setPlanMode(m);try{localStorage.setItem('tl-plan-mode',m);}catch{}};
-  const activeDMAP=planMode==='travel'?DMAP_TRAVEL:planMode==='italy'?DMAP_ITALY:planMode==='london'?DMAP_LONDON:DMAP;
+  const startDate=startDates[planMode]||'';
+  const switchMode=(m)=>{
+    setPlanMode(m);
+    try{localStorage.setItem('tl-plan-mode',m);}catch{}
+    // Each mode keeps its own week count — switching modes must not carry one mode's
+    // elapsed time into another (this was the root cause of the stuck "Week 12").
+    setWeek(calcWeek(startDates[m]));
+  };
+  // Which real weekday each mode's session sequence starts on. Defaults to Monday everywhere
+  // (matching the old fixed behaviour) — tap a day-letter in the week strip to shift it.
+  const[dayAnchors,setDayAnchors]=useState(()=>{
+    try{const v=localStorage.getItem('tl-day-anchor-map');return v?JSON.parse(v):{};}catch{return{};}
+  });
+  const setDayAnchor=(mode,idx)=>{
+    setDayAnchors(prev=>{
+      const next={...prev,[mode]:idx};
+      try{localStorage.setItem('tl-day-anchor-map',JSON.stringify(next));}catch{}
+      return next;
+    });
+  };
+  const activeDMAP=useMemo(()=>{
+    const seq=DAY_SEQ[planMode]||DAY_SEQ.home;
+    const anchor=dayAnchors[planMode]||0;
+    const map={};
+    DAYS.forEach((day,i)=>{map[day]=seq[(i-anchor+7)%7];});
+    return map;
+  },[planMode,dayAnchors[planMode]]);
   const showInMode=(p)=>{if(p.common)return true;if(planMode==='travel')return!!p.travel;if(planMode==='italy')return!!p.italy;if(planMode==='london')return!!p.london;return!p.travel&&!p.italy&&!p.london;};
   // Archived sessions — hidden from the grid but fully preserved in PLAN and in history
   const[archived,setArchived]=useState(()=>{
@@ -1801,8 +1849,8 @@ function App(){
   useEffect(()=>{
     (async()=>{
       try{
-        const sd=localStorage.getItem('tl-start');
-        if(sd){setStartDate(sd);setWeek(calcWeek(sd));}
+        // Seed week from this mode's own start date (already loaded via the startDates lazy initializer)
+        setWeek(calcWeek(startDates[planMode]));
         // First — try to sync any pending sessions from previous failed saves
         const initialPending=getPending();
         if(initialPending.length){
@@ -1822,14 +1870,26 @@ function App(){
         const rows=await db('GET',`/sessions?user_id=eq.${userId}&order=session_date.desc`);
         if(rows&&rows.length)setHist(rows);
         setDbError(false);// reached the DB successfully
-        // Recover the plan start date from the oldest session if localStorage was wiped
-        // (iOS clears PWA storage on icon delete/reinstall — this stopped the week resetting to 1).
-        if(!sd&&rows&&rows.length){
-          const oldest=rows[rows.length-1].session_date;
-          const recovered=new Date(oldest).toISOString().slice(0,10);
-          localStorage.setItem('tl-start',recovered);
-          setStartDate(recovered);
-          setWeek(calcWeek(recovered));
+        // Recover any missing per-mode start dates from session history if localStorage was wiped
+        // (iOS clears PWA storage on icon delete/reinstall). Runs per mode independently — a wipe
+        // that only affected one mode's date won't touch the others.
+        if(rows&&rows.length){
+          let changed=false;
+          const next={...startDates};
+          for(const mode of['home','london','travel','italy']){
+            if(next[mode])continue;
+            const modeRows=rows.filter(r=>modeOfType(r.type)===mode);
+            if(modeRows.length){
+              // rows are ordered session_date.desc, so the last match is the oldest
+              const oldest=modeRows[modeRows.length-1].session_date;
+              next[mode]=new Date(oldest).toISOString().slice(0,10);
+              changed=true;
+            }
+          }
+          if(changed){
+            persistStartDates(next);
+            setWeek(calcWeek(next[planMode]));
+          }
         }
         // Restore PT chat from the cloud backup. If localStorage was wiped (reinstall) the cloud
         // copy repopulates it; otherwise we keep whichever source has more messages so we never
@@ -1868,7 +1928,7 @@ function App(){
     })();
   },[]);
 
-  const applyStart=date=>{setStartDate(date);localStorage.setItem('tl-start',date);setWeek(calcWeek(date));setShowDP(false);};
+  const applyStart=date=>{persistStartDates({...startDates,[planMode]:date});setWeek(calcWeek(date));setShowDP(false);};
   // Persist the rest-timer default whenever it changes
   useEffect(()=>{try{localStorage.setItem('tl-rest-default',String(restDur));}catch{}},[restDur]);
   // Persist bodyweight log
@@ -2113,6 +2173,13 @@ function App(){
       if(mins>0&&mins<360)data.durationMin=mins;
     }
     const session={id:Date.now(),user_id:userId,type:atype,session_date:sessionDate?new Date(sessionDate+'T12:00:00').toISOString():new Date().toISOString(),week,data};
+    // If this mode has never had a start date set, this session becomes the anchor — so
+    // starting a fresh block (e.g. London) auto-seeds week 1 without a manual date entry.
+    if(!startDates[planMode]){
+      const seedDate=session.session_date.slice(0,10);
+      persistStartDates({...startDates,[planMode]:seedDate});
+      setWeek(calcWeek(seedDate));
+    }
     setHist(h=>[session,...h]);setSaving(true);
     // Try upsert. If it fails, queue for retry on next load or banner-tap.
     try{
@@ -2128,19 +2195,33 @@ function App(){
   const plan=atype?PLAN[atype]:null;
   const col=plan?plan.color:A;
   const ig=isGymSession(atype);
-  // dtw = types completed this week (used for "done" badge on session cards)
-  // daysCompleted = day-of-week set (used for week strip — ticks any day with any session)
-  const sessionsThisWeek=hist.filter(s=>s.week===week);
-  const dtw=sessionsThisWeek.map(s=>s.type);
+  // dtw = types completed THIS CALENDAR WEEK (used for "done" badge on session cards)
+  // daysCompleted = day-of-week set for the week strip. Both are based on the actual
+  // Mon-Sun window containing today, not the stored week-number — a session's week field
+  // depends on the block's own start date and shouldn't be what decides whether today's
+  // workout shows as logged.
+  const weekBounds=useMemo(()=>{
+    const now=new Date();
+    const dow=(now.getDay()+6)%7;// 0=Mon..6=Sun
+    const mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow);
+    mon.setHours(0,0,0,0);
+    const nextMon=new Date(mon);nextMon.setDate(mon.getDate()+7);
+    return{start:mon,end:nextMon};
+  },[]);
+  const sessionsThisCalWeek=useMemo(()=>hist.filter(s=>{
+    const d=new Date(s.session_date);
+    return d>=weekBounds.start&&d<weekBounds.end;
+  }),[hist,weekBounds]);
+  const dtw=sessionsThisCalWeek.map(s=>s.type);
   const daysCompleted=useMemo(()=>{
     const set=new Set();
-    for(const s of sessionsThisWeek){
+    for(const s of sessionsThisCalWeek){
       const d=new Date(s.session_date);
       // JS getDay: Sun=0..Sat=6. We want Mon=0..Sun=6 to match DAYS[]
       set.add(DAYS[(d.getDay()+6)%7]);
     }
     return set;
-  },[sessionsThisWeek.map(s=>s.session_date).join(',')]);
+  },[sessionsThisCalWeek]);
   const rc=done2&&PLAN[done2.type]?PLAN[done2.type].color:A;
   const navScreen=screen==='review'?'home':screen==='log'?'live':screen;
 
@@ -2168,18 +2249,18 @@ function App(){
                 <div style={{color:startDate?A:O,fontSize:22,fontFamily:'monospace',fontWeight:700,minWidth:28}}>{week}</div>
                 <div style={{color:startDate?'#1E3A5F':O,fontSize:8,fontWeight:startDate?400:700}}>{startDate?'auto':'tap to set!'}</div>
               </button>
-              <button onClick={()=>setWeek(w=>Math.min(12,w+1))} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',width:24,height:24,cursor:'pointer',fontSize:16}}>›</button>
+              <button onClick={()=>setWeek(w=>w+1)} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:4,color:'#475569',width:24,height:24,cursor:'pointer',fontSize:16}}>›</button>
             </div>
           </div>
         </div>
         {showDP&&(
           <div style={{background:'#0D1B2E',border:`1px solid ${A}33`,borderRadius:10,padding:'12px 14px',marginTop:10}}>
-            <div style={{color:'#94A3B8',fontSize:12,marginBottom:8}}>Set plan start date — week auto-calculates</div>
+            <div style={{color:'#94A3B8',fontSize:12,marginBottom:8}}>Set {planMode==='home'?'Home':planMode==='london'?'London':planMode==='italy'?'Italy':'Travel'} plan start date — week auto-calculates</div>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
               <input type="date" value={startDate} onChange={e=>applyStart(e.target.value)} style={{flex:1,background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:6,color:A,padding:'7px 10px',fontSize:13,outline:'none'}}/>
               <button onClick={()=>setShowDP(false)} style={{background:'none',border:'1px solid #1E3A5F',borderRadius:6,color:'#475569',padding:'7px 12px',cursor:'pointer',fontSize:12}}>Done</button>
             </div>
-            {startDate&&<div style={{color:'#475569',fontSize:11,marginTop:6}}>Currently Week {calcWeek(startDate)} of 12</div>}
+            {startDate&&<div style={{color:'#475569',fontSize:11,marginTop:6}}>Currently Week {calcWeek(startDate)}{planMode==='home'&&calcWeek(startDate)<=12?' of 12':''}</div>}
           </div>
         )}
         <div style={{display:'flex',marginTop:12,borderBottom:'1px solid #1E2D40',overflowX:'auto'}}>
@@ -2224,16 +2305,17 @@ function App(){
       {screen==='home'&&(
         <div style={{padding:'16px 20px 0'}}>
           <div style={{marginBottom:16}}>
-            <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Week {week} Progress</div>
+            <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:2}}>Week {week}{planMode==='home'&&week<=12?' of 12':''} Progress</div>
+            <div style={{color:'#334155',fontSize:9,marginBottom:8}}>Tap a day below to set it as the start of the cycle</div>
             <div style={{display:'flex',gap:5}}>
-              {DAYS.map(day=>{const exp=activeDMAP[day],dn=daysCompleted.has(day),rest=exp==='Rest'&&!dn;const lbl=exp==='Rest'?'–':exp==='Walk'?'W':((PLAN[exp]&&PLAN[exp].icon)||exp.replace('Gym ',''));return(
+              {(()=>{const modeColor=planMode==='london'?BK:planMode==='travel'?PU:planMode==='italy'?G:A;const anchor=dayAnchors[planMode]||0;return DAYS.map((day,i)=>{const exp=activeDMAP[day],dn=daysCompleted.has(day),rest=exp==='Rest'&&!dn;const lbl=exp==='Rest'?'–':exp==='Walk'?'W':((PLAN[exp]&&PLAN[exp].icon)||exp.replace('Gym ',''));const isAnchor=anchor===i;return(
                 <div key={day} style={{flex:1,textAlign:'center'}}>
-                  <div style={{fontSize:9,color:'#334155',marginBottom:3,fontFamily:'monospace'}}>{day}</div>
+                  <button onClick={()=>setDayAnchor(planMode,i)} style={{fontSize:9,color:isAnchor?modeColor:'#334155',marginBottom:3,fontFamily:'monospace',background:'none',border:'none',padding:0,cursor:'pointer',fontWeight:isAnchor?800:400,textDecoration:isAnchor?'underline':'none',width:'100%'}}>{day}</button>
                   <div style={{height:30,borderRadius:6,background:rest?'#0D1B2E':dn?G+'33':'#0D1B2E',border:`1px solid ${rest?'#1E2D40':dn?G+'88':'#1E3A5F'}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
                     <span style={{fontSize:9,color:rest?'#1E3A5F':dn?G:'#334155',fontWeight:600}}>{rest?'–':dn?'✓':lbl}</span>
                   </div>
                 </div>
-              );})}
+              );});})()}
             </div>
           </div>
           <div style={{display:'flex',gap:6,marginBottom:16,background:'#0A1628',border:'1px solid #1E2D40',borderRadius:10,padding:4}}>
