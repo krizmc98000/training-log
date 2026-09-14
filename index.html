@@ -202,7 +202,16 @@ function canProgressByExercise(hist,exName,repsStr){
     }
   }
   if(occurrences.length<2)return false;
-  return occurrences.every(sets=>sets.length>0&&sets.every(s=>s.done&&parseInt(s.reps)>=top));
+  // Every set in both sessions must be completed AND at the top of the rep range
+  if(!occurrences.every(sets=>sets.length>0&&sets.every(s=>s.done&&parseInt(s.reps)>=top)))return false;
+  // ...and the weight must not have gone DOWN between them. Without this check, hitting the rep
+  // target at a lighter load reads as "ready to progress" when it is actually a regression.
+  // hist is newest-first, so occurrences[0] is the most recent session.
+  const topWeight=sets=>Math.max(...sets.map(s=>parseFloat(s.weight)||0));
+  const recent=topWeight(occurrences[0]),older=topWeight(occurrences[1]);
+  // Bodyweight movements log no weight at all — rep progression alone is valid there.
+  if(recent===0&&older===0)return true;
+  return recent>=older;
 }
 function getPersonalBest(hist,exName){
   let best=null,bestDate=null;
@@ -316,6 +325,8 @@ const COACHING={
   'Side-Lying Hip Adduction':{muscle:'Adductor (Inner Thigh)',category:'Foot Recovery',tips:['ANKLE-SAFE: fully unloaded, lying on your side — no foot contact with the ground.','Lie on your side. Bend the TOP leg and plant its foot on the floor in front of the bottom thigh for support.','Keep the BOTTOM leg straight and lift it up toward the ceiling, leading with the inner thigh/heel.','Pause 1 second at the top, then lower slowly over 2-3 seconds. Do not let it drop.','You should feel this in the inner thigh of the bottom leg.','Small range is normal — quality of contraction beats height.','Add a light ankle weight on the bottom leg once bodyweight is easy.']},
   'Nordic Curl Eccentric':{muscle:'Hamstring (Eccentric)',category:'Foot Recovery',tips:['ANKLE-SAFE: knees down, feet anchored behind you — no weight through the foot or ankle.','Kneel on a pad. Anchor your heels/ankles under a bench, a loaded barbell, or have them held down. Body upright, hips extended.','Lower your torso toward the floor as SLOWLY as possible, resisting the whole way with your hamstrings. This is the eccentric — the entire point.','Only lower as far as you can control. The moment you lose control, catch yourself with your hands and push back up.','Do not use the hip as a hinge — keep a straight line from knees to shoulders throughout the descent.','Start with a very small controllable range and 3-5 reps. This is extremely demanding — hamstring soreness is expected.','The foot stays completely passive; all the work is in the hamstring lengthening under load.']},
   'Inverted Row (calves on bench)':{muscle:'Mid Back / Lats / Rear Delt',category:'Pull',tips:['ANKLE-SAFE SETUP IS MANDATORY: rest your LOWER LEGS on a bench so the contact point is under the CALVES, with the feet hanging free past the edge. Heels must never touch the bench or the floor — that would put bodyweight straight onto the bruised heel bone.','Set a bar at roughly hip height (Smith machine, rack, or rings). Lie underneath it, calves on the bench, body in a straight line from shoulders to knees.','Grip shoulder-width. Use rings or a neutral handle if available — avoid a wide pronated grip, which is the position that aggravates the right shoulder.','Squeeze the glutes and brace the core HARD. Your body stays a rigid plank the entire set — hips must not sag or pike.','DEPRESS the shoulder blades first, then pull the chest to the bar. Blade movement leads, arms follow.','Squeeze for 1 second at the top, then lower over 3 seconds to a full hang with the blades protracted.','Closed-chain, so the shoulder blade moves around a fixed hand — retraction quality is usually better than a cable row.','Progression: raise the bench, lower the bar toward the floor, or add a weight vest. Never progress by dropping the heels down.']},
+  'Banded Leg Extension (seated)':{muscle:'Quadricep',category:'Foot Recovery',tips:['ITALY / HOME VERSION — band or light DB held between the feet, seated on the bench. Distinct from the gym machine version so the loads are tracked separately.','ANKLE-SAFE: seated, no load through the foot or ankle at any point.','Sit tall on the bench, band anchored behind you at ankle height or a light DB gripped between the feet.','Extend the knee to full lock-out, squeeze the quad hard for 2 seconds at the top.','Lower over 3 seconds against the resistance. Do not let it snap back.','Band tension is not comparable to a machine stack — judge progress by reps and control, not by matching a gym number.']},
+  'Banded Leg Curl (seated)':{muscle:'Hamstrings',category:'Foot Recovery',tips:['ITALY / HOME VERSION — band anchored in front of you, seated or lying. Tracked separately from the gym machine version.','ANKLE-SAFE: no load passes through the foot or ankle.','Anchor the band ahead of you and loop it around the lower calf — NOT the heel or the Achilles insertion.','Curl the heel toward the glute, squeeze for 1 second.','Return over 3 seconds under control against the band.','Keep the hips still — do not let them lift or rock to help the movement.']},
   'Machine Chest Press (neutral grip)':{muscle:'Chest / Tricep / Front Delt',category:'Push',tips:['Use the NEUTRAL grip handles only — never the wide pronated ones. This protects the right shoulder.','Set the seat so the handles sit at roughly mid-chest / nipple line, NOT high on the chest. Too high forces the shoulder into the range it does not have.','Chest up, shoulder blades pulled DOWN and back into the pad, and keep them there for the whole set.','Press to almost lock-out, then return only until the hands are level with the chest — do NOT let the handles travel behind the torso line. That deep stretch position is what irritates the right shoulder.','Because the path is fixed and you are fully supported, this is the safest place in the session to push close to failure.','Exhale through the press. No breath-holding.','Feet rest on the floor without pushing — zero ankle load.']},
   'Chest-Supported Row (machine)':{muscle:'Mid Back / Lats',category:'Pull',tips:['Chest pinned to the pad throughout — the whole point is that the lower back and legs do nothing.','Set the seat height so the handles sit at roughly mid-chest level.','DEPRESS the shoulder blades FIRST, then drive the elbows back. Blade movement leads, arms follow.','Pull to the belly/hip line, not the chest. Squeeze for 1 second.','Return to a full stretch, letting the blades protract at the front. Do not just stop halfway.','Chest support means zero ankle load and zero lower-back demand — ideal in the current block.','If you feel it in the traps rather than the mid back, lower the weight and re-set the blade depression.']},
   'Seated KB Side Bend':{muscle:'Obliques / QL',category:'Core',tips:['SEATED on a bench — this keeps the load off the right ankle entirely, unlike a standing side bend.','Sit tall on the end of a bench, feet resting on the floor without pushing. Kettlebell in one hand, arm hanging straight down.','Bend SIDEWAYS at the waist only — lower the bell a few inches toward the floor, then pull straight back up using the opposite oblique.','Do NOT twist or lean forward/back. This is pure lateral movement in one plane.','Keep the ribcage down and the neck neutral. Small controlled range beats a big swinging one.','Start at 16kg and only add load once the movement is smooth and pain-free.','Stop immediately if you feel any pinching in the lower back — the QL should feel worked, the spine should feel nothing.']},
@@ -668,7 +679,7 @@ const PLAN={
   'Italy Lower A':{color:PU,icon:'ILA',subtitle:'Unloaded Legs + Core — Foot Recovery',italy:true,footRecovery:true,sections:[
     {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Foot-Safe Warm-Up',note:'⚠️ Achilles/calcaneus recovery — seated & floor only, NO standing load on the right foot.',exercises:WARMUP_ITALY_FOOTSAFE}]},
     {title:'Main Session',color:PU,supersets:[
-      {label:'Superset 1',note:'Quad + Hamstring — both seated/lying, ZERO foot load. Band or DB resistance.',exercises:[{name:'Seated Leg Extension (machine)',sets:4,reps:'12-15'},{name:'Prone Dumbbell Leg Curl',sets:4,reps:'12-15'}]},
+      {label:'Superset 1',note:'Quad + Hamstring — both seated/lying, ZERO foot load. Band or DB resistance.',exercises:[{name:'Banded Leg Extension (seated)',sets:4,reps:'12-15'},{name:'Prone Dumbbell Leg Curl',sets:4,reps:'12-15'}]},
       {label:'Superset 2',note:'Glute + Hamstring eccentric — injured foot stays OFF the floor throughout.',exercises:[{name:'Single-Leg Glute Bridge (foot elevated)',sets:4,reps:'12 each side'},{name:'Nordic Curl Eccentric',sets:3,reps:'5 slow'}]},
       {label:'Superset 3',note:'Glute med + adductor — side-lying, fully unloaded, no ground contact through the foot.',exercises:[{name:'Side-Lying Hip Abduction',sets:3,reps:'15 each side'},{name:'Side-Lying Hip Adduction',sets:3,reps:'12 each side'}]},
       {label:'Core Finisher',note:'All floor-based, no foot loading. Dead bug: press lumbar INTO floor.',exercises:[{name:'Dead Bug',sets:3,reps:'10 each side'},{name:'Hollow Hold',sets:3,reps:'20-30s'}]},
@@ -694,8 +705,8 @@ const PLAN={
   'Italy Lower B':{color:PU,icon:'ILB',subtitle:'Unloaded Posterior + Core — Foot Recovery',italy:true,footRecovery:true,sections:[
     {title:'Warm-Up',color:'#64748B',isWarmup:true,supersets:[{label:'Foot-Safe Warm-Up',note:'⚠️ Achilles/calcaneus recovery — seated & floor only, NO standing load on the right foot.',exercises:WARMUP_ITALY_FOOTSAFE}]},
     {title:'Main Session',color:PU,supersets:[
-      {label:'Superset 1',note:'Hamstring eccentric + curl — both unloaded through the foot. Nordic is the priority posterior movement now.',exercises:[{name:'Nordic Curl Eccentric',sets:4,reps:'5 slow'},{name:'Seated Leg Curl (machine)',sets:4,reps:'12-15'}]},
-      {label:'Superset 2',note:'Glute + quad — foot-elevated bridge keeps the injured foot off the floor; leg extension is seated.',exercises:[{name:'Single-Leg Glute Bridge (foot elevated)',sets:4,reps:'12 each side'},{name:'Seated Leg Extension (machine)',sets:3,reps:'15'}]},
+      {label:'Superset 1',note:'Hamstring eccentric + curl — both unloaded through the foot. Nordic is the priority posterior movement now.',exercises:[{name:'Nordic Curl Eccentric',sets:4,reps:'5 slow'},{name:'Banded Leg Curl (seated)',sets:4,reps:'12-15'}]},
+      {label:'Superset 2',note:'Glute + quad — foot-elevated bridge keeps the injured foot off the floor; leg extension is seated.',exercises:[{name:'Single-Leg Glute Bridge (foot elevated)',sets:4,reps:'12 each side'},{name:'Banded Leg Extension (seated)',sets:3,reps:'15'}]},
       {label:'Superset 3',note:'Glute med + adductor — side-lying, fully unloaded.',exercises:[{name:'Side-Lying Hip Abduction',sets:3,reps:'15 each side'},{name:'Banded Clamshells',sets:3,reps:'20 each side'}]},
       {label:'Core Finisher',note:'Floor-based, no foot load. Anti-rotation focus.',exercises:[{name:'Hollow Hold',sets:3,reps:'20-30s'},{name:'Pallof Press',sets:3,reps:'10 each side'}]},
     ]},
@@ -2254,7 +2265,15 @@ function App(){
   const plan=atype?PLAN[atype]:null;
   const col=plan?plan.color:A;
   const ig=isGymSession(atype);
-  // dtw = types completed THIS CALENDAR WEEK (used for "done" badge on session cards)
+  // History scoped to the current session's plan mode. 16 exercise names are shared between
+  // Italy and London (and Home), but the equipment differs — a band leg curl in a garage is not
+  // the same lift as a machine one. Comparing across modes corrupted PBs, the "Last:" value and
+  // the progression prompt, so anything used for progression decisions sees only same-mode history.
+  const histScoped=useMemo(()=>{
+    const m=modeOfType(atype);
+    if(!m)return hist;
+    return hist.filter(s=>modeOfType(s.type)===m);
+  },[hist,atype]);
   // daysCompleted = day-of-week set for the week strip. Both are based on the actual
   // Mon-Sun window containing today, not the stored week-number — a session's week field
   // depends on the block's own start date and shouldn't be what decides whether today's
@@ -2459,7 +2478,7 @@ function App(){
               </div>
             </div>
           )}
-          {ig&&(customSections||PLAN[atype].sections).map((sec,si)=><SecBlock key={si} sec={sec} si={si} gdata={gdata} restDur={restDur} hist={hist} onChange={hgc} onDragStart={onDragStart} dragInfo={dragInfo} onAddExercise={(secIdx)=>setAddPickerCtx({secIdx,ssIdx:null})} onRemoveEx={removeExerciseByUid}/>)}
+          {ig&&(customSections||PLAN[atype].sections).map((sec,si)=><SecBlock key={si} sec={sec} si={si} gdata={gdata} restDur={restDur} hist={histScoped} onChange={hgc} onDragStart={onDragStart} dragInfo={dragInfo} onAddExercise={(secIdx)=>setAddPickerCtx({secIdx,ssIdx:null})} onRemoveEx={removeExerciseByUid}/>)}
           {atype==='Bike'&&<BikeLogger data={cdata} onChange={setCdata} week={week}/>}
           {atype==='Walk'&&<WalkLogger data={cdata} onChange={setCdata}/>}
           {atype==='Swim'&&<SwimLogger data={cdata} onChange={setCdata} sphase={sphase} setSphase={setSphase}/>}
@@ -2572,7 +2591,35 @@ function App(){
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+// ── ERROR BOUNDARY ────────────────────────────────────────────────────────────
+// Without this, any render exception blanks the whole screen with no way back —
+// mid-session, on a phone, with no console access. This keeps the failure visible
+// and recoverable, and never touches the saved draft, so nothing logged is lost.
+class ErrorBoundary extends React.Component{
+  constructor(p){super(p);this.state={err:null};}
+  static getDerivedStateFromError(err){return{err};}
+  componentDidCatch(err,info){console.error('Render error:',err,info);}
+  render(){
+    if(!this.state.err)return this.props.children;
+    const msg=(this.state.err&&(this.state.err.stack||this.state.err.message))||String(this.state.err);
+    return(
+      <div style={{padding:'28px 20px',fontFamily:'-apple-system,system-ui,sans-serif',color:'#E2E8F0',background:'#050A14',minHeight:'100vh'}}>
+        <div style={{fontSize:20,fontWeight:700,marginBottom:8}}>Something broke</div>
+        <div style={{color:'#94A3B8',fontSize:13,lineHeight:1.5,marginBottom:16}}>
+          Your logged sets are safe — the draft is saved separately and was not affected. Reload to carry on.
+        </div>
+        <div style={{display:'flex',gap:8,marginBottom:20}}>
+          <button onClick={()=>location.reload()} style={{padding:'10px 16px',background:'#38BDF8',border:'none',borderRadius:8,color:'#050A14',fontSize:14,fontWeight:700,cursor:'pointer'}}>Reload</button>
+          <button onClick={()=>{try{navigator.clipboard.writeText(msg);}catch{}}} style={{padding:'10px 16px',background:'transparent',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',fontSize:14,cursor:'pointer'}}>Copy error</button>
+        </div>
+        <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:6}}>Details</div>
+        <pre style={{whiteSpace:'pre-wrap',wordBreak:'break-word',background:'#0A1628',border:'1px solid #1E2D40',borderRadius:8,padding:12,color:'#F87171',fontSize:11,lineHeight:1.4,maxHeight:'45vh',overflow:'auto'}}>{msg}</pre>
+      </div>
+    );
+  }
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
 <script>
 // Registers the app-shell service worker for offline/flaky-connection resilience.
