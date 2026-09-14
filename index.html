@@ -100,8 +100,67 @@ function getExerciseImages(exName){
   return [FREEDB_BASE+id+'/0.jpg',FREEDB_BASE+id+'/1.jpg'];
 }
 
-async function db(method,path,body){
-  const res=await fetch(SB+'/rest/v1'+path,{method,headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},body:body?JSON.stringify(body):undefined});
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+// Email one-time-code auth against Supabase's REST endpoints (no SDK, keeps this a single file).
+// Deliberately uses the 6-DIGIT CODE flow rather than a magic link: a magic link opens in Safari,
+// not the installed PWA, which breaks the flow on iOS. A code can be typed straight into the app.
+const AUTH_KEY='tl-auth';
+function loadAuth(){try{const r=localStorage.getItem(AUTH_KEY);return r?JSON.parse(r):null;}catch{return null;}}
+function saveAuth(a){try{a?localStorage.setItem(AUTH_KEY,JSON.stringify(a)):localStorage.removeItem(AUTH_KEY);}catch{}}
+function authUserId(){const a=loadAuth();return a&&a.user_id?a.user_id:null;}
+
+function packSession(j,prev){
+  return{
+    access_token:j.access_token,
+    refresh_token:j.refresh_token||(prev&&prev.refresh_token),
+    user_id:(j.user&&j.user.id)||(prev&&prev.user_id),
+    email:(j.user&&j.user.email)||(prev&&prev.email),
+    // Refresh a minute early so a request never races the expiry
+    expires_at:Date.now()+(((j.expires_in||3600)-60)*1000),
+  };
+}
+async function sendOtp(email){
+  const res=await fetch(SB+'/auth/v1/otp',{method:'POST',headers:{'apikey':SK,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email.trim().toLowerCase(),create_user:false})});
+  if(!res.ok){let m='';try{m=(await res.json()).msg||'';}catch{}throw new Error(m||('Could not send code ('+res.status+')'));}
+  return true;
+}
+async function verifyOtp(email,token){
+  const res=await fetch(SB+'/auth/v1/verify',{method:'POST',headers:{'apikey':SK,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email.trim().toLowerCase(),token:token.trim(),type:'email'})});
+  if(!res.ok){let m='';try{m=(await res.json()).msg||'';}catch{}throw new Error(m||'That code was not accepted');}
+  const j=await res.json();
+  const s=packSession(j,null);
+  saveAuth(s);return s;
+}
+async function refreshSession(){
+  const a=loadAuth();
+  if(!a||!a.refresh_token)return null;
+  try{
+    const res=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SK,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:a.refresh_token})});
+    if(!res.ok){if(res.status===400||res.status===401)saveAuth(null);return null;}
+    const s=packSession(await res.json(),a);
+    saveAuth(s);return s;
+  }catch{return null;}// network blip: keep the session, try again later
+}
+async function signOut(){
+  const a=loadAuth();
+  try{if(a&&a.access_token)await fetch(SB+'/auth/v1/logout',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+a.access_token}});}catch{}
+  saveAuth(null);
+}
+
+async function db(method,path,body,_retried){
+  let a=loadAuth();
+  // Proactively refresh an expired token rather than burning a failed request
+  if(a&&a.expires_at&&Date.now()>a.expires_at){const r=await refreshSession();if(r)a=r;}
+  const token=(a&&a.access_token)||SK;
+  const res=await fetch(SB+'/rest/v1'+path,{method,headers:{'apikey':SK,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'},body:body?JSON.stringify(body):undefined});
+  // A 401 mid-session means the token died early — refresh once and retry before surfacing an error
+  if(res.status===401&&!_retried&&loadAuth()){
+    const r=await refreshSession();
+    if(r)return db(method,path,body,true);
+  }
   if(!res.ok)throw new Error('DB '+res.status);
   const t=await res.text();return t?JSON.parse(t):null;
 }
@@ -158,10 +217,12 @@ async function loadChatBackup(userId){
 // iOS's isolated PWA storage) silently pointed the app at a brand new empty "user", making real
 // history look lost. Pinning it here means any future reinstall, browser, or device reconnects
 // to the same data automatically — no manual recovery step needed.
+// The user id every row is keyed by. Once signed in this is the Supabase auth UUID.
+// The legacy fixed id remains only as a fallback for the brief pre-migration window and for
+// the local draft mirror; after the RLS migration nothing can be read without a real session.
+const LEGACY_UID='chris-yqp5rrpt';
 function uid(){
-  const FIXED_ID='chris-yqp5rrpt';
-  try{if(localStorage.getItem('tl-uid')!==FIXED_ID)localStorage.setItem('tl-uid',FIXED_ID);}catch{}
-  return FIXED_ID;
+  return authUserId()||LEGACY_UID;
 }
 const fmt=iso=>new Date(iso).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 function calcWeek(sd){if(!sd)return 1;const diff=new Date()-new Date(sd);return Math.max(1,Math.floor(diff/(1000*60*60*24*7))+1);}
@@ -1612,7 +1673,7 @@ function LiveElapsed({startMs,color}){
 }
 
 // ── SETTINGS OVERLAY ──────────────────────────────────────────────────────────
-function SettingsScreen({onClose,restDur,setRestDur,healthReminderOff,setHealthReminderOff,bwLog,addBwEntry,hist,exportCsv,archived,toggleArchived,planMode}){
+function SettingsScreen({onClose,restDur,setRestDur,healthReminderOff,setHealthReminderOff,bwLog,addBwEntry,hist,exportCsv,archived,toggleArchived,planMode,authEmail}){
   const[bw,setBw]=useState('');
   const[bf,setBf]=useState('');
   const volume=getVolumeByMuscle(hist,7);
@@ -1717,14 +1778,80 @@ function SettingsScreen({onClose,restDur,setRestDur,healthReminderOff,setHealthR
           <div style={{color:'#334155',fontSize:11,textAlign:'center'}}>{hist.length} sessions stored</div>
         </div>
 
-        <div style={{color:'#334155',fontSize:10,textAlign:'center',fontFamily:'monospace'}}>Training Log · single-user · chris-yqp5rrpt</div>
+        {/* Account */}
+        <div style={{color:'#475569',fontSize:10,textTransform:'uppercase',letterSpacing:1.5,marginBottom:8}}>Account</div>
+        <div style={{background:'#0D1B2E',border:'1px solid #1E2D40',borderRadius:10,padding:'12px 14px',marginBottom:20}}>
+          <div style={{color:'#94A3B8',fontSize:12,marginBottom:10,wordBreak:'break-all'}}>Signed in as {authEmail||'unknown'}</div>
+          <button onClick={async()=>{if(confirm('Sign out? Any unfinished session stays saved and will be here when you sign back in.')){await signOut();location.reload();}}} style={{width:'100%',padding:'11px',background:'transparent',border:'1px solid #1E3A5F',borderRadius:8,color:'#94A3B8',fontSize:13,fontWeight:600,cursor:'pointer'}}>Sign out</button>
+        </div>
+
+        <div style={{color:'#334155',fontSize:10,textAlign:'center',fontFamily:'monospace'}}>Training Log · private · authenticated</div>
       </div>
     </div>
   );
 }
 
 // ── APP ───────────────────────────────────────────────────────────────────────
+// ── LOGIN SCREEN ──────────────────────────────────────────────────────────────
+function LoginScreen({onSignedIn}){
+  const[step,setStep]=useState('email');
+  const[email,setEmail]=useState(()=>{try{return localStorage.getItem('tl-last-email')||'';}catch{return'';}});
+  const[code,setCode]=useState('');
+  const[busy,setBusy]=useState(false);
+  const[err,setErr]=useState('');
+  const send=async()=>{
+    if(!email.trim()){setErr('Enter your email address');return;}
+    setBusy(true);setErr('');
+    try{
+      await sendOtp(email);
+      try{localStorage.setItem('tl-last-email',email.trim().toLowerCase());}catch{}
+      setStep('code');
+    }catch(e){setErr(e.message);}
+    setBusy(false);
+  };
+  const verify=async()=>{
+    if(!code.trim()){setErr('Enter the 6-digit code');return;}
+    setBusy(true);setErr('');
+    try{const s=await verifyOtp(email,code);onSignedIn(s);}
+    catch(e){setErr(e.message);setBusy(false);}
+  };
+  const inp={width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#E2E8F0',padding:'12px 14px',fontSize:16,outline:'none',boxSizing:'border-box'};
+  const btn={width:'100%',padding:'13px',background:A,border:'none',borderRadius:8,color:'#050A14',fontSize:15,fontWeight:700,cursor:'pointer',marginTop:12,opacity:busy?0.6:1};
+  return(
+    <div style={{minHeight:'100vh',background:'#050A14',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+      <div style={{width:'100%',maxWidth:340}}>
+        <div style={{fontSize:26,fontWeight:800,color:'#E2E8F0',marginBottom:4}}>Training Log</div>
+        <div style={{color:'#475569',fontSize:13,marginBottom:24}}>
+          {step==='email'?'Sign in to load your sessions.':`We emailed a 6-digit code to ${email}.`}
+        </div>
+        {step==='email'?(
+          <>
+            <input type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" value={email}
+              onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} style={inp}/>
+            <button onClick={send} disabled={busy} style={btn}>{busy?'Sending...':'Email me a code'}</button>
+          </>
+        ):(
+          <>
+            <input type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="123456" value={code}
+              onChange={e=>setCode(e.target.value.replace(/\D/g,'').slice(0,6))} onKeyDown={e=>e.key==='Enter'&&verify()}
+              style={{...inp,fontSize:24,letterSpacing:6,textAlign:'center',fontFamily:'monospace'}}/>
+            <button onClick={verify} disabled={busy} style={btn}>{busy?'Checking...':'Sign in'}</button>
+            <button onClick={()=>{setStep('email');setCode('');setErr('');}} style={{width:'100%',padding:10,background:'none',border:'none',color:'#475569',fontSize:12,cursor:'pointer',marginTop:6}}>Use a different email</button>
+          </>
+        )}
+        {err&&<div style={{color:R,fontSize:12,marginTop:12,lineHeight:1.4}}>{err}</div>}
+        <div style={{color:'#1E3A5F',fontSize:10,marginTop:28,lineHeight:1.5}}>
+          Codes expire after a few minutes. If one does not arrive, check spam before requesting another.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App(){
+  // Auth session. Null means signed out — the whole app is gated behind this.
+  const[auth,setAuth]=useState(()=>loadAuth());
+  const[authChecking,setAuthChecking]=useState(!!loadAuth());
   const[screen,setScreen]=useState('home');
   const[atype,setAtype]=useState(null);
   const[week,setWeek]=useState(1);
@@ -1829,7 +1956,35 @@ function App(){
       return s?JSON.parse(s):[];
     }catch{return[];}
   });
-  const userId=uid();const asr=useRef(null);
+  const userId=(auth&&auth.user_id)||LEGACY_UID;const asr=useRef(null);
+  // Validate/refresh the stored session on launch. An expired-but-refreshable token is renewed
+  // silently; a genuinely dead one drops to the login screen rather than failing every request.
+  useEffect(()=>{
+    let cancelled=false;
+    (async()=>{
+      const a=loadAuth();
+      if(!a){setAuthChecking(false);return;}
+      if(a.expires_at&&Date.now()>a.expires_at){
+        const r=await refreshSession();
+        if(!cancelled){setAuth(r);setAuthChecking(false);}
+        return;
+      }
+      if(!cancelled)setAuthChecking(false);
+    })();
+    return()=>{cancelled=true;};
+  },[]);
+  // Keep the token fresh while the app sits open between sets
+  useEffect(()=>{
+    if(!auth)return;
+    const id=setInterval(async()=>{
+      const a=loadAuth();
+      if(a&&a.expires_at&&Date.now()>a.expires_at-120000){
+        const r=await refreshSession();
+        if(r)setAuth(r);
+      }
+    },60000);
+    return()=>clearInterval(id);
+  },[auth&&auth.user_id]);
 
   // Manual retry handler — triggered from the banner
   const retrySync=useCallback(async()=>{
@@ -2303,6 +2458,16 @@ function App(){
   const rc=done2&&PLAN[done2.type]?PLAN[done2.type].color:A;
   const navScreen=screen==='review'?'home':screen==='log'?'live':screen;
 
+  // ── AUTH GATE ───────────────────────────────────────────────────────────────
+  // Nothing renders and no data loads until there is a valid session.
+  if(authChecking)return(
+    <div style={{background:'#070E1A',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:10}}>
+      <div style={{display:'flex',gap:6}}>{[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:'50%',background:A,animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}</div>
+      <div style={{color:'#475569',fontSize:12}}>Checking your session...</div>
+    </div>
+  );
+  if(!auth)return <LoginScreen onSignedIn={s=>{setAuth(s);location.reload();}}/>;
+
   if(!loaded)return(
     <div style={{background:'#070E1A',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:10}}>
       <div style={{display:'flex',gap:6}}>{[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:'50%',background:A,animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite`}}/>)}</div>
@@ -2585,7 +2750,7 @@ function App(){
       )}
       {showHealthReminder&&<HealthReminderModal onClose={()=>setShowHealthReminder(false)} onDisable={()=>{localStorage.setItem('tl-health-reminder-disabled','1');setHealthReminderOff(true);setShowHealthReminder(false);}}/>}
       {addPickerCtx&&customSections&&<AddExercisePicker ctx={addPickerCtx} customSections={customSections} onPick={addExerciseToSession} onClose={()=>setAddPickerCtx(null)}/>}
-      {showSettings&&<SettingsScreen onClose={()=>setShowSettings(false)} restDur={restDur} setRestDur={setRestDur} healthReminderOff={healthReminderOff} setHealthReminderOff={setHealthReminderOff} bwLog={bwLog} addBwEntry={addBwEntry} hist={hist} exportCsv={exportCsv} archived={archived} toggleArchived={toggleArchived} planMode={planMode}/>}
+      {showSettings&&<SettingsScreen onClose={()=>setShowSettings(false)} restDur={restDur} setRestDur={setRestDur} healthReminderOff={healthReminderOff} setHealthReminderOff={setHealthReminderOff} bwLog={bwLog} addBwEntry={addBwEntry} hist={hist} exportCsv={exportCsv} archived={archived} toggleArchived={toggleArchived} planMode={planMode} authEmail={auth&&auth.email}/>}
       <DragGhost info={dragInfo}/>
     </div>
   );
