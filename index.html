@@ -119,6 +119,16 @@ function packSession(j,prev){
     expires_at:Date.now()+(((j.expires_in||3600)-60)*1000),
   };
 }
+async function signInWithPassword(email,password){
+  const res=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':SK,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email.trim().toLowerCase(),password})});
+  if(!res.ok){
+    let m='';try{const j=await res.json();m=j.error_description||j.msg||j.message||'';}catch{}
+    throw new Error(m||'Email or password not recognised');
+  }
+  const s=packSession(await res.json(),null);
+  saveAuth(s);return s;
+}
 async function sendOtp(email){
   const res=await fetch(SB+'/auth/v1/otp',{method:'POST',headers:{'apikey':SK,'Content-Type':'application/json'},
     body:JSON.stringify({email:email.trim().toLowerCase(),create_user:false})});
@@ -1786,56 +1796,81 @@ function SettingsScreen({onClose,restDur,setRestDur,healthReminderOff,setHealthR
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 // ── LOGIN SCREEN ──────────────────────────────────────────────────────────────
+// Password is the primary method. The emailed code flow is kept as a fallback, but
+// Supabase's built-in email service is rate limited to a couple of messages an hour,
+// so it is not something to depend on day to day.
 function LoginScreen({onSignedIn}){
-  const[step,setStep]=useState('email');
+  const[mode,setMode]=useState('password');// 'password' | 'email' | 'code'
   const[email,setEmail]=useState(()=>{try{return localStorage.getItem('tl-last-email')||'';}catch{return'';}});
+  const[password,setPassword]=useState('');
   const[code,setCode]=useState('');
   const[busy,setBusy]=useState(false);
   const[err,setErr]=useState('');
-  const send=async()=>{
+  const remember=()=>{try{localStorage.setItem('tl-last-email',email.trim().toLowerCase());}catch{}};
+
+  const doPassword=async()=>{
+    if(!email.trim()||!password){setErr('Enter your email and password');return;}
+    setBusy(true);setErr('');
+    try{const s=await signInWithPassword(email,password);remember();onSignedIn(s);}
+    catch(ex){setErr(ex.message);setBusy(false);}
+  };
+  const doSend=async()=>{
     if(!email.trim()){setErr('Enter your email address');return;}
     setBusy(true);setErr('');
-    try{
-      await sendOtp(email);
-      try{localStorage.setItem('tl-last-email',email.trim().toLowerCase());}catch{}
-      setStep('code');
-    }catch(e){setErr(e.message);}
+    try{await sendOtp(email);remember();setMode('code');}
+    catch(ex){setErr(ex.message);}
     setBusy(false);
   };
-  const verify=async()=>{
+  const doVerify=async()=>{
     if(!code.trim()){setErr('Enter the 6-digit code');return;}
     setBusy(true);setErr('');
     try{const s=await verifyOtp(email,code);onSignedIn(s);}
-    catch(e){setErr(e.message);setBusy(false);}
+    catch(ex){setErr(ex.message);setBusy(false);}
   };
-  const inp={width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#E2E8F0',padding:'12px 14px',fontSize:16,outline:'none',boxSizing:'border-box'};
-  const btn={width:'100%',padding:'13px',background:A,border:'none',borderRadius:8,color:'#050A14',fontSize:15,fontWeight:700,cursor:'pointer',marginTop:12,opacity:busy?0.6:1};
+
+  const inp={width:'100%',background:'#070E1A',border:'1px solid #1E3A5F',borderRadius:8,color:'#E2E8F0',padding:'12px 14px',fontSize:16,outline:'none',boxSizing:'border-box',marginBottom:10};
+  const btn={width:'100%',padding:'13px',background:A,border:'none',borderRadius:8,color:'#050A14',fontSize:15,fontWeight:700,cursor:'pointer',marginTop:2,opacity:busy?0.6:1};
+  const link={width:'100%',padding:10,background:'none',border:'none',color:'#475569',fontSize:12,cursor:'pointer',marginTop:8};
+
   return(
     <div style={{minHeight:'100vh',background:'#050A14',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
       <div style={{width:'100%',maxWidth:340}}>
         <div style={{fontSize:26,fontWeight:800,color:'#E2E8F0',marginBottom:4}}>Training Log</div>
-        <div style={{color:'#475569',fontSize:13,marginBottom:24}}>
-          {step==='email'?'Sign in to load your sessions.':`We emailed a 6-digit code to ${email}.`}
+        <div style={{color:'#475569',fontSize:13,marginBottom:22}}>
+          {mode==='code'?`Enter the 6-digit code sent to ${email}.`:'Sign in to load your sessions.'}
         </div>
-        {step==='email'?(
+
+        {mode==='password'&&(
           <>
-            <input type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" value={email}
-              onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} style={inp}/>
-            <button onClick={send} disabled={busy} style={btn}>{busy?'Sending...':'Email me a code'}</button>
-          </>
-        ):(
-          <>
-            <input type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="123456" value={code}
-              onChange={e=>setCode(e.target.value.replace(/\D/g,'').slice(0,6))} onKeyDown={e=>e.key==='Enter'&&verify()}
-              style={{...inp,fontSize:24,letterSpacing:6,textAlign:'center',fontFamily:'monospace'}}/>
-            <button onClick={verify} disabled={busy} style={btn}>{busy?'Checking...':'Sign in'}</button>
-            <button onClick={()=>{setStep('email');setCode('');setErr('');}} style={{width:'100%',padding:10,background:'none',border:'none',color:'#475569',fontSize:12,cursor:'pointer',marginTop:6}}>Use a different email</button>
+            <input type="email" inputMode="email" autoComplete="username" placeholder="you@example.com" value={email}
+              onChange={e=>setEmail(e.target.value)} style={inp}/>
+            <input type="password" autoComplete="current-password" placeholder="Password" value={password}
+              onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&doPassword()} style={inp}/>
+            <button onClick={doPassword} disabled={busy} style={btn}>{busy?'Signing in...':'Sign in'}</button>
+            <button onClick={()=>{setMode('email');setErr('');}} style={link}>Email me a code instead</button>
           </>
         )}
+
+        {mode==='email'&&(
+          <>
+            <input type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" value={email}
+              onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&doSend()} style={inp}/>
+            <button onClick={doSend} disabled={busy} style={btn}>{busy?'Sending...':'Email me a code'}</button>
+            <button onClick={()=>{setMode('password');setErr('');}} style={link}>Use my password instead</button>
+          </>
+        )}
+
+        {mode==='code'&&(
+          <>
+            <input type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="123456" value={code}
+              onChange={e=>setCode(e.target.value.replace(/\D/g,'').slice(0,6))} onKeyDown={e=>e.key==='Enter'&&doVerify()}
+              style={{...inp,fontSize:24,letterSpacing:6,textAlign:'center',fontFamily:'monospace'}}/>
+            <button onClick={doVerify} disabled={busy} style={btn}>{busy?'Checking...':'Sign in'}</button>
+            <button onClick={()=>{setMode('password');setCode('');setErr('');}} style={link}>Back</button>
+          </>
+        )}
+
         {err&&<div style={{color:R,fontSize:12,marginTop:12,lineHeight:1.4}}>{err}</div>}
-        <div style={{color:'#1E3A5F',fontSize:10,marginTop:28,lineHeight:1.5}}>
-          Codes expire after a few minutes. If one does not arrive, check spam before requesting another.
-        </div>
       </div>
     </div>
   );
